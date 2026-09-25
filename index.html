@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUTALOG — Cargando…</title>
+<style>
+body{margin:0;background:#0a0a0a;color:#fafafa;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{text-align:center;padding:24px}
+.bar{width:220px;height:4px;background:#262626;border-radius:4px;margin:16px auto;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#fafafa;transition:width .2s}
+</style>
+</head>
+<body>
+<div class="box">
+  <div style="font-weight:700;letter-spacing:.04em">RUTALOG</div>
+  <div style="color:#a3a3a3;font-size:13px;margin-top:6px">Cargando aplicación…</div>
+  <div class="bar"><i id="p"></i></div>
+  <div id="err" style="color:#f87171;font-size:13px;margin-top:12px;display:none"></div>
+</div>
+<script>
+(async function(){
+  const n = 4;
+  const base = location.pathname.replace(/\/[^/]*$/, '/') || '/';
+  const bar = document.getElementById('p');
+  const err = document.getElementById('err');
+  try {
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      const r = await fetch(base + 'part' + i + '.txt?v=1');
+      if (!r.ok) throw new Error('No se pudo cargar part' + i + ' (HTTP ' + r.status + ')');
+      html += await r.text();
+      bar.style.width = Math.round(((i+1)/n)*100) + '%';
+    }
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    err.style.display = 'block';
+    err.textContent = String(e.message || e);
+  }
+})();
+</script>
+</body>
+</html>
