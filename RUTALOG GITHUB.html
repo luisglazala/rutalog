@@ -561,10 +561,14 @@ td .ed-cell.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 /* ========== RESPONSIVE UNIVERSAL ========== */
 .sidebar-toggle {
   display: none;
-  background: none; border: 1px solid var(--border); border-radius: 7px;
-  padding: 6px 8px; cursor: pointer; color: var(--text);
+  background: var(--surface-3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px; cursor: pointer; color: var(--text);
   flex-shrink: 0;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
 }
+.sidebar-toggle svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+.sidebar-toggle:active { background: var(--nav-active-bg); }
 .sidebar-backdrop {
   display: none; position: fixed; inset: 0; background: rgba(15,23,42,.4);
   z-index: 90;
@@ -1121,6 +1125,13 @@ input[type="checkbox"], input[type="radio"] {
   touch-action: manipulation;
 }
 
+
+.topbar .sidebar-toggle { order: -1; }
+@media (max-width: 900px) {
+  .topbar .date { display: none; }
+  .topbar .sidebar-toggle { display: inline-flex !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1156,11 +1167,11 @@ input[type="checkbox"], input[type="radio"] {
 
   <div class="main">
     <div class="topbar">
+      <button type="button" class="sidebar-toggle" id="btnSidebarToggle" aria-label="Abrir menú" title="Menú"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <h1 id="pageTitle">Panel de despachos</h1>
       <span class="date" id="fechaHoy"></span>
       <div class="spacer"></div>
-      <button type="button" class="sidebar-toggle" id="btnSidebarToggle" aria-label="Abrir menú"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-            <div class="user-chip-bar" id="userChipBar" hidden>
+      <div class="user-chip-bar" id="userChipBar" hidden>
         <span>Sesión: <strong id="userChipName">—</strong></span>
         <button type="button" class="btn btn-secondary btn-sm" id="btnLogout" title="Cerrar sesión">Salir</button>
       </div>
