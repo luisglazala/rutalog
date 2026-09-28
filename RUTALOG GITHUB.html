@@ -1379,7 +1379,7 @@ hr {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div>
               <h3 style="margin:0;">Usuarios y accesos</h3>
-              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, asígnales rol <strong>Administrador</strong> u <strong>Operador</strong> y marca los módulos permitidos. Con token de GitHub se suben solos (~2 s) a otras PCs.</p>
+              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, asígnales rol <strong>Administrador</strong> u <strong>Operador</strong> y marca los módulos permitidos. Con token de GitHub se suben solos (~1,5 s) a otras PCs.</p>
             </div>
             <span class="badge" id="badgeUsuarios">0 usuarios</span>
           </div>
@@ -1457,7 +1457,7 @@ hr {
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center;">
             <button type="button" class="btn btn-primary btn-sm" id="btnSyncActualizar">Actualizar ahora</button>
             <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none;">
-              <input type="checkbox" id="syncAuto" style="accent-color:#34d399;" checked> Auto cada 5 min (usuarios y datos)
+              <input type="checkbox" id="syncAuto" style="accent-color:#34d399;" checked> Auto tras editar + cada 60 s (usuarios y datos)
             </label>
           </div>
           <p style="font-size:12px;color:var(--muted);margin:0;" id="syncStatus">Última sync: —</p>
@@ -1465,7 +1465,7 @@ hr {
             <strong>Guardado automático en GitHub</strong> (con token): cualquier cambio de
             <strong>usuarios</strong>, <strong>maestro de clientes</strong>, <strong>citas</strong>,
             <strong>topes SKU</strong> o <strong>código SKU</strong> (edición o importación Excel)
-            se sube solo ~2–3 segundos después. También hay respaldo cada 5 min.
+            se sube solo ~1–2 segundos después. También hay respaldo automática tras editar y cada minuto.
             En otra PC: mismo token → Actualizar → mismos datos y login.
           </p>
         </div>
@@ -6701,7 +6701,7 @@ function ghIsDirty() {
   try { return localStorage.getItem("rutalog_gh_dirty") === "1"; } catch (e) { return false; }
 }
 
-/** Tras cualquier cambio: marca dirty y sube a GitHub en ~2.5 s (debounce). */
+/** Tras cualquier cambio: marca dirty y sincroniza con GitHub en ~1.5 s (sube si hay cambios locales; baja si la nube está más nueva). */
 let _ghPushTimer = null;
 let _ghPushInFlight = false;
 function ghSchedulePush(reason) {
@@ -6715,21 +6715,46 @@ function ghSchedulePush(reason) {
   _ghPushTimer = setTimeout(async function() {
     _ghPushTimer = null;
     if (_ghPushInFlight) {
-      // reintentar cuando termine el push actual
       ghSchedulePush(reason || "retry");
       return;
     }
-    if (!ghIsDirty()) return;
     if (typeof ghActualizar !== "function") return;
     _ghPushInFlight = true;
     try {
+      // Sube cambios locales y/o baja si remoto es más nuevo
       await ghActualizar({ silent: true });
     } catch (e) {
       console.warn("ghSchedulePush", e);
     } finally {
       _ghPushInFlight = false;
     }
-  }, 2500);
+  }, 1500);
+}
+
+/** Sincronización periódica: baja cambios de otras PCs aunque esta no edite. */
+let _ghPullTimer = null;
+function ghStartPullLoop(on) {
+  if (_ghPullTimer) { clearInterval(_ghPullTimer); _ghPullTimer = null; }
+  if (!on) return;
+  _ghPullTimer = setInterval(function() {
+    if (document.hidden) return;
+    if (typeof ghGetToken !== "function" || !ghGetToken()) return;
+    if (_ghPushInFlight) return;
+    if (typeof ghActualizar === "function") {
+      ghActualizar({ silent: true }).catch(function() {});
+    }
+  }, 60 * 1000); // cada 60 s
+}
+
+function ghOnVisibilitySync() {
+  if (document.hidden) return;
+  if (typeof ghGetToken !== "function" || !ghGetToken()) return;
+  if (_ghPushInFlight) return;
+  if (typeof ghActualizar === "function") {
+    setTimeout(function() {
+      try { ghActualizar({ silent: true }); } catch (e) {}
+    }, 400);
+  }
 }
 
 function ghBuildPayload() {
@@ -7323,21 +7348,20 @@ let _ghAutoTimer = null;
 function ghStartAutoSync(on) {
   if (_ghAutoTimer) { clearInterval(_ghAutoTimer); _ghAutoTimer = null; }
   try { localStorage.setItem("rutalog_gh_auto", on ? "1" : "0"); } catch (e) {}
+  if (typeof ghStartPullLoop === "function") ghStartPullLoop(!!on);
   if (!on) return;
-  // Primera pasada a los ~30 s (por si acabas de crear un operador)
+  // Primera pasada a los ~8 s
   setTimeout(function() {
     if (document.hidden) return;
     if (!ghGetToken()) return;
-    if (typeof ghIsDirty === "function" && ghIsDirty()) {
-      ghActualizar({ silent: true });
-    }
-  }, 30 * 1000);
+    ghActualizar({ silent: true });
+  }, 8 * 1000);
+  // Respaldo cada 2 min (además del pull cada 60 s y el push a 1.5 s tras editar)
   _ghAutoTimer = setInterval(function() {
     if (document.hidden) return;
     if (!ghGetToken()) return;
-    // Sube usuarios (operadores/admin) y resto de datos si hay cambios locales
     ghActualizar({ silent: true });
-  }, 5 * 60 * 1000);
+  }, 2 * 60 * 1000);
 }
 
 (function initGitHubSync() {
@@ -7378,7 +7402,7 @@ function ghStartAutoSync(on) {
   };
 
   const auto = document.getElementById("syncAuto");
-  // Por defecto ON: usuarios (operadores/admin) y datos se guardan en GitHub cada 5 min
+  // Por defecto ON: usuarios (operadores/admin) y datos se guardan en GitHub automática tras editar y cada minuto
   let autoOn = true;
   try {
     const stored = localStorage.getItem("rutalog_gh_auto");
@@ -7396,10 +7420,18 @@ function ghStartAutoSync(on) {
     try { localStorage.setItem("rutalog_gh_auto", "1"); } catch (e) {}
   }
 
-  // Primera actualización silenciosa al abrir (si hay token)
+  // Primera sincronización al abrir (si hay token)
   setTimeout(function() {
     if (ghGetToken()) ghActualizar({ silent: true });
-  }, 2500);
+  }, 2000);
+
+  // Al volver a la pestaña / ventana: bajar cambios de otras PCs
+  document.addEventListener("visibilitychange", function() {
+    if (typeof ghOnVisibilitySync === "function") ghOnVisibilitySync();
+  });
+  window.addEventListener("focus", function() {
+    if (typeof ghOnVisibilitySync === "function") ghOnVisibilitySync();
+  });
 })();
 
 
