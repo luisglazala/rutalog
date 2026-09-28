@@ -6663,7 +6663,14 @@ function ghBuildPayload() {
   const citasObj = {};
   if (estado.citas) estado.citas.forEach((v, k) => { citasObj[k] = v; });
   const topesArr = [];
-  if (estado.topesSku) estado.topesSku.forEach(t => topesArr.push(t));
+  if (estado.topesSku) estado.topesSku.forEach(t => topesArr.push({
+    sku: t.sku,
+    nombre: t.nombre || "",
+    tope: Number(t.tope) || Number(t.topeG) || Number(t.topeP) || 0,
+    topeG: t.topeG != null ? Number(t.topeG) : (Number(t.tope) || 0),
+    topeP: t.topeP != null ? Number(t.topeP) : 0,
+    transporte: t.transporte || "CAMION G",
+  }));
   const codigoArr = [];
   if (estado.maestroCodigo) estado.maestroCodigo.forEach(r => codigoArr.push(r));
   let usuarios = [];
@@ -6730,16 +6737,35 @@ function ghApplyPayload(data, opts) {
       data.topesSku.forEach(t => {
         if (!t || t.sku == null) return;
         const key = typeof normSkuKey === "function" ? normSkuKey(t.sku) : String(t.sku);
+        // Compat: datos viejos solo tenían "tope"; los nuevos traen topeG / topeP
+        let topeG = t.topeG != null ? Number(t.topeG) : null;
+        let topeP = t.topeP != null ? Number(t.topeP) : null;
+        const topeLegacy = Number(t.tope) || 0;
+        if (topeG == null || !Number.isFinite(topeG)) {
+          topeG = (t.transporte === "CAMION P") ? 0 : topeLegacy;
+        }
+        if (topeP == null || !Number.isFinite(topeP)) {
+          topeP = (t.transporte === "CAMION P") ? topeLegacy : 0;
+        }
         estado.topesSku.set(key, {
-          sku: t.sku,
+          sku: String(t.sku).trim(),
           nombre: t.nombre || "",
-          tope: t.tope,
+          tope: topeG || topeP || topeLegacy,
+          topeG: topeG,
+          topeP: topeP,
           transporte: t.transporte || "CAMION G",
         });
       });
       try {
         const arr = [];
-        estado.topesSku.forEach(x => arr.push(x));
+        estado.topesSku.forEach(x => arr.push({
+          sku: x.sku,
+          nombre: x.nombre || "",
+          tope: Number(x.tope) || Number(x.topeG) || Number(x.topeP) || 0,
+          topeG: x.topeG != null ? Number(x.topeG) : 0,
+          topeP: x.topeP != null ? Number(x.topeP) : 0,
+          transporte: x.transporte || "CAMION G",
+        }));
         localStorage.setItem("rutalog_topes_sku", JSON.stringify(arr));
       } catch (e) {}
       try { if (typeof renderTopesTable === "function") renderTopesTable(); } catch (e) {}
