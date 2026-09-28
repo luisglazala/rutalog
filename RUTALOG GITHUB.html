@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="color-scheme" content="dark">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <title>RUTALOG — Consolidador Territorial · Lazala</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fafafa%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23a3a3a3%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23111%22/%3E%3Cpath%20d%3D%22M8%2022%20L16%207%20L24%2022%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2220%22%20r%3D%222.2%22%20fill%3D%22%23fafafa%22/%3E%3Cpath%20d%3D%22M16%2020%20V14%22%20stroke%3D%22%23fafafa%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.5%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -990,6 +994,131 @@ th, td, .audit-table th, .audit-table td {
 hr {
   border: none !important;
   border-top: 1px solid rgba(255,255,255,.05) !important;
+}
+
+
+/* ===== Táctil / móvil / tablet: toque en vez de solo clic ===== */
+html {
+  -webkit-tap-highlight-color: rgba(245,245,245,.12);
+  touch-action: manipulation;
+}
+button, .btn, .nav button, .ciu-chip, .drop, a, label,
+.sidebar-toggle, .btn-collapse-sb, input[type="checkbox"],
+input[type="radio"], select, .ed-cell, .audit-qty, .role-badge {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(245,245,245,.15);
+  cursor: pointer;
+}
+/* Objetivos táctiles mínimos ~44px (Apple HIG) */
+.btn, .nav button, .sidebar-toggle, .btn-collapse-sb {
+  min-height: 44px;
+  min-width: 44px;
+}
+.btn-sm {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.nav button {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+input[type="checkbox"], input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  accent-color: #a3a3a3;
+}
+/* Feedback visual al tocar (hover no basta en móvil) */
+.btn:active, .nav button:active, .ciu-chip:active, .drop:active,
+.sidebar-toggle:active, .btn-collapse-sb:active {
+  opacity: .85;
+  transform: scale(0.98);
+}
+.ed-cell, input, select, textarea {
+  font-size: 16px; /* evita zoom iOS al enfocar */
+}
+/* Leaflet: gestos táctiles */
+.leaflet-container {
+  touch-action: pan-x pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.leaflet-control-zoom a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+}
+/* Tablas: scroll táctil suave */
+.table-wrap, .audit-body, .lista-paradas, .ciudades-grid, .content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+/* Filas de tabla más altas en táctil */
+@media (hover: none) and (pointer: coarse) {
+  td, th { padding: 10px 8px; }
+  .audit-table th, .audit-table td { padding: 10px 6px; }
+  .lista-paradas li { padding: 12px 0; min-height: 44px; }
+  .cita-item { min-height: 48px; padding: 12px; }
+  .viaje-card { padding: 12px; }
+}
+
+/* Tablet portrait / phablet: menú drawer como en móvil */
+@media (max-width: 900px) {
+  :root { --sidebar-w: min(300px, 82vw); }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: 4px 0 28px rgba(0,0,0,.35);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar.collapsed { width: var(--sidebar-w); } /* no icon-only en drawer */
+  .sidebar-toggle { display: inline-flex !important; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  .sidebar-backdrop.show { display: block; }
+  .app {
+    height: 100dvh;
+    height: 100vh;
+  }
+  .map-layout { grid-template-columns: 1fr; }
+  .side-panel { max-height: none; }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+  }
+  .topbar .btn-sm { min-height: 40px; }
+  .content {
+    padding: 12px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+  .filters input, .filters select, .form-row input, select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  /* Auditoría a casi pantalla completa en tablet */
+  .audit-modal {
+    width: min(100%, 96vw) !important;
+    max-height: min(96vh, 100dvh);
+  }
+  .audit-foot .btn { min-height: 48px; }
+  .login-card { width: min(400px, 92vw); }
+}
+
+/* Tablet landscape: dos columnas de mapa si cabe */
+@media (min-width: 721px) and (max-width: 1100px) and (orientation: landscape) {
+  .map-layout { grid-template-columns: 1fr minmax(220px, 32%); }
+  .map-box { min-height: 320px; }
+}
+
+/* Evitar doble-tap zoom en controles */
+.btn, .nav button, .ciu-chip, label {
+  touch-action: manipulation;
 }
 
 </style>
@@ -6197,8 +6326,9 @@ if (btnRellenarNombresTopes) {
     if (sb) sb.classList.add("open");
     if (bd) { bd.hidden = false; bd.classList.add("show"); }
   }
+  const isDrawer = () => window.innerWidth <= 900;
   if (btn) btn.onclick = () => {
-    if (window.innerWidth <= 720) {
+    if (isDrawer()) {
       if (sb && sb.classList.contains("open")) closeMobile(); else openMobile();
     } else if (sb) {
       sb.classList.toggle("collapsed");
@@ -6214,7 +6344,7 @@ if (btnRellenarNombresTopes) {
   };
   if (btnCol) btnCol.onclick = () => {
     if (!sb) return;
-    if (window.innerWidth <= 720) {
+    if (isDrawer()) {
       closeMobile();
       return;
     }
@@ -6228,16 +6358,29 @@ if (btnRellenarNombresTopes) {
       } catch (e) {}
     }, 220);
   };
-  if (bd) bd.onclick = closeMobile;
+  if (bd) {
+    bd.onclick = closeMobile;
+    bd.addEventListener("touchend", function(e) {
+      e.preventDefault();
+      closeMobile();
+    }, { passive: false });
+  }
   document.querySelectorAll(".nav button").forEach(b => {
-    b.addEventListener("click", () => { if (window.innerWidth <= 720) closeMobile(); });
+    b.addEventListener("click", () => { if (isDrawer()) closeMobile(); });
   });
-  // Restaurar estado colapsado en escritorio
+  // Restaurar estado colapsado solo en escritorio ancho
   try {
-    if (window.innerWidth > 720 && localStorage.getItem(LS_KEY) === "1" && sb) {
+    if (!isDrawer() && localStorage.getItem(LS_KEY) === "1" && sb) {
       sb.classList.add("collapsed");
     }
   } catch (e) {}
+  window.addEventListener("resize", function() {
+    if (!isDrawer()) {
+      closeMobile();
+    } else if (sb) {
+      sb.classList.remove("collapsed");
+    }
+  });
 })();
 
 
@@ -7363,6 +7506,34 @@ function ghStartAutoSync(on) {
     ghActualizar({ silent: true });
   }, 2 * 60 * 1000);
 }
+
+
+// ===== Toque: respuesta inmediata en móvil/tablet (sin esperar solo al click) =====
+(function enhanceTouch() {
+  function isCoarse() {
+    try {
+      return window.matchMedia && window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    } catch (e) { return "ontouchstart" in window; }
+  }
+  // Activar :active en iOS
+  document.addEventListener("touchstart", function() {}, { passive: true });
+
+  // Drop zones: abrir file picker también con touch
+  document.querySelectorAll(".drop").forEach(function(z) {
+    z.addEventListener("touchend", function(e) {
+      // dejar que click nativo funcione; solo evitar scroll accidental largo
+      if (e.cancelable && e.changedTouches && e.changedTouches.length === 1) {
+        // no preventDefault para no romper el onclick
+      }
+    }, { passive: true });
+  });
+
+  // Checkboxes de auditoría / chips: área de toque más grande vía label ya cubierto
+  // Leaflet: invalidar tamaño al abrir drawer o rotar (ya hay resize)
+  if (isCoarse()) {
+    document.documentElement.classList.add("touch-ui");
+  }
+})();
 
 (function initGitHubSync() {
   const tok = document.getElementById("syncToken");
