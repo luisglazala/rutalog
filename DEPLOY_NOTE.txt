@@ -1,0 +1,2 @@
+Upload pendiente de RUTALOG GITHUB.html + rutalog-app.js + maestro-embed.json desde artifacts.
+Archivos listos localmente.
