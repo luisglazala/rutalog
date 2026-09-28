@@ -1379,7 +1379,7 @@ hr {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div>
               <h3 style="margin:0;">Usuarios y accesos</h3>
-              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Crea usuarios y define módulos. Se guardan en este navegador y, con token, se suben a GitHub al guardar (o con «Actualizar ahora») para usarlo en otras PCs.</p>
+              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, asígnales rol <strong>Administrador</strong> u <strong>Operador</strong> y marca los módulos permitidos. Con token de GitHub se suben solos (~2 s) a otras PCs.</p>
             </div>
             <span class="badge" id="badgeUsuarios">0 usuarios</span>
           </div>
@@ -1404,6 +1404,7 @@ hr {
               </select>
             </div>
             <button type="button" class="btn btn-primary btn-sm" id="btnAddUsuario">Guardar usuario</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCancelEditUsuario" hidden>Cancelar edición</button>
           </div>
           <div style="margin:10px 0 6px;">
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Módulos permitidos</div>
@@ -1964,8 +1965,16 @@ function saveTopesSku() {
     // Verificar escritura
     const probe = localStorage.getItem("rutalog_topes_sku");
     if (!probe) throw new Error("localStorage no retuvo topes");
-    try { if (typeof ghSchedulePush === "function") ghSchedulePush("topes");
-          else if (typeof ghMarkDirty === "function") ghMarkDirty("topes"); } catch (e) {}
+    try {
+      if (typeof ghSchedulePush === "function") ghSchedulePush("topes");
+      else if (typeof ghMarkDirty === "function") ghMarkDirty("topes");
+      // Forzar subida rápida de topes (G/P) para otras PCs
+      if (typeof ghGetToken === "function" && ghGetToken() && typeof ghActualizar === "function") {
+        setTimeout(function() {
+          try { ghActualizar({ silent: true }); } catch (e2) {}
+        }, 1800);
+      }
+    } catch (e) {}
   } catch (e) {
     console.warn("saveTopesSku", e);
     if (typeof toast === "function") toast("No se pudieron guardar los topes: " + (e.message || e));
@@ -5171,14 +5180,34 @@ function renderUsuariosTable() {
       document.getElementById("cfgPass").placeholder = "(dejar vacío = no cambiar)";
       document.getElementById("cfgRol").value = u.rol || "operador";
       renderPermGrid(u.permisos || permisosDefault(u.rol));
+      const btnA = document.getElementById("btnAddUsuario");
+      if (btnA) btnA.textContent = "Guardar cambios";
+      const btnC = document.getElementById("btnCancelEditUsuario");
+      if (btnC) btnC.hidden = false;
+      try {
+        const pageCfg = document.getElementById("page-config");
+        if (pageCfg) pageCfg.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (e) {}
       if (typeof toast === "function") toast("Editando: " + u.username);
     };
   });
   tb.querySelectorAll(".usr-del").forEach(btn => {
     btn.onclick = async () => {
+      const sess0 = usuarioActual();
+      if (!sess0 || sess0.rol !== "admin") {
+        if (typeof toast === "function") toast("Solo un administrador puede eliminar usuarios");
+        return;
+      }
       const users = loadUsers();
       const u = users.find(x => x.id === btn.dataset.id);
       if (!u) return;
+      if (u.rol === "admin") {
+        const otros = users.filter(x => x.id !== u.id && x.rol === "admin" && x.activo !== false);
+        if (!otros.length) {
+          if (typeof toast === "function") toast("No puedes eliminar al único administrador");
+          return;
+        }
+      }
       const ok = await confirmDialog("¿Eliminar usuario «" + u.username + "»?", { title: "Eliminar usuario", danger: true });
       if (!ok) return;
       const next = users.filter(x => x.id !== u.id);
@@ -5200,6 +5229,14 @@ function renderUsuariosTable() {
 }
 
 async function guardarUsuarioForm() {
+  // Solo administrador puede crear/editar usuarios y roles
+  const sess = (typeof usuarioActual === "function") ? usuarioActual() : null;
+  const usersNow = (typeof loadUsers === "function") ? loadUsers() : [];
+  const hayUsuarios = usersNow.some(u => u.activo !== false);
+  if (hayUsuarios && (!sess || sess.rol !== "admin")) {
+    if (typeof toast === "function") toast("Solo un administrador puede crear o editar usuarios");
+    return;
+  }
   const editId = (document.getElementById("cfgEditId")?.value || "").trim();
   const username = (document.getElementById("cfgUser")?.value || "").trim();
   const nombre = (document.getElementById("cfgNombre")?.value || "").trim();
@@ -5210,7 +5247,7 @@ async function guardarUsuarioForm() {
     return;
   }
   if (!/^[a-zA-Z0-9._-]{2,32}$/.test(username)) {
-    if (typeof toast === "function") toast("Usuario: 2–32 caracteres (letras, números, . _ -)");
+    if (typeof toast === "function") toast("Usuario: 2–32 caracteres (letras, números, . _ -). Sin espacios.");
     return;
   }
   let users = loadUsers();
@@ -5223,17 +5260,35 @@ async function guardarUsuarioForm() {
     if (typeof toast === "function") toast("La contraseña es obligatoria para usuarios nuevos");
     return;
   }
+  if (pass && pass.length < 4) {
+    if (typeof toast === "function") toast("La contraseña debe tener al menos 4 caracteres");
+    return;
+  }
   const perms = leerPermisosDelForm();
   const passHash = pass ? hashPassSync(pass) : null;
+  if (pass && !passHash) {
+    if (typeof toast === "function") toast("Error al procesar la contraseña");
+    return;
+  }
   if (editId) {
     const idx = users.findIndex(u => u.id === editId);
-    if (idx < 0) return;
+    if (idx < 0) {
+      if (typeof toast === "function") toast("Usuario a editar no encontrado");
+      return;
+    }
+    // No permitir quitarse el rol admin a sí mismo si es el único admin
+    if (sess && sess.id === editId && users[idx].rol === "admin" && rol !== "admin") {
+      const otrosAdmin = users.filter(u => u.id !== editId && u.rol === "admin" && u.activo !== false);
+      if (!otrosAdmin.length) {
+        if (typeof toast === "function") toast("Debe quedar al menos un administrador");
+        return;
+      }
+    }
     users[idx].username = username;
     users[idx].nombre = nombre || username;
     users[idx].rol = rol;
     users[idx].permisos = rol === "admin" ? permisosDefault("admin") : perms;
     if (passHash) users[idx].passHash = passHash;
-    const sess = usuarioActual();
     if (sess && sess.id === editId) setSession(users[idx]);
   } else {
     users.push({
@@ -5261,6 +5316,10 @@ async function guardarUsuarioForm() {
   document.getElementById("cfgPass").placeholder = "••••••••";
   document.getElementById("cfgRol").value = "operador";
   renderPermGrid(permisosDefault("operador"));
+  const btnA2 = document.getElementById("btnAddUsuario");
+  if (btnA2) btnA2.textContent = "Guardar usuario";
+  const btnC2 = document.getElementById("btnCancelEditUsuario");
+  if (btnC2) btnC2.hidden = true;
   renderUsuariosTable();
   aplicarPermisosUI();
   if (typeof toast === "function") toast(editId ? "Usuario actualizado" : "Usuario creado: " + username);
@@ -5320,6 +5379,22 @@ function initUsuariosUI() {
 
   const btnAdd = document.getElementById("btnAddUsuario");
   if (btnAdd) btnAdd.onclick = () => guardarUsuarioForm();
+
+  const btnCancel = document.getElementById("btnCancelEditUsuario");
+  if (btnCancel) {
+    btnCancel.onclick = () => {
+      document.getElementById("cfgEditId").value = "";
+      document.getElementById("cfgUser").value = "";
+      document.getElementById("cfgNombre").value = "";
+      document.getElementById("cfgPass").value = "";
+      document.getElementById("cfgPass").placeholder = "••••••••";
+      document.getElementById("cfgRol").value = "operador";
+      renderPermGrid(permisosDefault("operador"));
+      btnCancel.hidden = true;
+      if (btnAdd) btnAdd.textContent = "Guardar usuario";
+      if (typeof toast === "function") toast("Edición cancelada");
+    };
+  }
 
   const rolSel = document.getElementById("cfgRol");
   if (rolSel) {
@@ -7096,12 +7171,18 @@ async function ghActualizar(opts) {
         );
         choice = okSubir ? "subir" : "bajar";
       } else if (silent) {
-        // Auto: no pisar en silencio; dejar dirty para el próximo ciclo manual
-        if (!silent) {}
+        // Auto-sync: la nube gana en catálogos compartidos (topes, usuarios, maestro…)
+        // para que todas las PCs vean Tope P, roles, etc. sin intervención manual.
+        ghApplyPayload(remote.data, { action: "bajado-auto" });
+        try {
+          localStorage.setItem("rutalog_gh_sha", remote.sha);
+          localStorage.setItem("rutalog_gh_remote_at", remoteAt || "");
+        } catch (e) {}
+        ghClearDirty();
         ghSetMeta({
           updatedAt: remoteAt || new Date().toISOString(),
           updatedBy: (remote.data && remote.data.updatedBy) || null,
-          action: "conflicto (esperando)",
+          action: "bajado (auto, remoto más nuevo)",
         });
         return;
       }
