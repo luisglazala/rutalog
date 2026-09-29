@@ -1,21 +1,10 @@
 # Mejoras RUTALOG
 
-## Plan (una por commit, revertible)
+| # | Mejora | Estado | Revert SHA |
+|---|--------|--------|------------|
+| 0 | Baseline original | ok | `66a2173eab2e48723450aa1e59b25cb8ad933504` |
+| 1 | Maestro fuera del HTML | aplicada | `efad14f40523e363c414b7099a6c0d4bc368532e` |
+| 2-6 | CSS/JS, vacíos, sesión, PWA, optimizar | preparada para subir | — |
 
-| # | Mejora | Estado | SHA para revertir |
-|---|--------|--------|-------------------|
-| 0 | Baseline antes de mejoras | listo | `66a2173eab2e48723450aa1e59b25cb8ad933504` |
-| 1 | Maestro fuera del HTML (`maestro-base.json`) | preparada (pendiente subir archivos grandes) | — |
-| 2 | Separar CSS y JS | pendiente | — |
-| 3 | Estados vacíos y feedback planificador | pendiente | — |
-| 4 | Exportar / restaurar sesión del día | pendiente | — |
-| 5 | PWA + PDF.js diferido | pendiente | — |
-| 6 | Optimización orden de paradas | pendiente | — |
-
-## Cómo revertir
-Escribe en el chat: **revierte la mejora N** o **revierte el último cambio**.
-
-## Mejora 1 — detalle
-- HTML sin maestro embebido (~465 KB)
-- Archivo nuevo `maestro-base.json` (2699 clientes)
-- Multi-usuario sigue en localStorage + `rutalog-datos`
+Para revertir las últimas 5 (2-6): pedir **revierte las últimas 5 mejoras** (vuelve a `efad14f...`).
+Para revertir todo desde mejora 1: **revierte desde la mejora 1** (`66a2173e...`).
