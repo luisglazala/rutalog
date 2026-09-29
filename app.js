@@ -1,6 +1,5 @@
 /* RUTALOG loader + CSS crítico + Código SKU paginado */
 (function () {
-  /* CSS crítico: login, módulos, confirm, auditoría (no depende del cache de Pages) */
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
@@ -49,6 +48,18 @@
   ].join("\n");
   document.head.appendChild(css);
 
+  function removeDiaBtns() {
+    ["btnExportSesion","btnImportSesion","fileImportSesion"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+  removeDiaBtns();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", removeDiaBtns);
+  setTimeout(removeDiaBtns, 100);
+  setTimeout(removeDiaBtns, 500);
+  setTimeout(removeDiaBtns, 1500);
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
@@ -61,6 +72,7 @@
   }
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
+    removeDiaBtns();
     var PAGE = 80;
     window._codPage = 0;
     window.renderCodigoTable = function () {
