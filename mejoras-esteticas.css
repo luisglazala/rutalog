@@ -1,4 +1,24 @@
-:root{--blue:#60a5fa;--blue-soft:rgba(96,165,250,.12);--green-soft:rgba(52,211,153,.12);--amber-soft:rgba(251,191,36,.12);--red-soft:rgba(248,113,113,.12);--radius-lg:14px;--shadow-sm:0 1px 2px rgba(0,0,0,.25);--shadow-md:0 4px 16px rgba(0,0,0,.28);--ease:cubic-bezier(.2,.8,.2,1)}.stats{gap:12px}.stat{position:relative;border-radius:var(--radius-lg);padding:14px 16px 12px;overflow:hidden;transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s;box-shadow:var(--shadow-sm)}.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:var(--muted);opacity:.7}.stat:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);border-color:#333}.stat .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}.stat .l{font-size:10.5px;font-weight:600;letter-spacing:.06em;margin-top:4px;opacity:.9}.stats .stat:nth-child(1)::before{background:var(--blue)}.stats .stat:nth-child(1) .v{color:#93c5fd}.stats .stat:nth-child(2)::before{background:var(--success)}.stats .stat:nth-child(2) .v{color:#6ee7b7}.stats .stat:nth-child(3)::before{background:var(--warn)}.stats .stat:nth-child(3) .v{color:#fcd34d}.stats .stat:nth-child(4)::before{background:#a78bfa}.stats .stat:nth-child(4) .v{color:#c4b5fd}.stats .stat:nth-child(5)::before{background:#38bdf8}.stats .stat:nth-child(5) .v{color:#7dd3fc}.btn{border-radius:9px;transition:background .15s var(--ease),border-color .15s,color .15s,transform .12s,box-shadow .15s}.btn:hover:not(:disabled){transform:translateY(-.5px)}.btn-primary{background:linear-gradient(180deg,#f5f5f5 0%,#e5e5e5 100%);color:var(--on-accent)!important;border:1px solid #d4d4d4}.btn-success{background:linear-gradient(180deg,#34d399 0%,#10b981 100%);color:#042f2e!important;border:1px solid #059669}.btn-danger{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(248,113,113,.45)}.btn-warn{background:var(--amber-soft);color:var(--warn-text);border:1px solid rgba(251,191,36,.45)}.vacio{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:28px 16px!important;font-style:normal!important}.nav button.active{box-shadow:inset 3px 0 0 0 var(--blue)}.nav button.active .ico{color:var(--blue)}.map-head .badge{background:var(--blue-soft);color:#93c5fd;border-color:rgba(96,165,250,.3)}
+/* Ajustes suaves — no rompen el diseño original */
+
+/* KPIs: acento lateral sutil */
+.stat { position: relative; overflow: hidden; }
+.stat::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: var(--muted);
+  opacity: .55;
+}
+.stats .stat:nth-child(1)::before { background: #60a5fa; opacity: .9; }
+.stats .stat:nth-child(2)::before { background: var(--success); opacity: .9; }
+.stats .stat:nth-child(3)::before { background: var(--warn); opacity: .9; }
+.stats .stat:nth-child(4)::before { background: #a78bfa; opacity: .9; }
+.stats .stat:nth-child(5)::before { background: #38bdf8; opacity: .9; }
+
+/* Nav activo */
+.nav button.active { box-shadow: inset 3px 0 0 0 #60a5fa; }
 
 /* Módulos permitidos — más espacio */
 .perm-grid {
@@ -12,28 +32,18 @@
   align-items: center !important;
   gap: 10px !important;
   padding: 10px 12px !important;
-  border: 1px solid var(--border, #1f1f1f) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 10px !important;
-  background: var(--surface-2, #1f1f1f) !important;
+  background: var(--surface-2) !important;
   font-size: 13px !important;
   cursor: pointer !important;
   user-select: none !important;
   min-height: 42px !important;
-  transition: border-color .15s, background .15s !important;
 }
-.perm-item:hover {
-  border-color: #525252 !important;
-  background: var(--surface-3, #262626) !important;
-}
-.perm-item input {
-  accent-color: #60a5fa !important;
-  width: 16px !important;
-  height: 16px !important;
-  flex-shrink: 0 !important;
-  margin: 0 !important;
-}
+.perm-item:hover { border-color: #525252 !important; background: var(--surface-3) !important; }
+.perm-item input { accent-color: #60a5fa !important; width: 16px !important; height: 16px !important; flex-shrink: 0 !important; margin: 0 !important; }
 
-/* Código SKU pagination bar */
+/* Paginador Código SKU */
 .codigo-pager {
   display: flex;
   align-items: center;
@@ -41,7 +51,7 @@
   flex-wrap: wrap;
   margin-top: 10px;
   font-size: 12.5px;
-  color: var(--muted, #a3a3a3);
+  color: var(--muted);
 }
 .codigo-pager .btn { min-width: 36px; }
-.codigo-pager strong { color: var(--text, #fafafa); }
+.codigo-pager strong { color: var(--text); }
