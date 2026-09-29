@@ -1,2 +1,4 @@
-Upload pendiente de RUTALOG GITHUB.html + rutalog-app.js + maestro-embed.json desde artifacts.
-Archivos listos localmente.
+mejora-1 aplicada (2026-09-29).
+Maestro base: maestro-base.json (2699 clientes).
+HTML ya no embebe el maestro.
+Revert SHA anterior: 66a2173eab2e48723450aa1e59b25cb8ad933504
