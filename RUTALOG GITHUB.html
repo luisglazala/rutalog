@@ -478,8 +478,11 @@
           </div>
           <div class="form-row" style="align-items:flex-end;">
             <div style="flex:2;min-width:200px;">
-              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Token de GitHub (PAT)</label>
-              <input type="password" id="syncToken" placeholder="ghp_…" autocomplete="off" style="width:100%;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Token de GitHub (PAT) <span style="font-weight:400;opacity:.75;">· solo admin puede verlo</span></label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="password" id="syncToken" placeholder="ghp_…" autocomplete="off" style="flex:1;min-width:0;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnToggleToken" title="Mostrar u ocultar el token (solo administrador)">Ver</button>
+              </div>
             </div>
             <button type="button" class="btn btn-secondary btn-sm" id="btnSaveToken">Guardar token</button>
             <button type="button" class="btn btn-secondary btn-sm" id="btnClearToken">Quitar</button>

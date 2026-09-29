@@ -6024,6 +6024,29 @@ function ghStartAutoSync(on) {
 (function initGitHubSync() {
   const tok = document.getElementById("syncToken");
   if (tok) tok.value = ghGetToken();
+  const btnToggleToken = document.getElementById("btnToggleToken");
+  if (btnToggleToken && tok) {
+    btnToggleToken.onclick = function () {
+      try {
+        const users = (typeof loadUsers === "function" ? loadUsers() : []).filter(function (x) { return x.activo !== false; });
+        const u = typeof usuarioActual === "function" ? usuarioActual() : null;
+        const canSee = !users.length || (u && u.rol === "admin");
+        if (!canSee) {
+          if (typeof toast === "function") toast("Solo un administrador puede ver el token");
+          return;
+        }
+        if (tok.type === "password") {
+          tok.type = "text";
+          btnToggleToken.textContent = "Ocultar";
+        } else {
+          tok.type = "password";
+          btnToggleToken.textContent = "Ver";
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+  }
   ghUpdateSyncBadge();
   ghSetMeta(ghGetMeta());
   ghInstallDirtyHooks();
