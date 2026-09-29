@@ -1,8 +1,11 @@
-/* RUTALOG loader + CSS crítico + Código SKU paginado */
+/* RUTALOG loader: gate visual + token primero + login + SKU paginado */
 (function () {
+  /* Ocultar app hasta decidir login/token (evita destello) */
+  try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
+    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html:not(.rutalog-ready) .sidebar,html:not(.rutalog-ready) .main{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".login-overlay{position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
     ".login-overlay[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}",
@@ -22,29 +25,21 @@
     ".login-card .btn{width:100%!important;justify-content:center!important;margin-top:4px!important}",
     ".login-card .credit{margin-top:16px;font-size:11px;color:#a3a3a3;text-align:center}",
     ".perm-grid,#cfgPermGrid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important;gap:12px!important;margin-top:12px!important}",
-    ".perm-item{display:flex!important;align-items:center!important;gap:10px!important;padding:12px 14px!important;border:1px solid #1f1f1f!important;border-radius:10px!important;background:#1f1f1f!important;font-size:13px!important;cursor:pointer!important;user-select:none!important;min-height:44px!important}",
-    ".perm-item:hover{border-color:#525252!important;background:#262626!important}",
-    ".perm-item input{accent-color:#60a5fa!important;width:16px!important;height:16px!important;flex-shrink:0!important;margin:0!important}",
-    ".confirm-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}",
-    ".confirm-overlay[hidden]{display:none!important}",
-    ".confirm-modal{background:#171717;border:1px solid #1f1f1f;border-radius:14px;width:min(400px,94vw);box-shadow:0 20px 50px rgba(0,0,0,.4);color:#fafafa}",
-    ".confirm-modal .body{padding:18px 20px}",
-    ".confirm-modal h2{font-size:15px;font-weight:700;margin:0 0 8px}",
-    ".confirm-modal .msg{font-size:13.5px;color:#a3a3a3;margin:0;line-height:1.45}",
-    ".confirm-modal .foot{padding:12px 16px;border-top:1px solid #1f1f1f;display:flex;gap:8px;justify-content:flex-end}",
-    ".audit-overlay{position:fixed!important;inset:0!important;z-index:8000!important;background:rgba(15,23,42,.55)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important}",
-    ".audit-overlay[hidden]{display:none!important}",
-    ".audit-modal{width:min(1480px,96vw)!important;max-width:96vw!important;height:min(920px,92vh)!important;max-height:92vh!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#171717!important;border:1px solid #1f1f1f!important;border-radius:14px!important;box-shadow:0 24px 60px rgba(0,0,0,.4)!important;color:#fafafa!important}",
-    ".audit-head{padding:14px 18px!important;border-bottom:1px solid #1f1f1f!important;display:flex!important;align-items:flex-start!important;gap:12px!important;flex-shrink:0!important}",
+    ".perm-item{display:flex!important;align-items:center!important;gap:10px!important;padding:12px 14px!important;border:1px solid #1f1f1f!important;border-radius:10px!important;background:#1f1f1f!important;font-size:13px!important;cursor:pointer!important;min-height:44px!important}",
+    ".perm-item input{accent-color:#60a5fa!important;width:16px!important;height:16px!important;margin:0!important}",
+    ".audit-modal{width:min(1480px,96vw)!important;max-width:96vw!important;height:min(920px,92vh)!important;max-height:92vh!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}",
     ".audit-body{flex:1!important;overflow:auto!important;min-height:0!important}",
-    ".audit-foot{padding:12px 18px!important;border-top:1px solid #1f1f1f!important;background:#1f1f1f!important;display:flex!important;align-items:center!important;gap:14px!important;flex-wrap:wrap!important;flex-shrink:0!important}",
-    ".audit-foot .spacer{flex:1!important}",
-    ".audit-table{width:100%!important;border-collapse:collapse!important;font-size:12.5px!important}",
-    ".audit-table th{position:sticky!important;top:0!important;background:#262626!important;padding:9px 10px!important;text-align:left!important;white-space:nowrap!important;z-index:1!important}",
-    ".audit-table td{padding:7px 10px!important;border-bottom:1px solid #1f1f1f!important;white-space:nowrap!important}",
-    ".codigo-pager{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#a3a3a3}",
-    ".codigo-pager .btn{min-width:36px}",
-    ".codigo-pager strong{color:#fafafa}"
+    ".audit-foot{flex-shrink:0!important}",
+    "#rutalogTokenGate{position:fixed;inset:0;z-index:100000;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
+    "#rutalogTokenGate .tg-card{width:min(420px,94vw);background:#171717;border:1px solid #1f1f1f;border-radius:16px;padding:28px 24px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:#fafafa}",
+    "#rutalogTokenGate h2{font-size:18px;font-weight:700;margin:0 0 6px}",
+    "#rutalogTokenGate p{font-size:13px;color:#a3a3a3;margin:0 0 16px;line-height:1.45}",
+    "#rutalogTokenGate label{display:block;font-size:12px;font-weight:600;color:#a3a3a3;margin-bottom:4px}",
+    "#rutalogTokenGate input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #1f1f1f;background:#0f0f0f;color:#fafafa;font-size:14px;box-sizing:border-box;margin-bottom:12px}",
+    "#rutalogTokenGate .btn{width:100%;justify-content:center;margin-top:4px}",
+    "#rutalogTokenGate .tg-skip{margin-top:10px;background:transparent;border:none;color:#a3a3a3;font-size:12px;cursor:pointer;width:100%;text-align:center}",
+    "#rutalogTokenGate .tg-err{display:none;background:#422006;border:1px solid #d97706;color:#fde68a;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}",
+    "#rutalogTokenGate .tg-err.visible{display:block}"
   ].join("\n");
   document.head.appendChild(css);
 
@@ -55,10 +50,137 @@
     });
   }
   removeDiaBtns();
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", removeDiaBtns);
-  setTimeout(removeDiaBtns, 100);
-  setTimeout(removeDiaBtns, 500);
-  setTimeout(removeDiaBtns, 1500);
+  setTimeout(removeDiaBtns, 200);
+  setTimeout(removeDiaBtns, 800);
+
+  function revealApp() {
+    try {
+      document.documentElement.classList.remove("rutalog-booting");
+      document.documentElement.classList.add("rutalog-ready");
+    } catch (e) {}
+    var main = document.querySelector(".main");
+    var sb = document.querySelector(".sidebar");
+    var ov = document.getElementById("loginOverlay");
+    var loginOn = ov && !ov.hidden && ov.style.display !== "none";
+    if (loginOn) {
+      if (main) { main.style.visibility = "hidden"; main.style.opacity = "0"; }
+      if (sb) { sb.style.visibility = "hidden"; sb.style.opacity = "0"; }
+    } else {
+      if (main) { main.style.visibility = ""; main.style.opacity = ""; }
+      if (sb) { sb.style.visibility = ""; sb.style.opacity = ""; }
+    }
+  }
+
+  function hasToken() {
+    try {
+      if (typeof ghGetToken === "function") return !!ghGetToken();
+      return !!(localStorage.getItem("rutalog_gh_token") || "");
+    } catch (e) { return false; }
+  }
+
+  function showTokenGate(onDone) {
+    if (document.getElementById("rutalogTokenGate")) return;
+    var gate = document.createElement("div");
+    gate.id = "rutalogTokenGate";
+    gate.innerHTML =
+      '<div class="tg-card">' +
+      "<h2>Configurar GitHub</h2>" +
+      "<p>Primera vez en este equipo. Pega el token de GitHub (PAT) para sincronizar usuarios y catálogos. Luego podrás iniciar sesión.</p>" +
+      '<div class="tg-err" id="tgErr"></div>' +
+      "<label for=\"tgToken\">Token de GitHub (ghp_…)</label>" +
+      '<input type="password" id="tgToken" placeholder="ghp_…" autocomplete="off">' +
+      '<button type="button" class="btn btn-primary" id="tgSave">Guardar y continuar</button>' +
+      '<button type="button" class="tg-skip" id="tgSkip">Continuar sin token (modo local)</button>' +
+      "</div>";
+    document.body.appendChild(gate);
+    var err = document.getElementById("tgErr");
+    var inp = document.getElementById("tgToken");
+    setTimeout(function () { if (inp) inp.focus(); }, 80);
+
+    function finish() {
+      if (gate.parentNode) gate.parentNode.removeChild(gate);
+      if (typeof onDone === "function") onDone();
+    }
+
+    document.getElementById("tgSave").onclick = function () {
+      var v = (inp && inp.value || "").trim();
+      if (!v || v.length < 10) {
+        if (err) { err.textContent = "Indica un token válido (ghp_… o github_pat_…)."; err.classList.add("visible"); }
+        return;
+      }
+      try {
+        if (typeof ghSetToken === "function") ghSetToken(v);
+        else localStorage.setItem("rutalog_gh_token", v);
+      } catch (e) {}
+      var tokField = document.getElementById("syncToken");
+      if (tokField) tokField.value = v;
+      if (typeof toast === "function") toast("Token guardado");
+      finish();
+      // Sincronizar usuarios si es posible
+      try {
+        if (typeof ghActualizar === "function") {
+          setTimeout(function () { ghActualizar({ silent: true }); }, 400);
+        }
+      } catch (e) {}
+    };
+    document.getElementById("tgSkip").onclick = function () { finish(); };
+    if (inp) {
+      inp.onkeydown = function (e) {
+        if (e.key === "Enter") document.getElementById("tgSave").click();
+      };
+    }
+  }
+
+  function afterAppReady() {
+    removeDiaBtns();
+    // Parchear mostrarLogin para mantener app oculta mientras hay login
+    if (typeof mostrarLogin === "function") {
+      var _ml = mostrarLogin;
+      window.mostrarLogin = function (show) {
+        _ml(show);
+        var main = document.querySelector(".main");
+        var sb = document.querySelector(".sidebar");
+        if (show) {
+          if (main) { main.style.visibility = "hidden"; main.style.opacity = "0"; }
+          if (sb) { sb.style.visibility = "hidden"; sb.style.opacity = "0"; }
+        } else {
+          if (main) { main.style.visibility = ""; main.style.opacity = ""; }
+          if (sb) { sb.style.visibility = ""; sb.style.opacity = ""; }
+          try {
+            document.documentElement.classList.remove("rutalog-booting");
+            document.documentElement.classList.add("rutalog-ready");
+          } catch (e) {}
+        }
+      };
+    }
+
+    function continueBoot() {
+      // Dar tiempo a initUsuariosUI del app principal
+      setTimeout(function () {
+        try {
+          if (typeof requiereLogin === "function" && requiereLogin() && typeof usuarioActual === "function" && !usuarioActual()) {
+            if (typeof mostrarLogin === "function") mostrarLogin(true);
+          } else {
+            revealApp();
+          }
+        } catch (e) {
+          revealApp();
+        }
+        // Si tras sync no hay login visible, revelar
+        setTimeout(function () {
+          var ov = document.getElementById("loginOverlay");
+          var loginOn = ov && !ov.hidden && getComputedStyle(ov).display !== "none";
+          if (!loginOn) revealApp();
+        }, 900);
+      }, 100);
+    }
+
+    if (!hasToken()) {
+      showTokenGate(continueBoot);
+    } else {
+      continueBoot();
+    }
+  }
 
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -70,9 +192,12 @@
       document.head.appendChild(s);
     });
   }
+
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
-    removeDiaBtns();
+    afterAppReady();
+
+    /* Paginación Código SKU */
     var PAGE = 80;
     window._codPage = 0;
     window.renderCodigoTable = function () {
@@ -113,7 +238,7 @@
         info.textContent = clean + total + " visibles · total " + estado.maestroCodigo.size + " SKU";
       }
       if (!slice.length) {
-        tb.innerHTML = '<tr><td colspan="6" class="vacio">Sin registros. Ajusta el filtro o agrega un SKU.</td></tr>';
+        tb.innerHTML = '<tr><td colspan="6" class="vacio">Sin registros.</td></tr>';
       } else {
         tb.innerHTML = slice.map(function (r) {
           var key = typeof normSkuKey === "function" ? normSkuKey(r.sku) : String(r.sku);
@@ -125,7 +250,7 @@
             '<td><input class="ed-cell mono cod-und" data-f="undCaja" type="number" min="0" step="1" value="' + (r.undCaja != null ? r.undCaja : "") + '"></td>' +
             '<td><input class="ed-cell mono cod-cp" data-f="cajaPaleta" type="number" min="0" step="1" value="' + (r.cajaPaleta != null ? r.cajaPaleta : "") + '"></td>' +
             '<td class="mono cod-upp">' + upp + '</td>' +
-            '<td><button type="button" class="btn btn-danger btn-sm cod-del" data-key="' + esc(key) + '" title="Eliminar">✕</button></td></tr>';
+            '<td><button type="button" class="btn btn-danger btn-sm cod-del" data-key="' + esc(key) + '">✕</button></td></tr>';
         }).join("");
         Array.prototype.forEach.call(tb.querySelectorAll(".ed-cell"), function (inp) {
           inp.onchange = function () {
@@ -170,7 +295,6 @@
             estado.maestroCodigo.delete(key);
             if (typeof saveMaestroCodigoLS === "function") saveMaestroCodigoLS();
             renderCodigoTable();
-            if (typeof toast === "function") toast("SKU eliminado");
           };
         });
       }
@@ -181,10 +305,6 @@
         pager.className = "codigo-pager";
         var infoEl = document.getElementById("codigoFuenteInfo");
         if (infoEl && infoEl.parentNode) infoEl.parentNode.appendChild(pager);
-        else {
-          var pg = document.getElementById("page-codigo");
-          if (pg) pg.appendChild(pager);
-        }
       }
       if (total <= PAGE) {
         pager.innerHTML = total ? "Mostrando <strong>" + total + "</strong> SKU" : "";
@@ -200,17 +320,8 @@
         if (next) next.onclick = function () { window._codPage++; renderCodigoTable(); };
       }
     };
-    setTimeout(function () {
-      var qEl = document.getElementById("qCodigo");
-      var filEl = document.getElementById("filCodigoUnd");
-      if (qEl && !qEl._codWired) {
-        qEl._codWired = true;
-        qEl.addEventListener("input", function () { window._codPage = 0; });
-      }
-      if (filEl && !filEl._codWired) {
-        filEl._codWired = true;
-        filEl.addEventListener("change", function () { window._codPage = 0; });
-      }
-    }, 400);
-  }).catch(function (e) { console.error("[RUTALOG]", e); });
+  }).catch(function (e) {
+    console.error("[RUTALOG]", e);
+    try { document.documentElement.classList.add("rutalog-ready"); document.documentElement.classList.remove("rutalog-booting"); } catch (err) {}
+  });
 })();
