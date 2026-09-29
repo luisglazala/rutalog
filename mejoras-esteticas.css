@@ -1,4 +1,11 @@
-/* Auditoría grande + módulos + login */
+/* Ocultar Exportar/Importar día */
+#btnExportSesion,
+#btnImportSesion,
+#fileImportSesion {
+  display: none !important;
+}
+
+/* Auditoría grande */
 .audit-modal{
   width:min(1480px,96vw)!important;
   max-width:96vw!important;
@@ -11,6 +18,7 @@
 .audit-body{flex:1!important;overflow:auto!important;min-height:0!important}
 .audit-foot{flex-shrink:0!important;flex-wrap:wrap!important}
 
+/* Módulos con más espacio */
 .perm-grid,#cfgPermGrid{
   display:grid!important;
   grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important;
@@ -25,6 +33,7 @@
 }
 .perm-item input{accent-color:#60a5fa!important;width:16px!important;height:16px!important;margin:0!important}
 
+/* Login */
 .login-card{width:min(400px,94vw)!important;max-width:400px!important}
 .login-card .logo-mark{width:40px!important;height:40px!important;min-width:40px!important;overflow:hidden!important}
 .login-card .logo-mark svg{width:28px!important;height:28px!important}
