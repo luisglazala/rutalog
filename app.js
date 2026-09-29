@@ -1,6 +1,6 @@
 /* RUTALOG loader + CSS crítico + Código SKU paginado */
 (function () {
-  /* CSS crítico: login, módulos, confirm (no depende del cache de Pages) */
+  /* CSS crítico: login, módulos, confirm, auditoría (no depende del cache de Pages) */
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
@@ -32,6 +32,16 @@
     ".confirm-modal h2{font-size:15px;font-weight:700;margin:0 0 8px}",
     ".confirm-modal .msg{font-size:13.5px;color:#a3a3a3;margin:0;line-height:1.45}",
     ".confirm-modal .foot{padding:12px 16px;border-top:1px solid #1f1f1f;display:flex;gap:8px;justify-content:flex-end}",
+    ".audit-overlay{position:fixed!important;inset:0!important;z-index:8000!important;background:rgba(15,23,42,.55)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important}",
+    ".audit-overlay[hidden]{display:none!important}",
+    ".audit-modal{width:min(1480px,96vw)!important;max-width:96vw!important;height:min(920px,92vh)!important;max-height:92vh!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#171717!important;border:1px solid #1f1f1f!important;border-radius:14px!important;box-shadow:0 24px 60px rgba(0,0,0,.4)!important;color:#fafafa!important}",
+    ".audit-head{padding:14px 18px!important;border-bottom:1px solid #1f1f1f!important;display:flex!important;align-items:flex-start!important;gap:12px!important;flex-shrink:0!important}",
+    ".audit-body{flex:1!important;overflow:auto!important;min-height:0!important}",
+    ".audit-foot{padding:12px 18px!important;border-top:1px solid #1f1f1f!important;background:#1f1f1f!important;display:flex!important;align-items:center!important;gap:14px!important;flex-wrap:wrap!important;flex-shrink:0!important}",
+    ".audit-foot .spacer{flex:1!important}",
+    ".audit-table{width:100%!important;border-collapse:collapse!important;font-size:12.5px!important}",
+    ".audit-table th{position:sticky!important;top:0!important;background:#262626!important;padding:9px 10px!important;text-align:left!important;white-space:nowrap!important;z-index:1!important}",
+    ".audit-table td{padding:7px 10px!important;border-bottom:1px solid #1f1f1f!important;white-space:nowrap!important}",
     ".codigo-pager{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#a3a3a3}",
     ".codigo-pager .btn{min-width:36px}",
     ".codigo-pager strong{color:#fafafa}"
