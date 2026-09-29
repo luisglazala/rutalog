@@ -1,1 +1,33 @@
-PLACEHOLDER_WILL_FAIL
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUTALOG — recuperando…</title>
+<style>body{margin:0;background:#0a0a0a;color:#fafafa;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}a{color:#34d399}</style>
+</head>
+<body>
+<p id="msg">Cargando RUTALOG (versión estable)…</p>
+<script>
+(async function () {
+  var urls = [
+    "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@efad14f40523e363c414b7099a6c0d4bc368532e/RUTALOG%20GITHUB.html",
+    "https://raw.githubusercontent.com/luisglazala/rutalog/efad14f40523e363c414b7099a6c0d4bc368532e/RUTALOG%20GITHUB.html"
+  ];
+  for (var i = 0; i < urls.length; i++) {
+    try {
+      var r = await fetch(urls[i], { cache: "no-store" });
+      if (!r.ok) continue;
+      var t = await r.text();
+      if (t.indexOf("PLACEHOLDER") >= 0 || t.length < 10000) continue;
+      document.open();
+      document.write(t);
+      document.close();
+      return;
+    } catch (e) {}
+  }
+  document.getElementById("msg").innerHTML = "No se pudo recuperar automáticamente. <a href=\"https://github.com/luisglazala/rutalog\">Abre el repo</a> y sube los archivos del chat.";
+})();
+</script>
+</body>
+</html>
