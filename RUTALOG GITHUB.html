@@ -1185,7 +1185,7 @@ input[type="checkbox"], input[type="radio"] {
       <div class="page active" id="page-panel">
         <div class="drop" id="dropDiario">
           <div class="t">Excel crudo de Dynamics (.xlsx)</div>
-          <div class="s">Arrastra o haz clic · Activa los puntos del mapa del día</div>
+          <div class="s">Arrastra o toca · Activa el mapa del día · Solo en este equipo/usuario (no se sincroniza)</div>
           <input type="file" id="fileDiario" accept=".xlsx,.xls,.csv">
         </div>
         <div class="stats" id="statsPanel">
@@ -1519,7 +1519,7 @@ input[type="checkbox"], input[type="radio"] {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
             <div>
               <h3 style="margin:0;">Usuarios y accesos</h3>
-              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, asígnales rol <strong>Administrador</strong> u <strong>Operador</strong> y marca los módulos permitidos. Con token de GitHub se suben solos (~1,5 s) a otras PCs.</p>
+              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, rol <strong>Administrador</strong> u <strong>Operador</strong> y módulos. Se sincronizan por GitHub. El trabajo del día (Panel, Mapa, Viajes, Reserva OV, Cruzados) es <strong>local de cada usuario/equipo</strong> y no se comparte.</p>
             </div>
             <span class="badge" id="badgeUsuarios">0 usuarios</span>
           </div>
@@ -1602,7 +1602,7 @@ input[type="checkbox"], input[type="radio"] {
           </div>
           <p style="font-size:12px;color:var(--muted);margin:0;" id="syncStatus">Última sync: —</p>
           <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0;">
-            <strong>Guardado automático en GitHub</strong> (con token): cualquier cambio de
+            <strong>Guardado automático en GitHub (catálogos)</strong> (con token): cualquier cambio de
             <strong>usuarios</strong>, <strong>maestro de clientes</strong>, <strong>citas</strong>,
             <strong>topes SKU</strong> o <strong>código SKU</strong> (edición o importación Excel)
             se sube solo ~1–2 segundos después. También hay respaldo automática tras editar y cada minuto.
@@ -1937,6 +1937,27 @@ function normEstado(e) {
 }
 
 // ============ PERSISTENCIA ============
+// Operativo del día (panel, mapa, viajes, residuales) = SOLO este navegador / usuario logueado.
+// NO se sube a GitHub. Catálogos compartidos (maestro, citas, topes, código, usuarios) sí.
+function wsUserKey() {
+  try {
+    const u = (typeof usuarioActual === "function") ? usuarioActual() : null;
+    if (u && u.id) return String(u.id);
+  } catch (e) {}
+  return "anon";
+}
+function wsKey(base) {
+  return base + "__" + wsUserKey();
+}
+/** Migrar clave global antigua → por usuario (una sola vez). */
+function wsMigrate(oldKey, newKey) {
+  try {
+    if (localStorage.getItem(newKey)) return;
+    const v = localStorage.getItem(oldKey);
+    if (v != null) localStorage.setItem(newKey, v);
+  } catch (e) {}
+}
+
 function loadLS() {
   try {
     const c = localStorage.getItem("rutalog_citas");
@@ -1944,13 +1965,17 @@ function loadLS() {
       const obj = JSON.parse(c);
       estado.citas = new Map(Object.entries(obj));
     }
-    const v = localStorage.getItem("rutalog_viajes");
+    // Viajes: exclusivos del usuario en este navegador
+    wsMigrate("rutalog_viajes", wsKey("rutalog_viajes"));
+    const v = localStorage.getItem(wsKey("rutalog_viajes"));
     if (v) {
       const arr = JSON.parse(v);
       estado.viajesGuardados = arr;
-      // Re-numerar por si quedaron huecos de borrados previos
       if (typeof renumerarViajes === "function") renumerarViajes();
       else estado.numViaje = arr.length + 1;
+    } else {
+      estado.viajesGuardados = [];
+      estado.numViaje = 1;
     }
     const m = localStorage.getItem("rutalog_maestro");
     if (m) {
@@ -2004,7 +2029,9 @@ function saveCitas() {
         else if (typeof ghMarkDirty === "function") ghMarkDirty("citas"); } catch (e) {}
 }
 function saveViajes() {
-  localStorage.setItem("rutalog_viajes", JSON.stringify(estado.viajesGuardados));
+  try {
+    localStorage.setItem(wsKey("rutalog_viajes"), JSON.stringify(estado.viajesGuardados || []));
+  } catch (e) { console.warn("saveViajes", e); }
 }
 
 function saveDiarioEstado() {
@@ -2025,7 +2052,7 @@ function saveDiarioEstado() {
       origenActual: estado.origenActual || null,
       numViaje: estado.numViaje || 1,
     };
-    localStorage.setItem("rutalog_diario_estado", JSON.stringify(payload));
+    localStorage.setItem(wsKey("rutalog_diario_estado"), JSON.stringify(payload));
   } catch (e) {
     console.warn("saveDiarioEstado", e);
   }
@@ -2033,7 +2060,8 @@ function saveDiarioEstado() {
 
 function loadDiarioEstado() {
   try {
-    const raw = localStorage.getItem("rutalog_diario_estado");
+    wsMigrate("rutalog_diario_estado", wsKey("rutalog_diario_estado"));
+    const raw = localStorage.getItem(wsKey("rutalog_diario_estado"));
     if (!raw) return false;
     const data = JSON.parse(raw);
     if (!data || !Array.isArray(data.clientesHoy)) return false;
@@ -2078,7 +2106,51 @@ function loadDiarioEstado() {
 }
 
 function clearDiarioEstado() {
-  try { localStorage.removeItem("rutalog_diario_estado"); } catch (e) {}
+  try { localStorage.removeItem(wsKey("rutalog_diario_estado")); } catch (e) {}
+  try { localStorage.removeItem(wsKey("rutalog_viajes")); } catch (e) {}
+}
+
+/** Carga el operativo del día de ESTE usuario en este navegador (no se sincroniza). */
+function loadWorkspaceForCurrentUser() {
+  try {
+    estado.viajesGuardados = [];
+    estado.numViaje = 1;
+    estado.clientesHoy = [];
+    estado.lineasRaw = [];
+    estado.lineasPendientes = new Map();
+    estado.origenActual = null;
+    estado.rutaActual = [];
+    if (estado.paradasSel) estado.paradasSel.clear();
+    // Viajes del usuario
+    wsMigrate("rutalog_viajes", wsKey("rutalog_viajes"));
+    const v = localStorage.getItem(wsKey("rutalog_viajes"));
+    if (v) {
+      const arr = JSON.parse(v);
+      if (Array.isArray(arr)) {
+        estado.viajesGuardados = arr;
+        if (typeof renumerarViajes === "function") renumerarViajes();
+        else estado.numViaje = arr.length + 1;
+      }
+    }
+    // Diario / residuales
+    if (typeof loadDiarioEstado === "function") loadDiarioEstado();
+    // Reserva OV y Viajes cruzados viven solo en memoria de esta sesión (no LS / no GitHub)
+    try {
+      if (typeof resultadosReserva !== "undefined") resultadosReserva = [];
+      if (typeof detalleReserva !== "undefined") detalleReserva = [];
+    } catch (e) {}
+    try {
+      if (typeof renderPanel === "function") renderPanel();
+      else if (typeof pintarMapaPanel === "function") pintarMapaPanel();
+    } catch (e) {}
+    try {
+      if (typeof renderDespachos === "function") renderDespachos();
+      if (typeof refrescarRutaUI === "function") refrescarRutaUI();
+      if (typeof renderViajesGuardados === "function") renderViajesGuardados();
+    } catch (e) {}
+  } catch (e) {
+    console.warn("loadWorkspaceForCurrentUser", e);
+  }
 }
 function normSkuKey(s) {
   if (s == null) return "";
@@ -5109,6 +5181,8 @@ function tienePermiso(modId) {
   if (!activos.length) return true;
   const u = usuarioActual();
   if (!u) return false;
+  // Configuración y gestión de usuarios: SOLO administradores
+  if (modId === "config") return u.rol === "admin";
   if (u.rol === "admin") return true;
   if (u.permisos && u.permisos[modId] === true) return true;
   return false;
@@ -5234,6 +5308,8 @@ async function intentarLogin() {
   mostrarLogin(false);
   const mainEl = document.querySelector(".main");
   if (mainEl) mainEl.style.visibility = "";
+  // Operativo (panel/mapa/viajes) exclusivo de este usuario en este equipo
+  if (typeof loadWorkspaceForCurrentUser === "function") loadWorkspaceForCurrentUser();
   aplicarPermisosUI();
   if (typeof toast === "function") toast("Bienvenido, " + (found.nombre || found.username));
   const first = MODULOS_APP.find(m => tienePermiso(m.id));
@@ -5241,6 +5317,17 @@ async function intentarLogin() {
 }
 
 function cerrarSesion() {
+  // Vaciar memoria operativa en pantalla (los datos del usuario quedan en este navegador para el próximo login)
+  try {
+    estado.viajesGuardados = [];
+    estado.numViaje = 1;
+    estado.clientesHoy = [];
+    estado.lineasRaw = [];
+    estado.lineasPendientes = new Map();
+    estado.origenActual = null;
+    estado.rutaActual = [];
+    if (estado.paradasSel) estado.paradasSel.clear();
+  } catch (e) {}
   setSession(null);
   if (requiereLogin()) {
     mostrarLogin(true);
@@ -6912,6 +6999,7 @@ function ghOnVisibilitySync() {
 }
 
 function ghBuildPayload() {
+  // Solo catálogos compartidos. NUNCA: diario, viajes, residuales, reserva OV, cruzados.
   const maestroArr = [];
   if (estado.maestro) estado.maestro.forEach(r => maestroArr.push(r));
   const citasObj = {};
