@@ -1,5 +1,43 @@
-/* RUTALOG loader + Código SKU paginado */
+/* RUTALOG loader + CSS crítico + Código SKU paginado */
 (function () {
+  /* CSS crítico: login, módulos, confirm (no depende del cache de Pages) */
+  var css = document.createElement("style");
+  css.id = "rutalog-critical-css";
+  css.textContent = [
+    ".login-overlay{position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
+    ".login-overlay[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}",
+    ".login-overlay:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important}",
+    ".login-card{width:min(400px,94vw)!important;max-width:400px!important;background:#171717!important;border:1px solid #1f1f1f!important;border-radius:16px!important;padding:28px 24px!important;box-shadow:0 24px 60px rgba(0,0,0,.45)!important;color:#fafafa!important}",
+    ".login-card .logo-row{display:flex!important;align-items:center!important;gap:12px!important;margin-bottom:18px!important}",
+    ".login-card .logo-mark{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;border-radius:10px!important;background:#111!important;border:1px solid #1f1f1f!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;overflow:hidden!important}",
+    ".login-card .logo-mark svg{width:28px!important;height:28px!important;display:block!important}",
+    ".login-card h2{font-size:18px!important;font-weight:700!important;margin:0 0 4px!important;color:#fafafa!important}",
+    ".login-card .sub{font-size:13px!important;color:#a3a3a3!important;margin:0 0 18px!important}",
+    ".login-card label{display:block!important;font-size:12px!important;font-weight:600!important;color:#a3a3a3!important;margin-bottom:4px!important}",
+    ".login-card .field{margin-bottom:12px!important}",
+    ".login-card input[type=text],.login-card input[type=password]{width:100%!important;padding:10px 12px!important;border-radius:8px!important;border:1px solid #1f1f1f!important;background:#0f0f0f!important;color:#fafafa!important;font-family:inherit!important;font-size:14px!important;box-sizing:border-box!important}",
+    ".login-card input:focus{outline:none!important;border-color:#f5f5f5!important}",
+    ".login-error{display:none;background:#422006;border:1px solid #d97706;color:#fde68a;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}",
+    ".login-error.visible{display:block}",
+    ".login-card .btn{width:100%!important;justify-content:center!important;margin-top:4px!important}",
+    ".login-card .credit{margin-top:16px;font-size:11px;color:#a3a3a3;text-align:center}",
+    ".perm-grid,#cfgPermGrid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important;gap:12px!important;margin-top:12px!important}",
+    ".perm-item{display:flex!important;align-items:center!important;gap:10px!important;padding:12px 14px!important;border:1px solid #1f1f1f!important;border-radius:10px!important;background:#1f1f1f!important;font-size:13px!important;cursor:pointer!important;user-select:none!important;min-height:44px!important}",
+    ".perm-item:hover{border-color:#525252!important;background:#262626!important}",
+    ".perm-item input{accent-color:#60a5fa!important;width:16px!important;height:16px!important;flex-shrink:0!important;margin:0!important}",
+    ".confirm-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}",
+    ".confirm-overlay[hidden]{display:none!important}",
+    ".confirm-modal{background:#171717;border:1px solid #1f1f1f;border-radius:14px;width:min(400px,94vw);box-shadow:0 20px 50px rgba(0,0,0,.4);color:#fafafa}",
+    ".confirm-modal .body{padding:18px 20px}",
+    ".confirm-modal h2{font-size:15px;font-weight:700;margin:0 0 8px}",
+    ".confirm-modal .msg{font-size:13.5px;color:#a3a3a3;margin:0;line-height:1.45}",
+    ".confirm-modal .foot{padding:12px 16px;border-top:1px solid #1f1f1f;display:flex;gap:8px;justify-content:flex-end}",
+    ".codigo-pager{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:#a3a3a3}",
+    ".codigo-pager .btn{min-width:36px}",
+    ".codigo-pager strong{color:#fafafa}"
+  ].join("\n");
+  document.head.appendChild(css);
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
@@ -139,7 +177,6 @@
         if (next) next.onclick = function () { window._codPage++; renderCodigoTable(); };
       }
     };
-    // Reset página al filtrar
     setTimeout(function () {
       var qEl = document.getElementById("qCodigo");
       var filEl = document.getElementById("filCodigoUnd");
