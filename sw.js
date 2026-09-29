@@ -1,10 +1,12 @@
-/* RUTALOG service worker — cache estática básica */
-const CACHE = "rutalog-v1";
+/* RUTALOG service worker — cache estática */
+const CACHE = "rutalog-v3-login-modulos";
 const ASSETS = [
   "./",
   "./index.html",
   "./RUTALOG%20GITHUB.html",
   "./styles.css",
+  "./styles-part2.css",
+  "./mejoras-esteticas.css",
   "./app.js",
   "./maestro-base.json",
   "./manifest.webmanifest"
@@ -27,11 +29,27 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+  // Network-first for JS/CSS so updates arrive
+  const url = new URL(req.url);
+  if (/\.(js|css)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        try {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
+          }
+        } catch (e) {}
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(req).then((cached) => {
       const fetched = fetch(req).then((res) => {
         try {
-          if (res && res.ok && new URL(req.url).origin === self.location.origin) {
+          if (res && res.ok && url.origin === self.location.origin) {
             const clone = res.clone();
             caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
           }
