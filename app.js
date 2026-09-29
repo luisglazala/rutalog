@@ -4,6 +4,7 @@
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
+    "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".login-overlay{position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
     ".login-overlay[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}",
     ".login-overlay:not([hidden]){display:flex!important;visibility:visible!important;pointer-events:auto!important}",
