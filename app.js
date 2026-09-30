@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy restaurado v4 + correcciones v2 + extras */
+/* RUTALOG loader: core e638c98 + construirHoy v4 + correcciones v2 + planificacion v3 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -173,7 +173,7 @@
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=3");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=1");
-      onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=2");
+      onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=3");
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
