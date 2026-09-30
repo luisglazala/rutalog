@@ -1,10 +1,21 @@
 # Mejoras RUTALOG
 
-| # | Mejora | Estado | Revert SHA |
-|---|--------|--------|------------|
-| 0 | Baseline original | ok | `66a2173eab2e48723450aa1e59b25cb8ad933504` |
-| 1 | Maestro fuera del HTML | aplicada | `efad14f40523e363c414b7099a6c0d4bc368532e` |
-| 2-6 | CSS/JS, vacíos, sesión, PWA, optimizar | preparada para subir | — |
+| # | Mejora | Estado | Notas |
+|---|--------|--------|-------|
+| 0 | Baseline original | ok | `66a2173e…` |
+| 1 | Maestro fuera del HTML | aplicada | `maestro-base.json` |
+| 2–6 | CSS/JS, vacíos, sesión, PWA, optimizar | parcial | boot + paginado SKU |
+| 7 | **mejoras-v2** (capa overlay) | aplicada | ver abajo |
 
-Para revertir las últimas 5 (2-6): pedir **revierte las últimas 5 mejoras** (vuelve a `efad14f...`).
-Para revertir todo desde mejora 1: **revierte desde la mejora 1** (`66a2173e...`).
+## mejoras-v2 (2026-09-29)
+
+Incluye (sin tocar cifrado de token ni export/import de sesión del día):
+
+1. **Capacidad de camión en vivo** en el panel de ruta (barra G 12 t / P 3 t con colores).
+2. **Optimizar orden** de paradas (vecino más cercano desde el centro/almacén). Atajo: `O`.
+3. **Búsqueda global** `Ctrl+K` (clientes del día, maestro, SKU).
+4. **Modo operador** (oculta Config / Topes / Código / Citas).
+5. **Atajos**: `S` guardar viaje, `Esc` cerrar, `Ctrl+K` buscar.
+6. Estilos asociados en `mejoras-v2.css`.
+
+Archivos: `mejoras-v2.js`, `mejoras-v2.css` (cargados desde el boot de `app.js`).
