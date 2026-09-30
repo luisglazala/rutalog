@@ -13,46 +13,65 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 (function(){try{var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}var needLogin=false;try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}if(needLogin)document.documentElement.classList.add("rutalog-need-login");else if(hasSession)document.documentElement.classList.add("rutalog-ready");else document.documentElement.classList.add("rutalog-booting")}catch(e){document.documentElement.classList.add("rutalog-booting")}})();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RUTALOG — cargando…</title>
-<style>body{background:#0a0a0a;color:#a3a3a3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}</style>
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>RUTALOG — Consolidador Territorial · Lazala</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Cpath d='M8 22 L16 7 L24 22' fill='none' stroke='%23fafafa' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='20' r='2.2' fill='%23fafafa'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css?v=boot4">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
-<div id="bootMsg">Cargando RUTALOG…</div>
 <script>
+/* Cargar plantilla completa desde commit estable y aplicar boot */
 (function(){
-  var SRC = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html";
-  fetch(SRC, {cache:"no-store"}).then(function(r){
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    return r.text();
-  }).then(function(html){
-    // Quitar botones export/import día
-    html = html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi, "");
-    html = html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi, "");
-    html = html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi, "");
-    // Inyectar boot al inicio del head
-    var boot = document.head.innerHTML;
-    // Reescribir documento completo
-    document.open();
-    document.write(html);
-    document.close();
-    // Re-aplicar clases de boot tras document.write
-    try {
+  var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html';
+  function strip(html){
+    html=html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
+    html=html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
+    html=html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi,'');
+    return html;
+  }
+  fetch(SRC,{cache:'no-store'}).then(function(r){return r.text()}).then(function(html){
+    html=strip(html);
+    var parser=new DOMParser();
+    var doc=parser.parseFromString(html,'text/html');
+    // Copiar body
+    document.body.innerHTML=doc.body.innerHTML;
+    // Copiar estilos/scripts del head que falten (leaflet ya están)
+    // Quitar scripts del body que apunten a app.js del CDN y usar el local
+    Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
+      if(s.src && s.src.indexOf('app.js')!==-1) s.remove();
+    });
+    // Re-aplicar clases gate
+    try{
       var hasSession=false;
-      try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
+      try{var raw=localStorage.getItem('rutalog_session');if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
       var needLogin=false;
-      try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}
-      if(needLogin){document.documentElement.classList.add("rutalog-need-login");document.documentElement.classList.remove("rutalog-ready")}
-      else if(hasSession){document.documentElement.classList.add("rutalog-ready");document.documentElement.classList.remove("rutalog-need-login","rutalog-booting")}
-      else {document.documentElement.classList.add("rutalog-booting")}
-    } catch(e){}
-    // Cargar app.js local (con fixes) en lugar del embebido del CDN si es necesario
-    var s = document.createElement("script");
-    s.src = "./app.js?v=boot3";
-    s.defer = true;
+      try{var usersRaw=localStorage.getItem('rutalog_usuarios_v2');var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}
+      document.documentElement.classList.remove('rutalog-ready','rutalog-need-login','rutalog-booting');
+      if(needLogin) document.documentElement.classList.add('rutalog-need-login');
+      else if(hasSession) document.documentElement.classList.add('rutalog-ready');
+      else document.documentElement.classList.add('rutalog-booting');
+    }catch(e){}
+    // Cargar app local (loader con fixes)
+    var s=document.createElement('script');
+    s.src='./app.js?v=boot4';
+    s.defer=true;
     document.body.appendChild(s);
   }).catch(function(err){
-    document.getElementById("bootMsg").innerHTML = "No se pudo cargar. <a href=\""+SRC+"\" style=\"color:#60a5fa\">Abrir respaldo</a><br><small>"+err+"</small>";
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a><br><small style="color:#a3a3a3">'+err+'</small></p>';
   });
 })();
 </script>
