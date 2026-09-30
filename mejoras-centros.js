@@ -1,4 +1,4 @@
-/* RUTALOG centros CI en mapa v1 */
+/* RUTALOG centros CI en mapa v2 — solo origen seleccionado, icono sutil */
 (function () {
   "use strict";
   if (window.__rutalogCentrosCI) return;
@@ -10,14 +10,23 @@
     { id: "almacen-lv",  corto: "La Vega", nombre: "Cesar Iglesias - La Vega", direccion: "Av. Pedro A. Rivera, Km 0", lat: 19.2250, lon: -70.5300, color: "#16a34a" }
   ];
 
-  function iconoAlmacen(a, esOrigen) {
-    var ring = esOrigen ? "3px solid #fbbf24" : "2px solid #fff";
-    var scale = esOrigen ? "1.15" : "1";
-    var label = a.corto.length > 5 ? a.corto.slice(0, 3) : a.corto;
-    var html = '<div style="transform:scale(' + scale + ');width:38px;height:38px;border-radius:10px;background:' + a.color +
-      ';border:' + ring + ';box-shadow:0 4px 14px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;' +
-      'color:#fff;font-weight:800;font-size:11px;font-family:system-ui,sans-serif">' + label + '</div>';
-    return L.divIcon({ className: "rutalog-almacen-ico", html: html, iconSize: [38, 38], iconAnchor: [19, 19], popupAnchor: [0, -20] });
+  function iconoOrigenSutil(a) {
+    /* Pin discreto: círculo pequeño + anillo suave, sin texto grande */
+    var html =
+      '<div style="position:relative;width:28px;height:28px;">' +
+      '<div style="position:absolute;inset:0;border-radius:50%;background:' + a.color +
+      ';opacity:.22;transform:scale(1.55)"></div>' +
+      '<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
+      'width:14px;height:14px;border-radius:50%;background:' + a.color +
+      ';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>' +
+      '</div>';
+    return L.divIcon({
+      className: "rutalog-origen-ico",
+      html: html,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -12]
+    });
   }
 
   function clearMarkers() {
@@ -33,54 +42,61 @@
     } catch (e) {}
   }
 
+  function getOrigenActivo() {
+    try {
+      if (!window.estado || !estado.origenActual) return null;
+      var o = estado.origenActual;
+      /* Preferir datos canónicos por id */
+      if (o.id) {
+        for (var i = 0; i < ALMACENES_MAPA.length; i++) {
+          if (ALMACENES_MAPA[i].id === o.id) return ALMACENES_MAPA[i];
+        }
+      }
+      if (o.lat != null && o.lon != null) {
+        return {
+          id: o.id || "origen",
+          corto: o.corto || "Origen",
+          nombre: o.nombre || o.corto || "Centro de trabajo",
+          direccion: o.direccion || "",
+          lat: o.lat,
+          lon: o.lon,
+          color: o.color || "#16a34a"
+        };
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function pintar() {
     try {
       if (typeof L === "undefined" || !window.estado) return;
       if (!estado.mapPanel && !estado.mapRutas) return;
       clearMarkers();
       if (!estado.markersAlmacenes) estado.markersAlmacenes = [];
-      var origenId = estado.origenActual && estado.origenActual.id;
 
-      ALMACENES_MAPA.forEach(function (a) {
-        var esOrigen = origenId === a.id;
-        var popup =
-          '<div style="min-width:190px"><strong style="font-size:13px">' + a.nombre + '</strong>' +
-          (esOrigen ? ' <span style="color:#ca8a04;font-weight:700">· ORIGEN</span>' : '') +
-          '<div style="font-size:12px;color:#666;margin-top:4px">' + a.direccion + '</div>' +
-          '<div style="font-size:11px;color:#888;margin-top:4px">Lat ' + a.lat + ' · Lon ' + a.lon + '</div>' +
-          (!esOrigen
-            ? '<button type="button" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%" data-alm="' + a.id + '">Usar como origen</button>'
-            : '<div style="margin-top:6px;font-size:12px;color:#16a34a;font-weight:600">Centro de trabajo activo</div>') +
-          '</div>';
+      var a = getOrigenActivo();
+      if (!a) return; /* Sin centro seleccionado → nada en el mapa */
 
-        function addTo(map) {
-          if (!map) return;
-          var m = L.marker([a.lat, a.lon], {
-            icon: iconoAlmacen(a, esOrigen),
-            zIndexOffset: esOrigen ? 5000 : 3500,
-            title: a.corto + " - " + a.nombre
-          });
-          m.bindPopup(popup);
-          m.on("popupopen", function () {
-            var btn = document.querySelector('.leaflet-popup-content button[data-alm="' + a.id + '"]');
-            if (btn) {
-              btn.onclick = function () {
-                if (typeof seleccionarOrigen === "function") seleccionarOrigen(a);
-                else {
-                  estado.origenActual = a;
-                  if (typeof toast === "function") toast("Origen: " + a.corto);
-                  if (typeof refrescarRutaUI === "function") refrescarRutaUI();
-                }
-                pintar();
-              };
-            }
-          });
-          m.addTo(map);
-          estado.markersAlmacenes.push(m);
-        }
-        addTo(estado.mapPanel);
-        addTo(estado.mapRutas);
-      });
+      var popup =
+        '<div style="min-width:170px">' +
+        '<div style="font-size:11px;color:#888;margin-bottom:2px">Origen del viaje</div>' +
+        '<strong style="font-size:13px">' + a.nombre + '</strong>' +
+        (a.direccion ? '<div style="font-size:12px;color:#666;margin-top:4px">' + a.direccion + '</div>' : '') +
+        '</div>';
+
+      function addTo(map) {
+        if (!map) return;
+        var m = L.marker([a.lat, a.lon], {
+          icon: iconoOrigenSutil(a),
+          zIndexOffset: 4500,
+          title: "Origen: " + a.corto
+        });
+        m.bindPopup(popup);
+        m.addTo(map);
+        estado.markersAlmacenes.push(m);
+      }
+      addTo(estado.mapPanel);
+      addTo(estado.mapRutas);
     } catch (e) {
       console.warn("[RUTALOG] centros CI", e);
     }
