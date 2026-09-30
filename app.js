@@ -159,28 +159,25 @@
         var l = document.createElement("link");
         l.id = "rutalog-mejoras-v2-css";
         l.rel = "stylesheet";
-        l.href = "./mejoras-v2.css?v=6";
+        l.href = "./mejoras-v2.css?v=7";
         document.head.appendChild(l);
       }
       if (!window.__rutalogMejorasV2) {
         window.__rutalogMejorasV2 = true;
         var s2 = document.createElement("script");
-        s2.src = "./mejoras-v2.js?v=6";
-        s2.defer = true;
+        s2.src = "./mejoras-v2.js?v=7";
         document.body.appendChild(s2);
       }
       if (!window.__rutalogMejorasCitas) {
         window.__rutalogMejorasCitas = true;
         var sC = document.createElement("script");
-        sC.src = "./mejoras-citas.js?v=6";
-        sC.defer = true;
+        sC.src = "./mejoras-citas.js?v=7";
         document.body.appendChild(sC);
       }
       if (!window.__rutalogCodigoPerf) {
         window.__rutalogCodigoPerf = true;
         var s3 = document.createElement("script");
         s3.src = "./codigo-perf.js?v=1";
-        s3.defer = true;
         document.body.appendChild(s3);
       }
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
