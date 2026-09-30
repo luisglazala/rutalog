@@ -1,13 +1,16 @@
-/* RUTALOG mejoras-citas v6b — pegar tabla robusto */
+/* RUTALOG mejoras-citas v7 — pegar tabla (escapeHtml arreglado) */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV6b) return;
-  window.__rutalogCitasV6b = true;
+  if (window.__rutalogCitasV7) return;
+  window.__rutalogCitasV7 = true;
 
   function el(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+      .replace(/&/g, "&"+"amp;")
+      .replace(/</g, "&"+"lt;")
+      .replace(/>/g, "&"+"gt;")
+      .replace(/"/g, "&"+"quot;");
   }
   function toastSafe(msg) {
     try { if (typeof toast === "function") { toast(msg); return; } } catch (e) {}
@@ -274,22 +277,22 @@
     var a = (root || document).querySelector("#btnCitaPasteAplicar");
     var r = (root || document).querySelector("#btnCitaPasteReemplazar");
     var c = (root || document).querySelector("#btnCitaPasteLimpiar");
-    if (a && !a._wiredV6) {
-      a._wiredV6 = true;
+    if (a && !a._wiredV7) {
+      a._wiredV7 = true;
       a.onclick = function (e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         doApply(false);
       };
     }
-    if (r && !r._wiredV6) {
-      r._wiredV6 = true;
+    if (r && !r._wiredV7) {
+      r._wiredV7 = true;
       r.onclick = function (e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         doApply(true);
       };
     }
-    if (c && !c._wiredV6) {
-      c._wiredV6 = true;
+    if (c && !c._wiredV7) {
+      c._wiredV7 = true;
       c.onclick = function (e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         var ta = el("citaPasteArea");
@@ -316,7 +319,7 @@
     box.className = "cita-paste-box";
     box.innerHTML =
       '<h4 class="cita-paste-title">Pegar tabla de citas</h4>' +
-      '<p class="cita-paste-hint">Pega las filas de Excel y pulsa <strong>Procesar y agregar</strong>. Se lee zona, cita, cliente, OV y nota (sin necesidad de ID).</p>' +
+      '<p class="cita-paste-hint">Pega las filas de Excel y pulsa <strong>Procesar y agregar</strong>. Se lee zona, cita, cliente, OV y nota.</p>' +
       '<textarea id="citaPasteArea" rows="6" placeholder="Pega aquí la tabla (Ctrl+V)…"></textarea>' +
       '<div class="cita-paste-actions">' +
       '<button type="button" class="btn btn-primary btn-sm" id="btnCitaPasteAplicar">Procesar y agregar</button>' +
@@ -352,9 +355,9 @@
       '<div class="cita-paste-table-wrap"><table class="cita-paste-table"><thead><tr>' +
       "<th>Cliente</th><th>OV</th><th>Fecha</th><th>Zona</th><th>Nota</th></tr></thead><tbody>" +
       rows.map(function (r) {
-        return "<tr class=\"ok\"><td>" + esc(r.clienteNombre) + "</td><td class=\"mono\">" + esc(r.ov || "—") +
-          "</td><td class=\"mono\">" + esc(r.fecha) + "</td><td>" + esc(r.zona) +
-          "</td><td>" + esc(r.nota) + "</td></tr>";
+        return '<tr class="ok"><td>' + esc(r.clienteNombre) + '</td><td class="mono">' + esc(r.ov || "—") +
+          '</td><td class="mono">' + esc(r.fecha) + '</td><td>' + esc(r.zona) +
+          '</td><td>' + esc(r.nota) + '</td></tr>';
       }).join("") + "</tbody></table></div>";
   }
 
@@ -367,14 +370,12 @@
     preview();
     if (!rows.length) {
       toastSafe("No se pudo leer ninguna fila");
-      console.warn("[citas] texto:", text.slice(0, 500));
       return;
     }
     var n = applyRows(rows, !!replaceAll);
     var st = el("citaPasteStatus");
     if (st) st.textContent = n + " citas agregadas";
     toastSafe(n + " cita(s) procesada(s)");
-    console.log("[citas] aplicadas", n, rows);
   }
 
   document.addEventListener("click", function (e) {
