@@ -1,4 +1,4 @@
-/* RUTALOG loader: gate + token + login + correcciones A-E + extras unificados (G) */
+/* RUTALOG loader: core e638c98 + construirHoy 2.1-2.3 + correcciones v2 + extras */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -26,7 +26,6 @@
       if (el) el.remove();
     });
   }
-  /* G: una sola pasada (sin setTimeout); el HTML ya no debe traer estos botones */
   removeDiaBtns();
 
   function revealApp() {
@@ -62,7 +61,7 @@
     gate.innerHTML =
       '<div class="tg-card">' +
       "<h2>Configurar GitHub</h2>" +
-      "<p>Primera vez en este equipo. Pega el token de GitHub (PAT) para sincronizar usuarios y catálogos.</p>" +
+      "<p>Primera vez en este equipo. Pega el token de GitHub (PAT) para sincronizar usuarios y catalogos.</p>" +
       '<div class="tg-err" id="tgErr"></div>' +
       '<label for="tgToken">Token de GitHub (ghp_…)</label>' +
       '<input type="password" id="tgToken" placeholder="ghp_…" autocomplete="off">' +
@@ -80,7 +79,7 @@
     document.getElementById("tgSave").onclick = function () {
       var v = (inp && inp.value || "").trim();
       if (!v || v.length < 10) {
-        if (err) { err.textContent = "Indica un token válido."; err.classList.add("visible"); }
+        if (err) { err.textContent = "Indica un token valido."; err.classList.add("visible"); }
         return;
       }
       try {
@@ -153,7 +152,6 @@
   }
 
   function loadExtras() {
-    /* Cargador único de extras (antes se duplicaban desde el HTML y desde aquí) */
     try {
       function onceScript(flag, src) {
         if (window[flag]) return;
@@ -181,7 +179,9 @@
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
     afterAppReady();
-    return loadScript("./mejoras-correcciones.js?v=1");
+    return loadScript("./app-core-construirHoy.js?v=2");
+  }).then(function () {
+    return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
     loadExtras();
   }).catch(function (e) {
