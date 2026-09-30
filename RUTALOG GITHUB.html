@@ -24,14 +24,13 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot6">
-<link rel="stylesheet" href="./mejoras-v2.css?v=6">
+<link rel="stylesheet" href="./styles.css?v=boot7">
+<link rel="stylesheet" href="./mejoras-v2.css?v=7">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 <script>
-/* Cargar plantilla completa desde commit estable y aplicar boot */
 (function(){
   var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html';
   function strip(html){
@@ -58,15 +57,14 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else if(hasSession) document.documentElement.classList.add('rutalog-ready');
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
-    // App local + citas forzados (sin defer)
     var s=document.createElement('script');
-    s.src='./app.js?v=boot6';
+    s.src='./app.js?v=boot7';
     s.onload=function(){
       var c=document.createElement('script');
-      c.src='./mejoras-citas.js?v=6b';
+      c.src='./mejoras-citas.js?v=7';
       document.body.appendChild(c);
       var m=document.createElement('script');
-      m.src='./mejoras-v2.js?v=6';
+      m.src='./mejoras-v2.js?v=7';
       document.body.appendChild(m);
     };
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
