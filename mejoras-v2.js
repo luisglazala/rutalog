@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-v2 v7 — capa de mejoras */
+/* RUTALOG mejoras-v2 v8 — capa de mejoras */
 (function () {
   "use strict";
 
@@ -51,11 +51,8 @@
       box.id = "rutalogCapBox";
       box.className = "rutalog-cap-box";
       var badges = side.querySelector("#badgeParadas");
-      if (badges && badges.parentNode) {
-        badges.parentNode.insertAdjacentElement("afterend", box);
-      } else {
-        side.insertBefore(box, side.firstChild);
-      }
+      if (badges && badges.parentNode) badges.parentNode.insertAdjacentElement("afterend", box);
+      else side.insertBefore(box, side.firstChild);
     }
     var cap = getCapacidad();
     var peso = pesoViajeActual();
@@ -81,7 +78,7 @@
     btn.id = "btnOptimizarRuta";
     btn.className = "btn btn-secondary btn-sm";
     btn.style.cssText = "width:100%;margin-top:6px;";
-    btn.title = "Reordenar paradas por vecino más cercano (desde el centro)";
+    btn.title = "Reordenar paradas por vecino más cercano";
     btn.innerHTML = "Optimizar orden de paradas";
     btn.disabled = true;
     row.parentNode.insertAdjacentElement("afterend", btn);
@@ -105,8 +102,7 @@
       var ordered = [];
       var cur = start;
       while (remaining.length) {
-        var bestI = 0;
-        var bestD = Infinity;
+        var bestI = 0, bestD = Infinity;
         for (var i = 0; i < remaining.length; i++) {
           var d = haversineKm(cur, [remaining[i].lat, remaining[i].lon]);
           if (d < bestD) { bestD = d; bestI = i; }
@@ -118,7 +114,6 @@
       estado.viajeActual = ordered;
       if (typeof refrescarRutaUI === "function") refrescarRutaUI();
       if (typeof renderMapas === "function") renderMapas();
-      else if (typeof pintarRutas === "function") pintarRutas();
       ensureCapacidadBadge();
       toastSafe("Orden optimizado (" + ordered.length + " paradas)");
     } catch (e) {
@@ -143,11 +138,7 @@
       return;
     }
     if (e.ctrlKey || e.metaKey) {
-      if (e.key === "k" || e.key === "K") {
-        e.preventDefault();
-        openGlobalSearch();
-        return;
-      }
+      if (e.key === "k" || e.key === "K") { e.preventDefault(); openGlobalSearch(); }
       return;
     }
     if (e.key === "s" || e.key === "S") {
@@ -156,9 +147,7 @@
     } else if (e.key === "o" || e.key === "O") {
       var op = el("btnOptimizarRuta");
       if (op && !op.disabled) op.click();
-    } else if (e.key === "Escape") {
-      closeGlobalSearch();
-    }
+    } else if (e.key === "Escape") closeGlobalSearch();
   }
 
   function ensureSearchUI() {
@@ -169,14 +158,11 @@
     ov.hidden = true;
     ov.innerHTML =
       '<div class="rutalog-search-card">' +
-      '<input type="search" id="rutalogSearchInput" placeholder="Buscar OV, cliente, ciudad, SKU…" autocomplete="off">' +
-      '<div class="rutalog-search-hint">Ctrl+K · Enter para ir · Esc cerrar</div>' +
-      '<ul id="rutalogSearchResults" class="rutalog-search-results"></ul>' +
-      "</div>";
+      '<input type="search" id="rutalogSearchInput" placeholder="Buscar OV, cliente, ciudad…" autocomplete="off">' +
+      '<div class="rutalog-search-hint">Ctrl+K · Enter · Esc</div>' +
+      '<ul id="rutalogSearchResults" class="rutalog-search-results"></ul></div>';
     document.body.appendChild(ov);
-    ov.addEventListener("click", function (e) {
-      if (e.target === ov) closeGlobalSearch();
-    });
+    ov.addEventListener("click", function (e) { if (e.target === ov) closeGlobalSearch(); });
     var inp = el("rutalogSearchInput");
     if (inp) {
       inp.addEventListener("input", function () { renderSearchResults(inp.value); });
@@ -199,10 +185,17 @@
     if (inp) { inp.value = ""; inp.focus(); }
     renderSearchResults("");
   }
-
   function closeGlobalSearch() {
     var ov = el("rutalogSearchOverlay");
     if (ov) ov.hidden = true;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&"+"amp;")
+      .replace(/</g, "&"+"lt;")
+      .replace(/>/g, "&"+"gt;")
+      .replace(/"/g, "&"+"quot;");
   }
 
   function renderSearchResults(qstr) {
@@ -231,7 +224,7 @@
           }
         });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {}
     if (!hits.length) {
       ul.innerHTML = '<li class="vacio">Sin resultados</li>';
       return;
@@ -250,14 +243,6 @@
     });
   }
 
-  function escapeHtml(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&"+"amp;")
-      .replace(/</g, "&"+"lt;")
-      .replace(/>/g, "&"+"gt;")
-      .replace(/"/g, "&"+"quot;");
-  }
-
   function ensureOperadorToggle() {
     var top = q(".topbar");
     if (!top || el("btnModoOperador")) return;
@@ -265,7 +250,7 @@
     btn.type = "button";
     btn.id = "btnModoOperador";
     btn.className = "btn btn-secondary btn-sm";
-    btn.title = "Oculta módulos avanzados (Config, Topes, Código, Citas)";
+    btn.title = "Oculta módulos avanzados";
     btn.textContent = "Modo operador";
     var spacer = q(".topbar .spacer");
     if (spacer) spacer.insertAdjacentElement("afterend", btn);
@@ -285,8 +270,6 @@
     } catch (e) {}
   }
 
-  function polishEmptyStates() {}
-
   function hookRefrescar() {
     if (typeof window.refrescarRutaUI === "function" && !window.refrescarRutaUI._mejoras) {
       var orig = window.refrescarRutaUI;
@@ -299,13 +282,155 @@
     }
   }
 
+  /* ---- Centro obligatorio + ligas de zonas ---- */
+  var ZONAS_LIGADAS = [
+    ["Santiago", "Tamboril", "Valverde", "Tavera", "Mao"],
+    ["Puerto Plata"],
+    ["Espaillat", "Hermanas Mirabal", "Salcedo", "Tenares", "Villa Tapia", "Moca"],
+    ["Dajabón", "Santiago Rodríguez", "Monte Cristi", "Esperanza"],
+    ["San Francisco de Macorís", "Cenoví", "Villa Arriba", "Villa Riva", "Arenoso", "Nagua"],
+    ["María Trinidad Sánchez", "Samaná", "Las Terrenas"],
+    ["Piedra Blanca", "Bonao", "Maimón", "Monseñor Nouel"],
+    ["Monseñor Nouel", "San José de Ocoa"],
+    ["La Vega", "Jarabacoa", "Constanza", "La Canela"],
+    ["Cotuí", "Sánchez Ramírez"]
+  ];
+
+  function normCity(s) {
+    return String(s || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function ligadasDe(ciudad) {
+    var qn = normCity(ciudad);
+    if (!qn) return [];
+    var out = {};
+    ZONAS_LIGADAS.forEach(function (grupo) {
+      var hit = grupo.some(function (g) {
+        var ng = normCity(g);
+        return ng === qn || ng.indexOf(qn) >= 0 || qn.indexOf(ng) >= 0;
+      });
+      if (hit) grupo.forEach(function (g) { out[g] = true; });
+    });
+    return Object.keys(out);
+  }
+
+  function ensureCentroPrompt() {
+    try {
+      if (!window.estado) return;
+      if (estado.origenActual) return;
+      if (typeof abrirSelectorCentro === "function") abrirSelectorCentro({ forzar: true });
+    } catch (e) {}
+  }
+
+  function hookConstruirHoy() {
+    if (typeof window.construirHoy !== "function" || window.construirHoy._ligaZonas) return;
+    var orig = window.construirHoy;
+    window.construirHoy = function () {
+      var r = orig.apply(this, arguments);
+      setTimeout(function () {
+        ensureCentroPrompt();
+        enhanceCiudadFilter();
+      }, 400);
+      return r;
+    };
+    window.construirHoy._ligaZonas = true;
+  }
+
+  function enhanceCiudadFilter() {
+    var lista = el("listaCiudades");
+    if (!lista || lista._ligaBound) return;
+    lista._ligaBound = true;
+    lista.addEventListener("change", function (e) {
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains("chk-ciudad") || !t.checked) return;
+      var ligadas = ligadasDe(t.value);
+      if (!ligadas.length) return;
+      var disponibles = {};
+      qa(".chk-ciudad", lista).forEach(function (chk) {
+        disponibles[normCity(chk.value)] = chk;
+      });
+      var sugeridas = [];
+      ligadas.forEach(function (name) {
+        var n = normCity(name);
+        Object.keys(disponibles).forEach(function (k) {
+          if (k === n || k.indexOf(n) >= 0 || n.indexOf(k) >= 0) sugeridas.push(disponibles[k]);
+        });
+      });
+      if (!sugeridas.length) return;
+      qa(".ciu-chip", lista).forEach(function (lab) { lab.classList.remove("ciu-sugerida"); });
+      sugeridas.forEach(function (chk) {
+        if (chk.parentNode) chk.parentNode.classList.add("ciu-sugerida");
+      });
+      var bar = el("rutalogLigasBar");
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "rutalogLigasBar";
+        bar.className = "rutalog-ligas-bar";
+        lista.parentNode.insertBefore(bar, lista);
+      }
+      var names = [];
+      var seen = {};
+      sugeridas.forEach(function (c) {
+        if (!seen[c.value]) { seen[c.value] = 1; names.push(c.value); }
+      });
+      bar.innerHTML = '<span class="ligas-label">Se pueden ligar con <strong>' + escapeHtml(t.value) +
+        '</strong>:</span> <span class="ligas-names">' + names.map(escapeHtml).join(", ") +
+        '</span> <button type="button" class="btn btn-primary btn-sm" id="btnAplicarLigas">Seleccionar ligadas</button>';
+      var btn = el("btnAplicarLigas");
+      if (btn) {
+        btn.onclick = function () {
+          sugeridas.forEach(function (chk) { chk.checked = true; });
+          var todas = el("chkTodasCiudades");
+          if (todas) todas.checked = false;
+          if (typeof actualizarLabelCiudad === "function") actualizarLabelCiudad();
+          if (typeof renderMapas === "function") renderMapas();
+          toastSafe("Ciudades ligadas seleccionadas");
+        };
+      }
+    });
+  }
+
+  function ensureLigasCSS() {
+    if (el("rutalog-ligas-css")) return;
+    var st = document.createElement("style");
+    st.id = "rutalog-ligas-css";
+    st.textContent =
+      ".ciu-chip.ciu-sugerida{outline:2px solid #16a34a;background:rgba(22,163,74,.12)}" +
+      ".rutalog-ligas-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;margin-bottom:10px;" +
+      "background:#0f172a;border:1px solid #1f2937;border-radius:10px;font-size:13px;color:#e5e5e5}" +
+      ".rutalog-ligas-bar .ligas-names{color:#86efac;font-weight:600}" +
+      ".rutalog-ligas-bar .btn{margin-left:auto}";
+    document.head.appendChild(st);
+  }
+
+  function onPageChange() {
+    try {
+      if (window.estado && estado.page === "rutas") {
+        setTimeout(ensureCentroPrompt, 500);
+        setTimeout(enhanceCiudadFilter, 600);
+      }
+    } catch (e) {}
+  }
+
+  function hookNav() {
+    qa(".nav button").forEach(function (b) {
+      if (b._ligaNav) return;
+      b._ligaNav = true;
+      b.addEventListener("click", function () { setTimeout(onPageChange, 300); });
+    });
+  }
+
   function tick() {
+    ensureLigasCSS();
+    hookConstruirHoy();
+    hookNav();
+    enhanceCiudadFilter();
     ensureOptimizarBtn();
     ensureCapacidadBadge();
     syncOptimizarState();
     ensureOperadorToggle();
     ensureSearchUI();
-    polishEmptyStates();
     hookRefrescar();
   }
 
@@ -313,7 +438,11 @@
     if (ready) return;
     ready = true;
     document.addEventListener("keydown", onKey);
+    ensureLigasCSS();
+    hookConstruirHoy();
+    hookNav();
     tick();
+    setTimeout(ensureCentroPrompt, 1200);
     setInterval(tick, 1500);
   }
 
