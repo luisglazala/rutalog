@@ -24,7 +24,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot8">
+<link rel="stylesheet" href="./styles.css?v=boot9">
 <link rel="stylesheet" href="./mejoras-v2.css?v=7">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
@@ -50,6 +50,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
   }
   loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js')
   .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js'); })
+  .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); })
   .then(function(){ return fetch(SRC,{cache:'no-store'}).then(function(r){return r.text();}); })
   .then(function(html){
     html=strip(html);
@@ -57,7 +58,8 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
     var doc=parser.parseFromString(html,'text/html');
     document.body.innerHTML=doc.body.innerHTML;
     Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
-      if(s.src && (s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1)) s.remove();
+      if(!s.src) return;
+      if(s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1 || s.src.indexOf('xlsx')!==-1) s.remove();
     });
     try{
       var hasSession=false;
@@ -70,7 +72,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot8';
+    s.src='./app.js?v=boot9';
     s.onload=function(){
       var c=document.createElement('script');
       c.src='./mejoras-citas.js?v=7';
