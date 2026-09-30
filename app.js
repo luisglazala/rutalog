@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy 2.1-2.3 + correcciones v2 + extras */
+/* RUTALOG loader: core e638c98 + construirHoy restaurado v4 + correcciones v2 + extras */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -180,7 +180,7 @@
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
     afterAppReady();
-    return loadScript("./app-core-construirHoy.js?v=3");
+    return loadScript("./app-core-construirHoy.js?v=4");
   }).then(function () {
     return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
