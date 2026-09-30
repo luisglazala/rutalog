@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-citas v5 — pegar tabla + listado (sin exigir maestro) */
+/* RUTALOG mejoras-citas v6 — pegar tabla robusto */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV5) return;
-  window.__rutalogCitasV5 = true;
+  if (window.__rutalogCitasV6) return;
+  window.__rutalogCitasV6 = true;
 
   function el(id) { return document.getElementById(id); }
   function esc(s) {
@@ -14,10 +14,10 @@
     try {
       var t = document.createElement("div");
       t.textContent = msg;
-      t.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#262626;color:#fff;padding:10px 16px;border-radius:8px;z-index:99999;font-size:13px;";
+      t.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 18px;border-radius:10px;z-index:999999;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);";
       document.body.appendChild(t);
-      setTimeout(function () { t.remove(); }, 2500);
-    } catch (e2) { console.log("[citas]", msg); }
+      setTimeout(function () { try { t.remove(); } catch (e) {} }, 3000);
+    } catch (e2) { try { alert(msg); } catch (e3) {} }
   }
   function normName(s) {
     return String(s || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -77,65 +77,77 @@
     return null;
   }
 
-  function splitLine(l) {
-    if (l.indexOf("\t") >= 0) return l.split("\t").map(function (x) { return x.trim(); });
-    if (l.indexOf("|") >= 0) return l.split("|").map(function (x) { return x.trim(); });
-    if (/\s{2,}/.test(l)) return l.split(/\s{2,}/).map(function (x) { return x.trim(); });
-    return [l.trim()];
+  function parseLine(line) {
+    line = String(line || "").replace(/\u00a0/g, " ").trim();
+    if (!line) return null;
+    var up = normName(line);
+    if (/^(ZONA|CITA|CLIENTE|ORDEN|NOTA)/.test(up) && /ZONA|CITA|CLIENTE/.test(up)) return null;
+
+    var ov = "", ovIdx = -1;
+    var ovMatch = line.match(/\b(OV[- ]?\d{6,})\b/i);
+    if (ovMatch) {
+      ov = ovMatch[1].replace(/\s+/g, "");
+      ovIdx = ovMatch.index;
+    }
+
+    var before = ovIdx >= 0 ? line.slice(0, ovIdx).trim() : line;
+    var after = ovIdx >= 0 ? line.slice(ovIdx + ovMatch[0].length).trim() : "";
+    before = before.replace(/\s+Z\s*\/\s*\d+\s*$/i, "").trim();
+
+    var zona = "", citaRaw = "", cliente = "";
+
+    var zm = before.match(/^(\d{1,4})\b\s*(.*)$/);
+    if (zm) {
+      zona = zm[1];
+      before = zm[2].trim();
+    }
+
+    var cm = before.match(/^((?:LUNES|MARTES|MI[EÉ]RCOLES|JUEVES|VIERNES|S[AÁ]BADO|DOMINGO)\s*\d{0,2}(?:\s*[\/\-]\s*\d{1,2})?|ENTREGA\s*INMEDIATA)\s+(.*)$/i);
+    if (cm) {
+      citaRaw = cm[1].replace(/\s+/g, " ").trim();
+      cliente = cm[2].trim();
+    } else {
+      cliente = before;
+    }
+
+    var nota = after;
+    if (line.indexOf("\t") >= 0) {
+      var cols = line.split("\t").map(function (x) { return x.trim(); });
+      if (cols.length >= 5) {
+        zona = cols[0] || zona;
+        citaRaw = cols[1] || citaRaw;
+        cliente = cols[2] || cliente;
+        if (/^OV/i.test(cols[3])) ov = cols[3].replace(/\s+/g, "");
+        nota = cols.slice(4).join(" ") || nota;
+      }
+    }
+
+    cliente = String(cliente || "").replace(/\s+Z\s*\/\s*\d+\s*$/i, "").trim();
+    if (!cliente && !ov) return null;
+    if (!cliente) cliente = ov || "Sin nombre";
+
+    var ref = new Date();
+    var fecha = parseCitaFecha(citaRaw, ref);
+    if (!fecha) fecha = parseCitaFecha(nota, ref);
+    if (!fecha) fecha = isoDate(ref);
+
+    return {
+      zona: String(zona || "").trim(),
+      citaRaw: String(citaRaw || "").trim(),
+      clienteNombre: cliente,
+      ov: String(ov || "").trim(),
+      nota: String(nota || "").trim(),
+      fecha: fecha,
+      idCliente: findIdByName(cliente)
+    };
   }
 
   function parsePasteTable(text) {
-    var lines = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n")
-      .map(function (l) { return l.replace(/\u00a0/g, " ").trim(); }).filter(Boolean);
-    if (!lines.length) return [];
-    var header = splitLine(lines[0]).map(normName);
-    var hasHeader = header.some(function (h) { return /ZONA|CITA|CLIENTE|ORDEN|VENTA|NOTA|^OV$/.test(h); });
-    var idx = { zona: 0, cita: 1, cliente: 2, ov: 3, nota: 4 };
-    if (hasHeader) {
-      idx = { zona: -1, cita: -1, cliente: -1, ov: -1, nota: -1 };
-      header.forEach(function (h, i) {
-        if (/ZONA/.test(h)) idx.zona = i;
-        else if (/^CITA$|FECHA/.test(h)) idx.cita = i;
-        else if (/CLIENTE|NOMBRE/.test(h)) idx.cliente = i;
-        else if (/ORDEN|VENTA|^OV$/.test(h)) idx.ov = i;
-        else if (/NOTA|OBS|COMENT/.test(h)) idx.nota = i;
-      });
-    }
-    var start = hasHeader ? 1 : 0;
+    var lines = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
     var rows = [];
-    var ref = new Date();
-    for (var li = start; li < lines.length; li++) {
-      var cols = splitLine(lines[li]);
-      if (!cols.length) continue;
-      var zona = idx.zona >= 0 ? (cols[idx.zona] || "") : "";
-      var citaRaw = idx.cita >= 0 ? (cols[idx.cita] || "") : "";
-      var cliente = idx.cliente >= 0 ? (cols[idx.cliente] || "") : "";
-      var ov = idx.ov >= 0 ? (cols[idx.ov] || "") : "";
-      var nota = idx.nota >= 0 ? (cols[idx.nota] || "") : "";
-      if (!ov) {
-        for (var ci = 0; ci < cols.length; ci++) {
-          if (/^OV[- ]?\d+/i.test(cols[ci])) { ov = cols[ci]; break; }
-        }
-      }
-      cliente = String(cliente || "").replace(/\s+Z\/\d+\s*$/i, "").trim();
-      if (cols.length === 1 && !cliente) {
-        nota = cols[0];
-        cliente = "Sin nombre";
-      }
-      if (!cliente && !ov && !nota) continue;
-      if (!cliente) cliente = ov || ("Fila " + (li + 1));
-      var fecha = parseCitaFecha(citaRaw, ref);
-      if (!fecha) fecha = parseCitaFecha(nota, ref);
-      if (!fecha) fecha = isoDate(ref);
-      rows.push({
-        zona: String(zona || "").trim(),
-        citaRaw: String(citaRaw || "").trim(),
-        clienteNombre: cliente,
-        ov: String(ov || "").trim(),
-        nota: String(nota || "").trim(),
-        fecha: fecha,
-        idCliente: findIdByName(cliente)
-      });
+    for (var i = 0; i < lines.length; i++) {
+      var r = parseLine(lines[i]);
+      if (r) rows.push(r);
     }
     return rows;
   }
@@ -146,19 +158,38 @@
     return "N:" + normName(r.clienteNombre).replace(/\s+/g, "_").slice(0, 40);
   }
 
-  function ensureEstado() {
-    if (!window.estado) window.estado = { citas: new Map() };
-    if (!estado.citas) estado.citas = new Map();
-    return estado;
+  function getCitasMap() {
+    if (!window.estado) window.estado = {};
+    if (!estado.citas || typeof estado.citas.set !== "function") {
+      var map = new Map();
+      try {
+        var raw = localStorage.getItem("rutalog_citas");
+        if (raw) {
+          var obj = JSON.parse(raw);
+          Object.keys(obj).forEach(function (k) { map.set(k, obj[k]); });
+        }
+      } catch (e) {}
+      estado.citas = map;
+    }
+    return estado.citas;
+  }
+
+  function persistCitas() {
+    try { if (typeof saveCitas === "function") { saveCitas(); return; } } catch (e) {}
+    try {
+      var o = {};
+      getCitasMap().forEach(function (v, k) { o[k] = v; });
+      localStorage.setItem("rutalog_citas", JSON.stringify(o));
+    } catch (e2) {}
   }
 
   function applyRows(rows, replaceAll) {
-    var st = ensureEstado();
-    if (replaceAll) st.citas.clear();
+    var citas = getCitasMap();
+    if (replaceAll) citas.clear();
     var ok = 0;
     rows.forEach(function (r) {
       var key = makeKey(r);
-      var prev = st.citas.get(key);
+      var prev = citas.get(key);
       var ovs = (prev && prev.ovs) ? prev.ovs.slice() : [];
       ovs.push({
         ov: r.ov, fecha: r.fecha, nota: r.nota, zona: r.zona,
@@ -172,7 +203,7 @@
         return true;
       });
       ovs.sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
-      st.citas.set(key, {
+      var rec = {
         fecha: ovs[0].fecha,
         ov: ovs[0].ov || null,
         nota: ovs[0].nota || null,
@@ -180,19 +211,12 @@
         nombre: r.clienteNombre,
         ovs: ovs,
         fuente: "pegar-tabla"
-      });
-      if (r.idCliente && key !== r.idCliente) {
-        st.citas.set(r.idCliente, st.citas.get(key));
-      }
+      };
+      citas.set(key, rec);
+      if (r.idCliente && key !== r.idCliente) citas.set(r.idCliente, rec);
       ok++;
     });
-    try { if (typeof saveCitas === "function") saveCitas(); } catch (e) {
-      try {
-        var o = {};
-        st.citas.forEach(function (v, k) { o[k] = v; });
-        localStorage.setItem("rutalog_citas", JSON.stringify(o));
-      } catch (e2) {}
-    }
+    persistCitas();
     renderList();
     try { if (typeof renderMapas === "function") renderMapas(); } catch (e) {}
     return ok;
@@ -201,13 +225,13 @@
   function renderList() {
     var cont = el("listaCitas");
     if (!cont) return;
-    var st = ensureEstado();
-    if (!st.citas.size) {
+    var citas = getCitasMap();
+    if (!citas.size) {
       cont.innerHTML = '<div class="vacio">Sin fechas de cita todavía.</div>';
       return;
     }
     var items = [], seen = {};
-    st.citas.forEach(function (v, id) {
+    citas.forEach(function (v, id) {
       var ovs = (v.ovs && v.ovs.length) ? v.ovs : [{ ov: v.ov, fecha: v.fecha, nota: v.nota, zona: v.zona, nombre: v.nombre }];
       ovs.forEach(function (o) {
         var rk = (o.ov || id) + "|" + (o.fecha || "") + "|" + (o.nota || "");
@@ -238,26 +262,62 @@
     }).join("");
     cont.querySelectorAll(".del-cita").forEach(function (b) {
       b.onclick = function () {
-        ensureEstado().citas.delete(b.getAttribute("data-id"));
-        try { if (typeof saveCitas === "function") saveCitas(); } catch (e) {}
+        getCitasMap().delete(b.getAttribute("data-id"));
+        persistCitas();
         renderList();
         try { if (typeof renderMapas === "function") renderMapas(); } catch (e) {}
       };
     });
   }
 
+  function wireButtons(root) {
+    var a = (root || document).querySelector("#btnCitaPasteAplicar");
+    var r = (root || document).querySelector("#btnCitaPasteReemplazar");
+    var c = (root || document).querySelector("#btnCitaPasteLimpiar");
+    if (a && !a._wiredV6) {
+      a._wiredV6 = true;
+      a.onclick = function (e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        doApply(false);
+      };
+    }
+    if (r && !r._wiredV6) {
+      r._wiredV6 = true;
+      r.onclick = function (e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        doApply(true);
+      };
+    }
+    if (c && !c._wiredV6) {
+      c._wiredV6 = true;
+      c.onclick = function (e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        var ta = el("citaPasteArea");
+        if (ta) ta.value = "";
+        var prev = el("citaPastePreview");
+        if (prev) { prev.hidden = true; prev.innerHTML = ""; }
+        var st = el("citaPasteStatus");
+        if (st) st.textContent = "";
+      };
+    }
+  }
+
   function ensureUI() {
     var page = el("page-citas");
     if (!page) return;
-    if (el("citaPasteBox")) return;
+    var existing = el("citaPasteBox");
+    if (existing) {
+      wireButtons(existing);
+      return;
+    }
     var card = page.querySelector(".card") || page;
     var box = document.createElement("div");
     box.id = "citaPasteBox";
     box.className = "cita-paste-box";
     box.innerHTML =
       '<h4 class="cita-paste-title">Pegar tabla de citas</h4>' +
-      '<p class="cita-paste-hint">Copia desde Excel (ZONA, CITA, CLIENTE, ORDEN DE VENTA, NOTA) y pega aquí. Luego pulsa <strong>Procesar y agregar</strong>.</p>' +
-      '<textarea id="citaPasteArea" rows="6" placeholder="Pega aquí la tabla completa (Ctrl+V)…"></textarea>' +
+      '<p class="cita-paste-hint">Pega las filas de Excel y pulsa <strong>Procesar y agregar</strong>. Se lee zona, cita, cliente, OV y nota (sin necesidad de ID).</p>' +
+      '<textarea id="citaPasteArea" rows="6" placeholder="Pega aquí la tabla (Ctrl+V)…"></textarea>' +
       '<div class="cita-paste-actions">' +
       '<button type="button" class="btn btn-primary btn-sm" id="btnCitaPasteAplicar">Procesar y agregar</button>' +
       '<button type="button" class="btn btn-secondary btn-sm" id="btnCitaPasteReemplazar">Reemplazar todas</button>' +
@@ -267,6 +327,13 @@
     var h3 = card.querySelector("h3");
     if (h3) card.insertBefore(box, h3.nextSibling);
     else card.insertBefore(box, card.firstChild);
+    wireButtons(box);
+    var ta = el("citaPasteArea");
+    if (ta && !ta._wiredPaste) {
+      ta._wiredPaste = true;
+      ta.addEventListener("input", function () { preview(); });
+      ta.addEventListener("paste", function () { setTimeout(preview, 40); });
+    }
   }
 
   function preview() {
@@ -281,7 +348,7 @@
     }
     prev.hidden = false;
     prev.innerHTML =
-      '<div class="cita-paste-sum">' + rows.length + " filas listas</div>" +
+      '<div class="cita-paste-sum">' + rows.length + " filas listas — pulsa Procesar y agregar</div>" +
       '<div class="cita-paste-table-wrap"><table class="cita-paste-table"><thead><tr>' +
       "<th>Cliente</th><th>OV</th><th>Fecha</th><th>Zona</th><th>Nota</th></tr></thead><tbody>" +
       rows.map(function (r) {
@@ -295,63 +362,57 @@
     var ta = el("citaPasteArea");
     if (!ta) { toastSafe("No se encontró el cuadro de pegado"); return; }
     var text = ta.value || "";
-    if (!String(text).trim()) {
-      toastSafe("Pega primero la tabla en el cuadro");
-      return;
-    }
+    if (!String(text).trim()) { toastSafe("Pega primero la tabla en el cuadro"); return; }
     var rows = parsePasteTable(text);
     preview();
     if (!rows.length) {
-      toastSafe("No se pudo leer ninguna fila. Copia las 5 columnas desde Excel.");
+      toastSafe("No se pudo leer ninguna fila");
+      console.warn("[citas] texto:", text.slice(0, 500));
       return;
     }
     var n = applyRows(rows, !!replaceAll);
     var st = el("citaPasteStatus");
     if (st) st.textContent = n + " citas agregadas";
     toastSafe(n + " cita(s) procesada(s)");
+    console.log("[citas] aplicadas", n, rows);
   }
 
   document.addEventListener("click", function (e) {
     var t = e.target;
     if (!t) return;
-    var btn = null;
-    if (t.closest) btn = t.closest("#btnCitaPasteAplicar, #btnCitaPasteReemplazar, #btnCitaPasteLimpiar");
-    if (!btn) {
-      var id = t.id || (t.parentNode && t.parentNode.id);
-      if (id === "btnCitaPasteAplicar" || id === "btnCitaPasteReemplazar" || id === "btnCitaPasteLimpiar")
-        btn = t.id ? t : t.parentNode;
-    }
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (btn.id === "btnCitaPasteAplicar") doApply(false);
-    else if (btn.id === "btnCitaPasteReemplazar") doApply(true);
-    else if (btn.id === "btnCitaPasteLimpiar") {
-      var ta = el("citaPasteArea");
-      if (ta) ta.value = "";
-      var prev = el("citaPastePreview");
-      if (prev) { prev.hidden = true; prev.innerHTML = ""; }
-      var st = el("citaPasteStatus");
-      if (st) st.textContent = "";
+    var btn = t.id ? t : (t.closest ? t.closest("button") : t.parentNode);
+    if (!btn || !btn.id) return;
+    if (btn.id === "btnCitaPasteAplicar") {
+      e.preventDefault(); e.stopPropagation();
+      doApply(false);
+    } else if (btn.id === "btnCitaPasteReemplazar") {
+      e.preventDefault(); e.stopPropagation();
+      doApply(true);
     }
   }, true);
 
-  document.addEventListener("paste", function (e) {
-    var t = e.target;
-    if (t && t.id === "citaPasteArea") setTimeout(preview, 30);
-  });
-
   function boot() {
     ensureUI();
+    wireButtons(document);
     if (typeof window.renderCitas === "function" && !window.renderCitas._enhanced) {
-      window.renderCitas = function () { renderList(); };
+      var orig = window.renderCitas;
+      window.renderCitas = function () {
+        try { renderList(); } catch (e) { try { orig(); } catch (e2) {} }
+      };
       window.renderCitas._enhanced = true;
     }
     try { renderList(); } catch (e) {}
   }
 
-  setTimeout(boot, 400);
-  setTimeout(boot, 1200);
-  setTimeout(boot, 3000);
-  setInterval(ensureUI, 2500);
+  setTimeout(boot, 300);
+  setTimeout(boot, 1000);
+  setTimeout(boot, 2500);
+  setTimeout(boot, 5000);
+  setInterval(function () {
+    ensureUI();
+    wireButtons(document);
+  }, 2000);
+
+  window.__citasParseTest = parsePasteTable;
+  window.__citasApply = doApply;
 })();
