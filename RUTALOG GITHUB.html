@@ -24,14 +24,13 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=final2">
+<link rel="stylesheet" href="./styles.css?v=final3">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 <script>
-/* Cargador único (G): libs → body → app.js. Sin strip() regex. Extras solo en app.js. */
 (function(){
   var BODY_SRC = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html";
   function loadScript(src){
@@ -77,7 +76,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
     removeDiaButtons(document);
     bootSessionClasses();
     var s=document.createElement("script");
-    s.src="./app.js?v=final2";
+    s.src="./app.js?v=final3";
     s.defer=true;
     s.onerror=function(){ console.error("[RUTALOG] app.js fail"); };
     document.body.appendChild(s);
