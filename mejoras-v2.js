@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-v2 — capa de mejoras (no modifica token ni export/import sesión) */
+/* RUTALOG mejoras-v2 v7 — capa de mejoras */
 (function () {
   "use strict";
 
@@ -82,7 +82,7 @@
     btn.className = "btn btn-secondary btn-sm";
     btn.style.cssText = "width:100%;margin-top:6px;";
     btn.title = "Reordenar paradas por vecino más cercano (desde el centro)";
-    btn.innerHTML = "⚡ Optimizar orden";
+    btn.innerHTML = "Optimizar orden de paradas";
     btn.disabled = true;
     row.parentNode.insertAdjacentElement("afterend", btn);
     btn.onclick = optimizarOrden;
@@ -158,11 +158,6 @@
       if (op && !op.disabled) op.click();
     } else if (e.key === "Escape") {
       closeGlobalSearch();
-      var audit = el("auditOverlay");
-      if (audit && !audit.hidden) {
-        var volver = el("btnAuditVolver");
-        if (volver) volver.click();
-      }
     }
   }
 
@@ -231,37 +226,6 @@
               go: function () {
                 var btn = document.querySelector('.nav button[data-page="rutas"]');
                 if (btn) btn.click();
-                setTimeout(function () {
-                  if (estado.markersRutas && estado.markersRutas.get(c.idCliente)) {
-                    var m = estado.markersRutas.get(c.idCliente);
-                    if (estado.mapRutas) estado.mapRutas.setView(m.getLatLng(), 14);
-                    m.openPopup();
-                  }
-                }, 300);
-              }
-            });
-          }
-        });
-      }
-      if (window.estado && estado.maestro) {
-        var n = 0;
-        estado.maestro.forEach(function (c) {
-          if (n >= 12) return;
-          var blob = [c.id, c.nombre, c.ciudad, c.localidad, c.zona].join(" ").toLowerCase();
-          if (blob.indexOf(qstr) >= 0) {
-            n++;
-            hits.push({
-              tipo: "Maestro",
-              titulo: c.nombre || c.id,
-              sub: (c.ciudad || "") + (c.id ? " · " + c.id : ""),
-              go: function () {
-                var btn = document.querySelector('.nav button[data-page="maestro"]');
-                if (btn) btn.click();
-                var qIn = el("qMaestro");
-                if (qIn) {
-                  qIn.value = c.nombre || c.id || "";
-                  qIn.dispatchEvent(new Event("input", { bubbles: true }));
-                }
               }
             });
           }
@@ -288,7 +252,10 @@
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+      .replace(/&/g, "&"+"amp;")
+      .replace(/</g, "&"+"lt;")
+      .replace(/>/g, "&"+"gt;")
+      .replace(/"/g, "&"+"quot;");
   }
 
   function ensureOperadorToggle() {
