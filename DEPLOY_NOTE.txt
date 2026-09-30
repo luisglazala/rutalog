@@ -1,4 +1,22 @@
-mejora-1 aplicada (2026-09-29).
-Maestro base: maestro-base.json (2699 clientes).
-HTML ya no embebe el maestro.
-Revert SHA anterior: 66a2173eab2e48723450aa1e59b25cb8ad933504
+RUTALOG — rama mejoras (listo para merge cuando TEST OK)
+=========================================================
+SHA tip: ver git log origin/mejoras -1
+
+Core app.js (sin tocar): e638c98005f54256a4f856d7aba8cad9a54174f0
+Patch construirHoy: app-core-construirHoy.js?v=3
+Correcciones: mejoras-correcciones.js?v=2
+Cascarón: app.js?v=final1  styles.css?v=final1
+SheetJS en cascarón: 0.20.3 (cdn.sheetjs.com)
+
+Probar:
+  https://cdn.jsdelivr.net/gh/luisglazala/rutalog@<SHA_TIP>/RUTALOG-TEST.html
+  o clonar rama mejoras y servir localmente.
+
+PR borrador: https://github.com/luisglazala/rutalog/pull/1
+
+Rollback sin tag (tienes copia local):
+  1) Restaura tus archivos locales de antes de mejoras en main, o
+  2) git checkout main && git reset --hard 8ae409a598ff31a4a56033d9e26c5ab59ec5c0ff
+     (solo si sabes que ese era el tip estable de main)
+
+NO mergear a main hasta checklist: login, Excel, mapa, parada, viaje, auditoría, sync.
