@@ -159,20 +159,20 @@
         var l = document.createElement("link");
         l.id = "rutalog-mejoras-v2-css";
         l.rel = "stylesheet";
-        l.href = "./mejoras-v2.css?v=2";
+        l.href = "./mejoras-v2.css?v=5";
         document.head.appendChild(l);
       }
       if (!window.__rutalogMejorasV2) {
         window.__rutalogMejorasV2 = true;
         var s2 = document.createElement("script");
-        s2.src = "./mejoras-v2.js?v=2";
+        s2.src = "./mejoras-v2.js?v=5";
         s2.defer = true;
         document.body.appendChild(s2);
       }
       if (!window.__rutalogMejorasCitas) {
         window.__rutalogMejorasCitas = true;
         var sC = document.createElement("script");
-        sC.src = "./mejoras-citas.js?v=1";
+        sC.src = "./mejoras-citas.js?v=5";
         sC.defer = true;
         document.body.appendChild(sC);
       }

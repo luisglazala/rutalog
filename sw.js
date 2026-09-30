@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v5-mejoras-v2";
+const CACHE = "rutalog-v6-citas-paste";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./mejoras-v2.css",
   "./app.js",
   "./mejoras-v2.js",
+  "./mejoras-citas.js",
   "./maestro-base.json",
   "./manifest.webmanifest"
 ];
@@ -42,18 +43,16 @@ self.addEventListener("fetch", (e) => {
   }
   e.respondWith(
     caches.match(req).then((cached) => {
-      const fetched = fetch(req)
-        .then((res) => {
-          try {
-            if (res && res.ok && url.origin === self.location.origin) {
-              const clone = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
-            }
-          } catch (err) {}
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetched;
+      const net = fetch(req).then((res) => {
+        try {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
+          }
+        } catch (err) {}
+        return res;
+      }).catch(() => cached);
+      return cached || net;
     })
   );
 });
