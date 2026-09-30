@@ -24,75 +24,78 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=corr1">
+<link rel="stylesheet" href="./styles.css?v=g1">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
-<!-- ENTORNO DE PRUEBA — no es producción. Probar A–E aquí antes de promover. -->
+<!-- ENTORNO DE PRUEBA — no es producción -->
 <script>
+/* Cargador único (G): libs → body → app.js. Sin strip() regex. Extras solo en app.js. */
 (function(){
-  var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html';
+  var BODY_SRC = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html";
   function loadScript(src){
     return new Promise(function(resolve,reject){
-      var s=document.createElement('script');
+      var s=document.createElement("script");
       s.src=src;
       s.onload=function(){resolve();};
-      s.onerror=function(){reject(new Error('fail '+src));};
+      s.onerror=function(){reject(new Error("fail "+src));};
       document.head.appendChild(s);
     });
   }
-  function loadCss(href){
-    return new Promise(function(resolve){
-      var l=document.createElement('link');
-      l.rel='stylesheet';
-      l.href=href;
-      l.onload=function(){resolve();};
-      l.onerror=function(){resolve();};
-      document.head.appendChild(l);
-    });
-  }
-  Promise.resolve()
-  .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'); })
-  .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js'); })
-  .then(function(){ return loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'); })
-  .then(function(){ return fetch(SRC,{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }); })
-  .then(function(html){
-    html=html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
-    html=html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
-    html=html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi,'');
-    var parser=new DOMParser();
-    var doc=parser.parseFromString(html,'text/html');
-    document.body.innerHTML='<!-- ENTORNO DE PRUEBA -->'+doc.body.innerHTML;
-    Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
-      if(!s.src) return;
-      if(s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1 || s.src.indexOf('xlsx')!==-1 || s.src.indexOf('sheetjs')!==-1) s.remove();
-    });
+  function bootSessionClasses(){
     try{
       var hasSession=false;
-      try{var raw=localStorage.getItem('rutalog_session');if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
+      try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
       var needLogin=false;
-      try{var usersRaw=localStorage.getItem('rutalog_usuarios_v2');var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}
-      document.documentElement.classList.remove('rutalog-ready','rutalog-need-login','rutalog-booting');
-      if(needLogin) document.documentElement.classList.add('rutalog-need-login');
-      else if(hasSession) document.documentElement.classList.add('rutalog-ready');
-      else document.documentElement.classList.add('rutalog-booting');
+      try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}
+      document.documentElement.classList.remove("rutalog-ready","rutalog-need-login","rutalog-booting");
+      if(needLogin) document.documentElement.classList.add("rutalog-need-login");
+      else if(hasSession) document.documentElement.classList.add("rutalog-ready");
+      else document.documentElement.classList.add("rutalog-booting");
     }catch(e){}
-    var s=document.createElement('script');
-    s.src='./app.js?v=corr1';
+  }
+  function removeDiaButtons(root){
+    ["btnExportSesion","btnImportSesion","fileImportSesion"].forEach(function(id){
+      var n = root.getElementById ? root.getElementById(id) : null;
+      if(n && n.parentNode) n.parentNode.removeChild(n);
+    });
+  }
+  function mountBody(html){
+    var parser=new DOMParser();
+    var doc=parser.parseFromString(html,"text/html");
+    removeDiaButtons(doc);
+    var bodyHtml=doc.body?doc.body.innerHTML:html;
+    document.body.insertAdjacentHTML("beforeend", bodyHtml);
+    Array.prototype.slice.call(document.body.querySelectorAll("script")).forEach(function(s){
+      if(!s.src) return;
+      if(s.src.indexOf("boot.js")!==-1) return;
+      if(s.src.indexOf("app.js")!==-1 || s.src.indexOf("leaflet")!==-1 || s.src.indexOf("xlsx")!==-1 || s.src.indexOf("sheetjs")!==-1){
+        s.remove();
+      }
+    });
+    removeDiaButtons(document);
+    bootSessionClasses();
+    var s=document.createElement("script");
+    s.src="./app.js?v=g1";
     s.defer=true;
-    s.onload=function(){
-      var c=document.createElement('script'); c.src='./mejoras-citas.js?v=8'; document.body.appendChild(c);
-      var m=document.createElement('script'); m.src='./mejoras-v2.js?v=11'; document.body.appendChild(m);
-      var cent=document.createElement('script'); cent.src='./mejoras-centros.js?v=2'; document.body.appendChild(cent);
-      var cx=document.createElement('script'); cx.src='./mejoras-cruzados.js?v=4'; document.body.appendChild(cx);
-      var au=document.createElement('script'); au.src='./mejoras-audit.js?v=2'; document.body.appendChild(au);
-    };
-    s.onerror=function(){ console.error('[RUTALOG-TEST] app.js fail'); };
+    s.onerror=function(){ console.error("[RUTALOG] app.js fail"); };
     document.body.appendChild(s);
-  }).catch(function(err){
-    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar TEST. <a style="color:#60a5fa" href="'+SRC+'">Respaldo</a><br><small style="color:#a3a3a3">'+err+'</small></p>';
+  }
+  Promise.resolve()
+  .then(function(){ return loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"); })
+  .then(function(){ return loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"); })
+  .then(function(){ return loadScript("https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"); })
+  .then(function(){
+    return fetch(BODY_SRC,{cache:"no-store"}).then(function(r){
+      if(!r.ok) throw new Error("HTTP body "+r.status);
+      return r.text();
+    });
+  })
+  .then(mountBody)
+  .catch(function(err){
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <small style="color:#a3a3a3">'+err+'</small></p>';
   });
 })();
 </script>
