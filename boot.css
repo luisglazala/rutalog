@@ -1,0 +1,23 @@
+/* Anti-destello: se carga antes que el resto */
+html, body { background: #0a0a0a !important; }
+html:not(.rutalog-ready) .app {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+html.rutalog-need-login #loginOverlay {
+  display: flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  background: #0a0a0a !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+}
+html.rutalog-need-login #loginOverlay[hidden] {
+  display: flex !important;
+  visibility: visible !important;
+}
