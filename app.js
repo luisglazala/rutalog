@@ -1,4 +1,4 @@
-/* RUTALOG loader: gate + token + login + mejoras-v2 + citas + codigo-perf */
+/* RUTALOG loader: gate + token + login + correcciones A-E + extras */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -186,6 +186,8 @@
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
     afterAppReady();
+    return loadScript("./mejoras-correcciones.js?v=1");
+  }).then(function () {
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
