@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-v2 v9 — centro CSS + planificador + capacidad */
+/* RUTALOG mejoras-v2 v11 — centro solo al cargar Excel Dynamics */
 (function () {
   "use strict";
-  if (window.__rutalogMejorasV9) return;
-  window.__rutalogMejorasV9 = true;
+  if (window.__rutalogMejorasV11) return;
+  window.__rutalogMejorasV11 = true;
 
   var CAP_G = 12000;
   var CAP_P = 3000;
@@ -161,7 +161,7 @@
       if (!window.estado) return;
       if (estado.origenActual && !forzar) return;
       if (typeof abrirSelectorCentro === "function") {
-        abrirSelectorCentro({ forzar: true });
+        abrirSelectorCentro({ forzar: !!forzar });
         var ov = el("centroOverlay");
         if (ov) { ov.hidden = false; ov.style.display = "flex"; }
       }
@@ -169,33 +169,24 @@
   }
 
   function hookPlanificador() {
-    var btn = el("btnIrRutas");
-    if (btn && !btn._centroHook) {
-      btn._centroHook = true;
-      btn.addEventListener("click", function () {
-        setTimeout(function () { ensureCentroPrompt(false); }, 350);
-      });
-    }
-    if (typeof window.go === "function" && !window.go._centroHook) {
-      var origGo = window.go;
-      window.go = function (page) {
-        var r = origGo.apply(this, arguments);
-        if (page === "rutas") setTimeout(function () { ensureCentroPrompt(false); }, 400);
-        return r;
-      };
-      window.go._centroHook = true;
-    }
+    /* No pedir centro al navegar/recargar; solo al cargar Excel (construirHoy) */
   }
 
   function hookConstruirHoy() {
-    if (typeof window.construirHoy !== "function" || window.construirHoy._v9) return;
+    if (typeof window.construirHoy !== "function" || window.construirHoy._v11) return;
     var orig = window.construirHoy;
     window.construirHoy = function () {
       var r = orig.apply(this, arguments);
-      setTimeout(function () { ensureCentroPrompt(false); enhanceCiudadFilter(); }, 500);
+      /* Tras cargar Excel Dynamics: pedir centro si aún no hay origen */
+      setTimeout(function () {
+        try {
+          if (window.estado && !estado.origenActual) ensureCentroPrompt(true);
+        } catch (e) {}
+        enhanceCiudadFilter();
+      }, 500);
       return r;
     };
-    window.construirHoy._v9 = true;
+    window.construirHoy._v11 = true;
   }
 
   var ZONAS_LIGADAS = [
@@ -347,7 +338,7 @@
     if (ready) return;
     ready = true;
     tick();
-    setTimeout(function () { ensureCentroPrompt(false); }, 1500);
+    /* Centro solo al cargar Excel Dynamics (construirHoy), no al recargar la página */
     setInterval(tick, 2000);
   }
 
