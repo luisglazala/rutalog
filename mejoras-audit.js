@@ -1,12 +1,11 @@
-/* RUTALOG mejoras-audit v2 — sin fila extra; totales solo en el pie fijo del modal */
+/* RUTALOG mejoras-audit v3 — sin fila extra; totales en el pie fijo; sin setInterval */
 (function () {
   "use strict";
-  if (window.__rutalogAuditTotalesV2) return;
-  window.__rutalogAuditTotalesV2 = true;
+  if (window.__rutalogAuditTotalesV3) return;
+  window.__rutalogAuditTotalesV3 = true;
 
   function el(id) { return document.getElementById(id); }
 
-  /** Quita la fila tfoot que añadimos antes (ya no hace falta) */
   function removeTfoot() {
     try {
       var tf = document.getElementById("auditTfoot");
@@ -18,7 +17,6 @@
     if (el("rutalog-audit-foot-css")) return;
     var st = document.createElement("style");
     st.id = "rutalog-audit-foot-css";
-    /* Pie del modal siempre visible; destaca cajas y peso */
     st.textContent =
       "#auditOverlay .audit-foot{position:sticky;bottom:0;z-index:5;" +
       "background:#111!important;border-top:1px solid #2a2a2a;" +
@@ -33,7 +31,20 @@
     removeTfoot();
   }
 
-  setTimeout(tick, 500);
-  setTimeout(tick, 1500);
-  setInterval(tick, 3000);
+  tick();
+  try {
+    var obs = new MutationObserver(function () {
+      if (el("auditOverlay")) {
+        tick();
+        try { obs.disconnect(); } catch (e) {}
+      }
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+    setTimeout(function () {
+      try { obs.disconnect(); } catch (e) {}
+      tick();
+    }, 10000);
+  } catch (e) {
+    tick();
+  }
 })();
