@@ -1,11 +1,11 @@
 /* RUTALOG loader: gate visual + token primero + login + SKU paginado */
 (function () {
-  /* Ocultar app hasta decidir login/token (evita destello) */
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
-    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html:not(.rutalog-ready) .sidebar,html:not(.rutalog-ready) .main{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
+    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html:not(.rutalog-ready) .sidebar,html:not(.rutalog-ready) .main,html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
+    "html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".login-overlay{position:fixed;inset:0;z-index:99999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
     ".login-overlay[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}",
@@ -56,6 +56,7 @@
   function revealApp() {
     try {
       document.documentElement.classList.remove("rutalog-booting");
+      document.documentElement.classList.remove("rutalog-need-login");
       document.documentElement.classList.add("rutalog-ready");
     } catch (e) {}
     var main = document.querySelector(".main");
@@ -116,7 +117,6 @@
       if (tokField) tokField.value = v;
       if (typeof toast === "function") toast("Token guardado");
       finish();
-      // Sincronizar usuarios si es posible
       try {
         if (typeof ghActualizar === "function") {
           setTimeout(function () { ghActualizar({ silent: true }); }, 400);
@@ -133,7 +133,6 @@
 
   function afterAppReady() {
     removeDiaBtns();
-    // Parchear mostrarLogin para mantener app oculta mientras hay login
     if (typeof mostrarLogin === "function") {
       var _ml = mostrarLogin;
       window.mostrarLogin = function (show) {
@@ -141,6 +140,10 @@
         var main = document.querySelector(".main");
         var sb = document.querySelector(".sidebar");
         if (show) {
+          try {
+            document.documentElement.classList.add("rutalog-need-login");
+            document.documentElement.classList.remove("rutalog-ready");
+          } catch (e) {}
           if (main) { main.style.visibility = "hidden"; main.style.opacity = "0"; }
           if (sb) { sb.style.visibility = "hidden"; sb.style.opacity = "0"; }
         } else {
@@ -148,6 +151,7 @@
           if (sb) { sb.style.visibility = ""; sb.style.opacity = ""; }
           try {
             document.documentElement.classList.remove("rutalog-booting");
+            document.documentElement.classList.remove("rutalog-need-login");
             document.documentElement.classList.add("rutalog-ready");
           } catch (e) {}
         }
@@ -155,7 +159,6 @@
     }
 
     function continueBoot() {
-      // Dar tiempo a initUsuariosUI del app principal
       setTimeout(function () {
         try {
           if (typeof requiereLogin === "function" && requiereLogin() && typeof usuarioActual === "function" && !usuarioActual()) {
@@ -166,7 +169,6 @@
         } catch (e) {
           revealApp();
         }
-        // Si tras sync no hay login visible, revelar
         setTimeout(function () {
           var ov = document.getElementById("loginOverlay");
           var loginOn = ov && !ov.hidden && getComputedStyle(ov).display !== "none";
@@ -197,7 +199,6 @@
   loadScript(APP).then(function () {
     afterAppReady();
 
-    /* Paginación Código SKU */
     var PAGE = 80;
     window._codPage = 0;
     window.renderCodigoTable = function () {
@@ -322,6 +323,10 @@
     };
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
-    try { document.documentElement.classList.add("rutalog-ready"); document.documentElement.classList.remove("rutalog-booting"); } catch (err) {}
+    try {
+      document.documentElement.classList.add("rutalog-ready");
+      document.documentElement.classList.remove("rutalog-booting");
+      document.documentElement.classList.remove("rutalog-need-login");
+    } catch (err) {}
   });
 })();
