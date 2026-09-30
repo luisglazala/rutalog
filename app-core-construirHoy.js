@@ -1,7 +1,6 @@
-/* app-core-construirHoy.js — restaurado desde e638c98 + sinPunto tabla + filtro ciudades seguro */
+/* app-core-construirHoy.js — e638c98 + ciudades filtro + sinPunto */
 (function () {
 function construirHoy(filas) {
-  // Guardar líneas crudas a nivel SKU (no agregar aún)
   const lineas = [];
   let lineId = 0;
   for (const f of filas) {
@@ -9,7 +8,6 @@ function construirHoy(filas) {
     if (!ov) continue;
     const id = pad9(alias(f, ALIAS_DIARIO.cliente));
     if (!id) continue;
-    // Dynamics suele exportar cantidades en negativo (salida); trabajar siempre en valor absoluto
     let peso = num(alias(f, ALIAS_DIARIO.peso));
     if (peso == null) peso = 0;
     peso = Math.abs(peso);
@@ -35,17 +33,18 @@ function construirHoy(filas) {
   }
   estado.lineasRaw = lineas;
 
-  // Consolidar por OV (para stats y agrupación por cliente)
   const porOV = {};
   for (const ln of lineas) {
-    if (porOV[ln.ov]) porOV[ln.ov].peso += ln.peso;
-    else porOV[ln.ov] = {
+    if (porOV[ln.ov]) {
+      porOV[ln.ov].peso += ln.peso;
+      if (!porOV[ln.ov].ciudadExcel && ln.ciudadExcel) porOV[ln.ov].ciudadExcel = ln.ciudadExcel;
+    } else porOV[ln.ov] = {
       ov: ln.ov, idCliente: ln.idCliente,
       nombreRaw: ln.nombreRaw, peso: ln.peso, estado: ln.estado,
+      ciudadExcel: ln.ciudadExcel || "",
     };
   }
 
-  // Agrupar por cliente
   const porCli = {};
   Object.values(porOV).forEach(r => {
     if (!r.idCliente) return;
@@ -53,9 +52,11 @@ function construirHoy(filas) {
       porCli[r.idCliente] = {
         idCliente: r.idCliente, peso: 0, ovs: [],
         nombreRaw: r.nombreRaw, estado: r.estado,
+        ciudadExcel: r.ciudadExcel || "",
       };
     }
     porCli[r.idCliente].peso += r.peso;
+    if (!porCli[r.idCliente].ciudadExcel && r.ciudadExcel) porCli[r.idCliente].ciudadExcel = r.ciudadExcel;
     porCli[r.idCliente].ovs.push({ ov: r.ov, peso: r.peso, estado: r.estado });
     const rank = { Factura: 3, "Confirmación": 2, Ninguno: 1 };
     if ((rank[r.estado] || 0) > (rank[porCli[r.idCliente].estado] || 0))
@@ -79,7 +80,6 @@ function construirHoy(filas) {
   estado.clientesHoy = Object.values(porCli).map(c => {
     const m = resolverMaestro(c.idCliente);
     if (!m || m.lat == null || m.lon == null) return null;
-    // Normalizar al id del maestro para consistencia
     const idOk = m.id || c.idCliente;
     return {
       idCliente: idOk,
@@ -87,7 +87,7 @@ function construirHoy(filas) {
       lat: m.lat, lon: m.lon,
       condicion: m.condicion || "",
       localidad: m.localidad || "",
-      ciudad: m.ciudad || "",
+      ciudad: m.ciudad || m.localidad || c.ciudadExcel || "",
       provincia: m.provincia || "",
       peso: c.peso,
       ovs: c.ovs,
@@ -96,14 +96,12 @@ function construirHoy(filas) {
     };
   }).filter(Boolean);
 
-  // Líneas pendientes por cliente (todas al inicio)
   estado.lineasPendientes = new Map();
   for (const ln of lineas) {
     if (!estado.lineasPendientes.has(ln.idCliente)) estado.lineasPendientes.set(ln.idCliente, []);
     estado.lineasPendientes.get(ln.idCliente).push({ ...ln, despachado: false, aDespachar: ln.cantidad });
   }
 
-  // Control de OVs por cliente
   estado.controlOVs.clear();
   estado.clientesHoy.forEach(c => {
     const total = new Set((c.ovs || []).map(o => String(o.ov).trim()).filter(Boolean));
@@ -124,7 +122,17 @@ function construirHoy(filas) {
   if (el("badgeMapaPanel")) el("badgeMapaPanel").textContent = estado.clientesHoy.length + " puntos";
   if (el("badgeActivos")) el("badgeActivos").textContent = estado.clientesHoy.length + " puntos activos";
 
-  const ciudades = [...new Set(estado.clientesHoy.map(c => c.ciudad).filter(Boolean))].sort();
+  const ciudadesSet = new Set(estado.clientesHoy.map(c => c.ciudad).filter(Boolean));
+  lineas.forEach(ln => { if (ln.ciudadExcel) ciudadesSet.add(ln.ciudadExcel); });
+  Object.values(porCli).forEach(c => {
+    if (c.ciudadExcel) ciudadesSet.add(c.ciudadExcel);
+    const m = resolverMaestro(c.idCliente);
+    if (m) {
+      if (m.ciudad) ciudadesSet.add(m.ciudad);
+      if (m.localidad) ciudadesSet.add(m.localidad);
+    }
+  });
+  const ciudades = [...ciudadesSet].filter(Boolean).sort((a,b)=>a.localeCompare(b,"es"));
   const lista = document.getElementById("listaCiudades");
   if (lista) {
     let prev = (typeof getCiudadesSeleccionadas === "function") ? getCiudadesSeleccionadas() : ["__TODAS__"];
@@ -133,11 +141,11 @@ function construirHoy(filas) {
       const fromLS = cargarCiudadesFiltroLS();
       if (fromLS && fromLS.length) keep = fromLS;
     }
-    // Solo conservar ciudades que existen hoy (evita filtro LS viejo → mapa vacío)
     if (keep.length) keep = keep.filter(c => ciudades.includes(c));
     lista.innerHTML = ciudades.map(c => {
       const ck = keep.length ? (keep.includes(c) ? "checked" : "") : "";
-      return `<label class="ciu-chip"><input type="checkbox" class="chk-ciudad" value="${c}" ${ck}> ${c}</label>`;
+      const safe = String(c).replace(/"/g, """);
+      return `<label class="ciu-chip"><input type="checkbox" class="chk-ciudad" value="${safe}" ${ck}> ${safe}</label>`;
     }).join("");
     const chkTodas = document.getElementById("chkTodasCiudades");
     if (chkTodas) chkTodas.checked = !keep.length;
@@ -149,7 +157,6 @@ function construirHoy(filas) {
     } catch (e) {}
   }
 
-  // Clientes del Excel sin punto (sin maestro o sin lat/lon)
   const idsExcel = new Set(Object.keys(porCli));
   let sinPunto = 0;
   const sinPuntoRows = [];
@@ -195,5 +202,5 @@ function construirHoy(filas) {
 }
 
   window.construirHoy = construirHoy;
-  console.info("[RUTALOG] construirHoy restaurado (core e638c98 + sinPunto)");
+  console.info("[RUTALOG] construirHoy v5 ciudades filtro");
 })();
