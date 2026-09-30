@@ -173,6 +173,7 @@
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=3");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=1");
+      onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=1");
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
