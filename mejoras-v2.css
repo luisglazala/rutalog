@@ -130,3 +130,46 @@ html.rutalog-operador .nav button[data-page="citas"] {
   .rutalog-search-overlay { padding-top: 8vh; }
   .rutalog-cap-box { font-size: 11.5px; }
 }
+
+/* Autocompletado citas */
+.cita-ac-wrap { position: relative; flex: 1; min-width: 160px; }
+.cita-ac-wrap input { width: 100%; }
+.cita-ac-drop {
+  position: absolute;
+  left: 0; right: 0; top: calc(100% + 4px);
+  z-index: 50;
+  max-height: 240px;
+  overflow: auto;
+  background: #171717;
+  border: 1px solid #1f1f1f;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  padding: 4px;
+}
+.cita-ac-drop[hidden] { display: none !important; }
+.cita-ac-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: #fafafa;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: inherit;
+}
+.cita-ac-item:hover, .cita-ac-item:focus {
+  background: #262626;
+  outline: none;
+}
+.cita-ac-name { font-size: 13.5px; font-weight: 600; }
+.cita-ac-meta { font-size: 11.5px; color: #a3a3a3; }
+.cita-ac-empty {
+  padding: 12px;
+  font-size: 12.5px;
+  color: #a3a3a3;
+  font-style: italic;
+}
