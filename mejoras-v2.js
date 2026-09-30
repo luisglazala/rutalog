@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-v2 v8 — capa de mejoras */
+/* RUTALOG mejoras-v2 v8b — capa de mejoras */
 (function () {
   "use strict";
 
@@ -282,8 +282,9 @@
     }
   }
 
-  /* ---- Centro obligatorio + ligas de zonas ---- */
+  /* ---- Centro obligatorio + ligas de zonas Norte / Sur / Este ---- */
   var ZONAS_LIGADAS = [
+    /* Zona Norte / La Vega */
     ["Santiago", "Tamboril", "Valverde", "Tavera", "Mao"],
     ["Puerto Plata"],
     ["Espaillat", "Hermanas Mirabal", "Salcedo", "Tenares", "Villa Tapia", "Moca"],
@@ -293,7 +294,19 @@
     ["Piedra Blanca", "Bonao", "Maimón", "Monseñor Nouel"],
     ["Monseñor Nouel", "San José de Ocoa"],
     ["La Vega", "Jarabacoa", "Constanza", "La Canela"],
-    ["Cotuí", "Sánchez Ramírez"]
+    ["Cotuí", "Sánchez Ramírez"],
+    /* Zona Sur MAY STD */
+    ["Santo Domingo", "San Cristóbal", "Distrito Nacional", "Santo Domingo Este", "Santo Domingo Oeste", "Santo Domingo Norte", "Villa Mella"],
+    ["Yamasá", "Monte Plata", "Santo Domingo"],
+    ["Baní", "Peravia", "San José de Ocoa", "Azua", "Padre Las Casas", "Las Yayas de Viajama", "Las Charcas"],
+    ["Azua", "Baní"],
+    ["Bahoruco", "Independencia", "Vicente Noble", "Duvergé", "Elías Piña", "San Juan", "Barahona", "Pedernales", "Enriquillo", "Comendador"],
+    ["Bahoruco", "Independencia", "Azua"],
+    /* Zona Este */
+    ["La Romana", "Higüey", "Bávaro", "Punta Cana"],
+    ["San Pedro de Macorís", "La Romana", "Hato Mayor"],
+    ["San Pedro de Macorís", "Hato Mayor"],
+    ["Hato Mayor", "Miches", "El Seibo"]
   ];
 
   function normCity(s) {
