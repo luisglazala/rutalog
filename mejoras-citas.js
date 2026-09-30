@@ -9,7 +9,7 @@
       document.head.appendChild(s);
     });
   }
-  var v = "?v=3";
+  var v = "?v=4";
   load("./mejoras-citas-core.js" + v).then(function () {
     return load("./mejoras-citas-ui.js" + v);
   }).catch(function (e) { console.warn("[RUTALOG] citas", e); });
