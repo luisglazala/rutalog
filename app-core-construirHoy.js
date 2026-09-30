@@ -1,5 +1,5 @@
 /* app-core-construirHoy.js — parches minimos 2.1-2.3 sobre construirHoy de e638c98.
- * Se carga DESPUES del app.js original (e638c980). No toca controlOVs/lineasPendientes/resolverMaestro.
+ * Se carga DESPU\u00c9S del app.js original (e638c980). No toca controlOVs/lineasPendientes/resolverMaestro.
  */
 (function () {
 function construirHoy(filas) {
@@ -44,7 +44,7 @@ function construirHoy(filas) {
     });
   }
   estado.lineasRaw = lineas;
-  if (_devol > 0) toast(_devol + " linea(s) con signo contrario (devolucion/ajuste): restan en el peso de la OV y no se despachan en viajes");
+  if (_devol > 0) toast(_devol + " l\u00ednea(s) con signo contrario (devoluci\u00f3n/ajuste): restan en el peso de la OV y no se despachan en viajes");
 
   const porOV = {};
   for (const ln of lineas) {
@@ -59,7 +59,7 @@ function construirHoy(filas) {
       };
     }
   }
-  const _rank = { Factura: 3, "Confirmación": 2, Ninguno: 1 };
+  const _rank = { Factura: 3, "Confirmaci\u00f3n": 2, Ninguno: 1 };
   Object.values(porOV).forEach(o => {
     const arr = [...o._est].sort((a, b) => (_rank[b] || 0) - (_rank[a] || 0));
     o.estadosLineas = arr;
@@ -79,7 +79,7 @@ function construirHoy(filas) {
     }
     porCli[r.idCliente].peso += r.peso;
     porCli[r.idCliente].ovs.push({ ov: r.ov, peso: r.peso, estado: r.estado, mixta: r.mixta });
-    const rank = { Factura: 3, "Confirmación": 2, Ninguno: 1 };
+    const rank = { Factura: 3, "Confirmaci\u00f3n": 2, Ninguno: 1 };
     if ((rank[r.estado] || 0) > (rank[porCli[r.idCliente].estado] || 0))
       porCli[r.idCliente].estado = r.estado;
   });
@@ -120,7 +120,7 @@ function construirHoy(filas) {
   estado.lineasPendientes = new Map();
   for (const ln of lineas) {
     if (!estado.lineasPendientes.has(ln.idCliente)) estado.lineasPendientes.set(ln.idCliente, []);
-    estado.lineasPendientes.get(ln.idCliente).push({ ...ln, despachado: false, aDespachar: ln.cantidad });
+    estado.lineasPendientes.get(ln.idCliente).push({ ...ln, despachado: ln.devolucion === true, aDespachar: ln.cantidad });
   }
 
   estado.controlOVs.clear();
@@ -132,7 +132,7 @@ function construirHoy(filas) {
 
   const ovs = Object.keys(porOV).length;
   const pesoT = Object.values(porOV).reduce((s,x)=>s+x.peso,0);
-  const conf = Object.values(porOV).filter(x=>x.estado==="Confirmación").length;
+  const conf = Object.values(porOV).filter(x=>x.estado==="Confirmaci\u00f3n").length;
   const fact = Object.values(porOV).filter(x=>x.estado==="Factura").length;
   document.getElementById("sOV").textContent = ovs;
   document.getElementById("sPeso").textContent = pesoT.toFixed(2) + " kg";
@@ -189,7 +189,7 @@ function construirHoy(filas) {
       renderMapas();
     } catch (e) {}
   }, 200);
-  let msg = estado.clientesHoy.length + " clientes en mapa · " + lineas.length + " lineas";
+  let msg = estado.clientesHoy.length + " clientes en mapa · " + lineas.length + " l\u00edneas";
   if (sinPunto > 0) msg += " · " + sinPunto + " sin coordenadas/maestro";
   toast(msg);
   if (typeof rellenarNombresTopesDesdeDiario === "function") {

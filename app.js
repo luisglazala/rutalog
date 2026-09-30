@@ -61,7 +61,7 @@
     gate.innerHTML =
       '<div class="tg-card">' +
       "<h2>Configurar GitHub</h2>" +
-      "<p>Primera vez en este equipo. Pega el token de GitHub (PAT) para sincronizar usuarios y catalogos.</p>" +
+      "<p>Primera vez en este equipo. Pega el token de GitHub (PAT) para sincronizar usuarios y cat\u00e1logos.</p>" +
       '<div class="tg-err" id="tgErr"></div>' +
       '<label for="tgToken">Token de GitHub (ghp_…)</label>' +
       '<input type="password" id="tgToken" placeholder="ghp_…" autocomplete="off">' +
@@ -79,7 +79,7 @@
     document.getElementById("tgSave").onclick = function () {
       var v = (inp && inp.value || "").trim();
       if (!v || v.length < 10) {
-        if (err) { err.textContent = "Indica un token valido."; err.classList.add("visible"); }
+        if (err) { err.textContent = "Indica un token v\u00e1lido."; err.classList.add("visible"); }
         return;
       }
       try {
@@ -179,7 +179,7 @@
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
     afterAppReady();
-    return loadScript("./app-core-construirHoy.js?v=2");
+    return loadScript("./app-core-construirHoy.js?v=3");
   }).then(function () {
     return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
