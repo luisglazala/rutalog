@@ -1,4 +1,4 @@
-/* RUTALOG loader: gate + token + login + mejoras-v2 */
+/* RUTALOG loader: gate + token + login + mejoras-v2 + codigo-perf */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -153,7 +153,7 @@
     });
   }
 
-  function loadMejorasV2() {
+  function loadExtras() {
     try {
       if (!document.getElementById("rutalog-mejoras-v2-css")) {
         var l = document.createElement("link");
@@ -169,13 +169,20 @@
         s2.defer = true;
         document.body.appendChild(s2);
       }
-    } catch (eM) { console.warn("[RUTALOG] mejoras-v2", eM); }
+      if (!window.__rutalogCodigoPerf) {
+        window.__rutalogCodigoPerf = true;
+        var s3 = document.createElement("script");
+        s3.src = "./codigo-perf.js?v=1";
+        s3.defer = true;
+        document.body.appendChild(s3);
+      }
+    } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
   var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
   loadScript(APP).then(function () {
     afterAppReady();
-    loadMejorasV2();
+    loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
     try {
@@ -183,6 +190,6 @@
       document.documentElement.classList.remove("rutalog-booting");
       document.documentElement.classList.remove("rutalog-need-login");
     } catch (err) {}
-    loadMejorasV2();
+    loadExtras();
   });
 })();
