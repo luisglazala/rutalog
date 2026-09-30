@@ -1,7 +1,7 @@
-/* mejoras-planificacion.js — Generar viaje solo al clic + OSRM por calles */
+/* mejoras-planificacion.js v3 — Generar viaje: zonas ligadas + peso/SKU/10 + OSRM al clic */
 (function () {
-  if (window.__rutalogPlanificacionV2) return;
-  window.__rutalogPlanificacionV2 = true;
+  if (window.__rutalogPlanificacionV3) return;
+  window.__rutalogPlanificacionV3 = true;
 
   var MAX_CLIENTES = 10;
   var KG_G = 12000;
@@ -10,11 +10,71 @@
   var osrmLayer = null;
   var osrmSeq = 0;
 
+  var ZONAS_LIGADAS = [
+    ["santiago", "tamboril", "valverde", "tavera", "mao", "esperanza"],
+    ["puerto plata", "sosua", "cabarete"],
+    ["espaillat", "moca", "gaspar hernandez", "jose contreras"],
+    ["hermanas mirabal", "salcedo", "tenares", "villa tapia"],
+    ["dajabon", "santiago rodriguez", "moncion"],
+    ["montecristi", "dajabon"],
+    ["san francisco de macoris", "san francisco", "cenovi", "villa arriba", "nagua", "arenoso"],
+    ["maria trinidad sanchez", "samana", "las terrenas", "sanchez"],
+    ["piedra blanca", "bonao", "maimon", "monsenor nouel", "monsenor"],
+    ["monsenor nouel", "san jose de ocoa", "ocoa"],
+    ["la vega", "vega", "jarabacoa", "constanza", "jatubey"],
+    ["cotui", "sanchez ramirez", "fantino", "cevicos"],
+    ["santo domingo", "distrito nacional", "santo domingo este", "santo domingo norte", "santo domingo oeste", "sdn", "sde", "sdo"],
+    ["san cristobal", "bajos de haina", "haina", "villa altagracia"],
+    ["yamasa", "monte plata", "bayaguana", "sabana grande de boya"],
+    ["villa mella", "distrito nacional", "santo domingo este"],
+    ["bani", "peravia", "san jose de ocoa", "ocoa"],
+    ["azua", "padre las casas", "las yayas", "las charcas", "bani"],
+    ["bahoruco", "independencia", "vicente noble", "duverge", "neiba"],
+    ["elias pina", "san juan", "san juan de la maguana", "el cercado"],
+    ["barahona", "pedernales", "enriquillo", "cabral"],
+    ["comendador", "elias pina"],
+    ["la romana", "higuey", "salvaleon de higuey"],
+    ["higuey", "bavaro", "punta cana", "veron"],
+    ["san pedro de macoris", "san pedro", "la romana"],
+    ["san pedro de macoris", "hato mayor", "hato mayor del rey"],
+    ["hato mayor", "miches", "el seibo", "santa cruz de el seibo"]
+  ];
+
   function toastSafe(msg) {
     try {
       if (typeof toast === "function") toast(msg);
       else console.info("[plan]", msg);
     } catch (e) {}
+  }
+
+  function normCiudad(s) {
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function zonasDeCiudad(ciudad) {
+    var n = normCiudad(ciudad);
+    if (!n) return [];
+    var out = [];
+    for (var i = 0; i < ZONAS_LIGADAS.length; i++) {
+      var g = ZONAS_LIGADAS[i];
+      for (var j = 0; j < g.length; j++) {
+        if (n === g[j] || n.indexOf(g[j]) >= 0 || g[j].indexOf(n) >= 0) {
+          out.push(i);
+          break;
+        }
+      }
+    }
+    return out;
+  }
+
+  function compartenZona(c1, c2) {
+    var a = zonasDeCiudad(c1);
+    var b = zonasDeCiudad(c2);
+    if (!a.length || !b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (b.indexOf(a[i]) >= 0) return true;
+    }
+    return false;
   }
 
   function plantillaActiva() {
@@ -37,20 +97,8 @@
     var R = 6371, toR = Math.PI / 180;
     var dLat = (b.lat - a.lat) * toR, dLon = (b.lon - a.lon) * toR;
     var la1 = a.lat * toR, la2 = b.lat * toR;
-    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-  }
-
-  function bearingDeg(from, to) {
-    if (!from || !to || from.lat == null || to.lat == null) return 0;
-    var toR = Math.PI / 180;
-    var lat1 = from.lat * toR, lat2 = to.lat * toR;
-    var dLon = (to.lon - from.lon) * toR;
-    var y = Math.sin(dLon) * Math.cos(lat2);
-    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-    var br = Math.atan2(y, x) * 180 / Math.PI;
-    return (br + 360) % 360;
   }
 
   function pesoYSkusCliente(cli) {
@@ -139,29 +187,34 @@
   }
 
   function ordenarLogico(cands, origen) {
-    var sectorCount = {};
-    cands.forEach(function (c) {
-      var sec = Math.floor(bearingDeg(origen, c) / 45);
-      sectorCount[sec] = (sectorCount[sec] || 0) + 1;
-    });
-    var bestSector = 0, bestN = -1;
-    Object.keys(sectorCount).forEach(function (k) {
-      if (sectorCount[k] > bestN) { bestN = sectorCount[k]; bestSector = Number(k); }
-    });
-    var pending = cands.slice();
+    if (!cands.length) return [];
     var ordered = [];
-    var cur = origen;
+    var pending = cands.slice();
+    var bestI = 0, bestD = 1e18, i;
+    for (i = 0; i < pending.length; i++) {
+      var d0 = distKmSafe(origen, pending[i]);
+      if (d0 < bestD) { bestD = d0; bestI = i; }
+    }
+    var first = pending.splice(bestI, 1)[0];
+    ordered.push(first);
+    var zonaAncla = first.ciudad || "";
+    var cur = first;
     while (pending.length) {
-      var bestI = 0, bestD = 1e18;
-      for (var i = 0; i < pending.length; i++) {
+      bestI = 0;
+      bestD = 1e18;
+      for (i = 0; i < pending.length; i++) {
         var d = distKmSafe(cur, pending[i]);
-        var sec = Math.floor(bearingDeg(origen, pending[i]) / 45);
-        if (ordered.length < 4 && sec !== bestSector) d += 15;
+        if (compartenZona(zonaAncla, pending[i].ciudad)) d *= 0.35;
+        else if (ordered.length >= 2) {
+          if (compartenZona(cur.ciudad, pending[i].ciudad)) d *= 0.55;
+          else d += 8;
+        }
         if (d < bestD) { bestD = d; bestI = i; }
       }
       var next = pending.splice(bestI, 1)[0];
       ordered.push(next);
       cur = next;
+      if (!zonasDeCiudad(zonaAncla).length && next.ciudad) zonaAncla = next.ciudad;
     }
     return ordered;
   }
@@ -205,10 +258,39 @@
       (restantes.length > 40 ? '<div style="opacity:.7;margin-top:4px">… y ' + (restantes.length - 40) + " más</div>" : "");
   }
 
+  function clearOsrmLayer() {
+    try {
+      if (osrmLayer && estado && estado.mapRutas) estado.mapRutas.removeLayer(osrmLayer);
+    } catch (e) {}
+    osrmLayer = null;
+  }
+
+  function reiniciarViajePlan() {
+    try {
+      if (typeof estado !== "undefined" && estado) estado.viajeActual = [];
+      clearOsrmLayer();
+      try {
+        if (estado && estado.polyActual && estado.mapRutas) {
+          estado.mapRutas.removeLayer(estado.polyActual);
+          estado.polyActual = null;
+        }
+      } catch (e) {}
+      var box = document.getElementById("rutalogRestantesPlan");
+      if (box) box.innerHTML = "";
+      if (typeof refrescarRutaUI === "function") refrescarRutaUI();
+      if (typeof renderMapas === "function") renderMapas();
+      toastSafe("Viaje reiniciado");
+    } catch (e) {
+      console.warn("[plan] reiniciar", e);
+    }
+  }
+
   function ensureUI() {
     try {
-      if (document.getElementById("btnGenerarViaje")) return true;
-
+      if (document.getElementById("btnGenerarViaje")) {
+        hookReiniciar();
+        return true;
+      }
       if (!document.getElementById("rutalog-plan-css")) {
         var style = document.createElement("style");
         style.id = "rutalog-plan-css";
@@ -218,11 +300,9 @@
           "#rutalogPlanCamion select{flex:1;padding:6px 8px;border-radius:8px;border:1px solid #1f1f1f;background:#0f0f0f;color:#fafafa;}";
         (document.head || document.documentElement).appendChild(style);
       }
-
       var opt = document.getElementById("btnOptimizarRuta");
       var guardar = document.getElementById("btnGuardarViaje");
       if (!opt && !guardar) return false;
-
       var row = document.createElement("div");
       row.id = "rutalogPlanCamion";
       row.innerHTML =
@@ -231,7 +311,6 @@
         '<option value="G">Grande · 12000 kg</option>' +
         '<option value="P">Pequeño · 3800 kg</option>' +
         "</select>";
-
       var btn = document.createElement("button");
       btn.type = "button";
       btn.id = "btnGenerarViaje";
@@ -241,7 +320,6 @@
         if (ev) ev.preventDefault();
         generarViaje();
       };
-
       if (opt) {
         opt.insertAdjacentElement("afterend", row);
         row.insertAdjacentElement("afterend", btn);
@@ -249,7 +327,6 @@
         guardar.insertAdjacentElement("beforebegin", row);
         row.insertAdjacentElement("afterend", btn);
       }
-
       var sel = document.getElementById("selPlanCamion");
       if (sel) {
         sel.value = plantillaActiva() === "P" ? "P" : "G";
@@ -259,12 +336,26 @@
           } catch (e) {}
         };
       }
-      console.info("[RUTALOG] botón Generar viaje listo");
+      hookReiniciar();
+      console.info("[RUTALOG] Generar viaje v3 (zonas) listo");
       return true;
     } catch (err) {
       console.warn("[RUTALOG] ensureUI plan", err);
       return false;
     }
+  }
+
+  function hookReiniciar() {
+    var btn = document.getElementById("btnReiniciar");
+    if (!btn || btn.__planReinicio) return;
+    btn.__planReinicio = true;
+    btn.addEventListener("click", function () {
+      setTimeout(function () {
+        clearOsrmLayer();
+        var box = document.getElementById("rutalogRestantesPlan");
+        if (box) box.innerHTML = "";
+      }, 50);
+    });
   }
 
   function generarViaje() {
@@ -275,7 +366,6 @@
       }
       var sel = document.getElementById("selPlanCamion");
       if (sel) estado.plantillaCamion = sel.value;
-
       if (!estado.origenActual || estado.origenActual.lat == null) {
         toastSafe("Selecciona primero el centro (origen) del viaje");
         try {
@@ -283,38 +373,35 @@
         } catch (e) {}
         return;
       }
-
       if (!(estado.clientesHoy && estado.clientesHoy.length)) {
-        toastSafe("No hay clientes en el mapa. Carga el Excel del día y espera a ver los puntos.");
+        toastSafe("No hay clientes en el mapa. Carga el Excel del día primero.");
         return;
       }
-
+      clearOsrmLayer();
       estado.viajeActual = [];
-
       var origen = estado.origenActual;
       var cands = clientesDisponibles();
       if (!cands.length) {
         mostrarRestantes([]);
-        toastSafe("No hay clientes disponibles (ya asignados o sin pendiente)");
+        toastSafe("No hay clientes disponibles");
         return;
       }
-
       var ordered = ordenarLogico(cands, origen);
       var elegidos = [];
       var accPeso = 0;
       var accSku = {};
-
+      var zonaRef = "";
       for (var i = 0; i < ordered.length; i++) {
         var cli = ordered[i];
         var data = pesoYSkusCliente(cli);
         if (!(data.peso > 0) && Number(cli.peso) > 0) data.peso = Number(cli.peso);
         var check = cabeCliente(data, accPeso, accSku, elegidos.length);
         if (!check.ok) continue;
+        if (!zonaRef && cli.ciudad) zonaRef = cli.ciudad;
         elegidos.push(cli);
         accPeso = aplicarClienteAlAcumulado(data, accPeso, accSku);
         if (elegidos.length >= MAX_CLIENTES) break;
       }
-
       elegidos.forEach(function (cli) {
         try {
           if (typeof agregarParada === "function") agregarParada(cli);
@@ -327,16 +414,14 @@
           console.warn("[plan] agregarParada", e);
         }
       });
-
       if (typeof refrescarRutaUI === "function") refrescarRutaUI();
       if (typeof renderMapas === "function") renderMapas();
-
       var restantes = clientesDisponibles();
       var meta = elegidos.length + " paradas · " + accPeso.toFixed(1) + " kg / " + kgMax() + " kg";
+      if (zonaRef) meta += " · zona ~ " + zonaRef;
       mostrarRestantes(restantes, meta);
-
       if (!elegidos.length) {
-        toastSafe("Ningún cliente cabe con las reglas (peso / SKU / máx. 10)");
+        toastSafe("Ningún cliente cabe (peso / SKU / máx. 10)");
       } else {
         toastSafe("Viaje generado: " + elegidos.length + " · " + accPeso.toFixed(1) + " kg · Restan " + restantes.length);
         dibujarRutaOSRM();
@@ -360,13 +445,6 @@
     return pts;
   }
 
-  function clearOsrmLayer() {
-    try {
-      if (osrmLayer && estado.mapRutas) estado.mapRutas.removeLayer(osrmLayer);
-    } catch (e) {}
-    osrmLayer = null;
-  }
-
   function dibujarRutaOSRM() {
     try {
       var map = estado && estado.mapRutas;
@@ -376,11 +454,9 @@
         clearOsrmLayer();
         return;
       }
-
       var seq = ++osrmSeq;
       var coordStr = pts.map(function (p) { return p[1] + "," + p[0]; }).join(";");
       var url = OSRM_BASE + coordStr + "?overview=full&geometries=geojson";
-
       fetch(url)
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -392,7 +468,6 @@
               estado.polyActual = null;
             }
           } catch (e) {}
-
           if (!data || data.code !== "Ok" || !data.routes || !data.routes[0]) {
             osrmLayer = L.polyline(pts, { color: "#f59e0b", weight: 3, dashArray: "6,6", opacity: 0.9 }).addTo(map);
             return;
@@ -401,19 +476,11 @@
             return [c[1], c[0]];
           });
           osrmLayer = L.polyline(coords, { color: "#38bdf8", weight: 4, opacity: 0.95 }).addTo(map);
-          try {
-            map.fitBounds(osrmLayer.getBounds(), { padding: [40, 40] });
-          } catch (e2) {}
+          try { map.fitBounds(osrmLayer.getBounds(), { padding: [40, 40] }); } catch (e2) {}
         })
         .catch(function () {
           if (seq !== osrmSeq) return;
           clearOsrmLayer();
-          try {
-            if (estado.polyActual && estado.mapRutas) {
-              estado.mapRutas.removeLayer(estado.polyActual);
-              estado.polyActual = null;
-            }
-          } catch (e) {}
           osrmLayer = L.polyline(pts, { color: "#f59e0b", weight: 3, dashArray: "6,6", opacity: 0.9 }).addTo(map);
         });
     } catch (err) {
@@ -422,11 +489,7 @@
   }
 
   function boot() {
-    try {
-      ensureUI();
-    } catch (e) {
-      console.warn("[plan] boot", e);
-    }
+    try { ensureUI(); } catch (e) {}
     var n = 0;
     var t = setInterval(function () {
       n++;
@@ -444,10 +507,11 @@
   }
 
   window.rutalogGenerarViaje = generarViaje;
+  window.rutalogReiniciarViaje = reiniciarViajePlan;
   window.rutalogDibujarOSRM = dibujarRutaOSRM;
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 
-  console.info("[RUTALOG] planificacion v2 (solo al clic + OSRM)");
+  console.info("[RUTALOG] planificacion v3 zonas + reinicio");
 })();
