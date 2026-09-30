@@ -1,13 +1,20 @@
-/* RUTALOG mejoras-cruzados v3 — Condicion desde maestro */
+/* RUTALOG mejoras-cruzados v4 — Id carga + Condicion maestro */
 (function () {
   "use strict";
-  if (window.__rutalogCruzadosXls3) return;
-  window.__rutalogCruzadosXls3 = true;
+  if (window.__rutalogCruzadosXls4) return;
+  window.__rutalogCruzadosXls4 = true;
 
   function el(id) { return document.getElementById(id); }
   function toastSafe(msg) {
     if (typeof toast === "function") toast(msg);
     else console.log("[RUTALOG]", msg);
+  }
+
+  function extraerIdCarga(textoPlano) {
+    var t = String(textoPlano || "");
+    var m = t.match(/Id\.?\s*de\s*la\s*carga\s*:?\s*(IDC\d+)/i)
+      || t.match(/\b(IDC\d{6,})\b/i);
+    return m ? m[1].toUpperCase() : "";
   }
 
   function extraerArticulosPorBloque(textoPlano) {
@@ -48,7 +55,6 @@
           if (/^(AV\.?|AVE\.?|CALLE|C\/|CARRETERA|NO\.)/i.test(nombreArt)) continue;
           if (nombreArt.length < 3) continue;
           arts.push({ sku: mSku[1], producto: nombreArt, cantidad: parseFloat(String(mSku[3]).replace(",", ".")) || mSku[3], unidad: (mSku[4] || "").trim() });
-          continue;
         }
       }
       var entry = { ide: blk.ide, orden: idx + 1, articulos: arts };
@@ -63,14 +69,17 @@
       var list = (window.estado && estado.paradasCruzadas) || [];
       if (!list.length) return;
       var ext = extraerArticulosPorBloque(textoPlano);
+      var idCarga = extraerIdCarga(textoPlano);
       list.forEach(function (p, i) {
         var found = null;
         if (p.idEnvio && ext.porIde[String(p.idEnvio).toUpperCase()]) found = ext.porIde[String(p.idEnvio).toUpperCase()];
         else if (ext.porOrden[i]) found = ext.porOrden[i];
         p.articulos = found ? found.articulos.slice() : (p.articulos || []);
+        p.idCarga = idCarga || p.idCarga || "";
       });
       estado.paradasCruzadas = list;
       estado._cruzadosTextoPlano = textoPlano;
+      estado._cruzadosIdCarga = idCarga;
     } catch (e) { console.warn("[cruzados] enriquecer", e); }
   }
 
@@ -136,9 +145,11 @@
 
   function filasExcel() {
     var list = (window.estado && estado.paradasCruzadas) || [];
+    var idCargaGlobal = (window.estado && estado._cruzadosIdCarga) || "";
     return list.map(function (p) {
       return {
         "Nº parada": p.orden != null ? p.orden : "",
+        "Id. de la carga": p.idCarga || idCargaGlobal || "",
         "Id. del envío": p.idEnvio || "",
         "Entregar a": nombreLimpio(p),
         "Dirección": p.direccion || (p.match && p.match.direccion) || "",
@@ -163,10 +174,13 @@
         return;
       }
       enriquecerCondiciones();
+      if (!estado._cruzadosIdCarga && estado._cruzadosTextoPlano) {
+        estado._cruzadosIdCarga = extraerIdCarga(estado._cruzadosTextoPlano);
+      }
       var rows = filasExcel();
       var ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [
-        { wch: 10 }, { wch: 14 }, { wch: 40 }, { wch: 42 }, { wch: 18 },
+        { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 40 }, { wch: 42 }, { wch: 18 },
         { wch: 14 }, { wch: 36 }, { wch: 14 }, { wch: 16 }
       ];
       var wb = XLSX.utils.book_new();
@@ -188,7 +202,7 @@
     btn.id = "btnExcelCruzados";
     btn.className = "btn btn-primary btn-sm";
     btn.textContent = "Descargar Excel del PDF";
-    btn.title = "Paradas: Id envío, Entregar a, ciudad del mapa, condición, motivo";
+    btn.title = "Paradas: Id carga, Id envío, Entregar a, ciudad, condición, motivo";
     btn.style.cssText = "margin-left:8px;";
     var info = el("cruzadosInfo");
     var drop = el("dropCruzados");
@@ -223,7 +237,7 @@
           if (typeof renderCruzadosLista === "function") renderCruzadosLista();
         }
       } catch (e) {
-        console.warn("[cruzados] post-parse articulos", e);
+        console.warn("[cruzados] post-parse", e);
       }
       return r;
     };

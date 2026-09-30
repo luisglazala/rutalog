@@ -24,7 +24,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot18">
+<link rel="stylesheet" href="./styles.css?v=boot19">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
@@ -72,7 +72,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot18';
+    s.src='./app.js?v=boot19';
     s.onload=function(){
       var c=document.createElement('script');
       c.src='./mejoras-citas.js?v=8';
@@ -84,7 +84,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       cent.src='./mejoras-centros.js?v=2';
       document.body.appendChild(cent);
       var cx=document.createElement('script');
-      cx.src='./mejoras-cruzados.js?v=3';
+      cx.src='./mejoras-cruzados.js?v=4';
       document.body.appendChild(cx);
     };
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
