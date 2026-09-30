@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-cruzados v2 — Excel una hoja como tabla de paradas */
+/* RUTALOG mejoras-cruzados v3 — Condicion desde maestro */
 (function () {
   "use strict";
-  if (window.__rutalogCruzadosXls) return;
-  window.__rutalogCruzadosXls = true;
+  if (window.__rutalogCruzadosXls3) return;
+  window.__rutalogCruzadosXls3 = true;
 
   function el(id) { return document.getElementById(id); }
   function toastSafe(msg) {
@@ -85,7 +85,33 @@
   function condicionDeParada(p) {
     if (p.match && p.match.condicion) return p.match.condicion;
     if (p.condicion) return p.condicion;
+    try {
+      if (p.match && (p.match.id || p.match.idCliente) && window.estado && estado.maestro) {
+        var id = String(p.match.id || p.match.idCliente);
+        var m = estado.maestro.get(id);
+        if (m && m.condicion) return m.condicion;
+      }
+    } catch (e) {}
     return "";
+  }
+
+  function enriquecerCondiciones() {
+    try {
+      var list = (window.estado && estado.paradasCruzadas) || [];
+      if (!list.length || !estado.maestro) return;
+      list.forEach(function (p) {
+        if (!p.match) return;
+        if (p.match.condicion) return;
+        var id = p.match.id || p.match.idCliente;
+        if (!id) return;
+        var m = estado.maestro.get(String(id));
+        if (m) {
+          p.match.condicion = m.condicion || "";
+          if (m.ciudad && !p.match.ciudad) p.match.ciudad = m.ciudad;
+          if (m.localidad && !p.match.localidad) p.match.localidad = m.localidad;
+        }
+      });
+    } catch (e) { console.warn("[cruzados] condiciones", e); }
   }
 
   function nombreLimpio(p) {
@@ -136,6 +162,7 @@
         toastSafe("No hay paradas. Carga primero el PDF.");
         return;
       }
+      enriquecerCondiciones();
       var rows = filasExcel();
       var ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [
@@ -192,6 +219,7 @@
             plano = (textoObj.colIzq || "") + "\n" + (textoObj.colDer || "") + "\n" + (textoObj.plano || "");
           }
           enriquecerParadas(plano);
+          enriquecerCondiciones();
           if (typeof renderCruzadosLista === "function") renderCruzadosLista();
         }
       } catch (e) {
@@ -202,9 +230,34 @@
     window.procesarPDFCruzados._xlsHook = true;
   }
 
+  function hookCruzar() {
+    if (typeof window.cruzarParadasConMaestro !== "function" || window.cruzarParadasConMaestro._condHook) return;
+    var orig = window.cruzarParadasConMaestro;
+    window.cruzarParadasConMaestro = function (paradas) {
+      var out = orig.apply(this, arguments);
+      try {
+        (out || []).forEach(function (p) {
+          if (!p || !p.match) return;
+          var id = p.match.id || p.match.idCliente;
+          if (!id || !estado.maestro) return;
+          var m = estado.maestro.get(String(id));
+          if (m) {
+            p.match.condicion = m.condicion || "";
+            if (m.ciudad) p.match.ciudad = m.ciudad;
+            if (m.localidad) p.match.localidad = m.localidad;
+          }
+        });
+      } catch (e) {}
+      return out;
+    };
+    window.cruzarParadasConMaestro._condHook = true;
+  }
+
   function tick() {
     ensureUI();
     hookProcesar();
+    hookCruzar();
+    enriquecerCondiciones();
   }
 
   setTimeout(tick, 800);
