@@ -1,1 +1,60 @@
-PLACEHOLDER_WILL_FAIL
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="stylesheet" href="./boot.css">
+<script src="./boot.js"></script>
+<style id="rutalog-boot-css">
+html,body{background:#0a0a0a!important}
+html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
+html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
+</style>
+<script>
+(function(){try{var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}var needLogin=false;try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}if(needLogin)document.documentElement.classList.add("rutalog-need-login");else if(hasSession)document.documentElement.classList.add("rutalog-ready");else document.documentElement.classList.add("rutalog-booting")}catch(e){document.documentElement.classList.add("rutalog-booting")}})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RUTALOG — cargando…</title>
+<style>body{background:#0a0a0a;color:#a3a3a3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}</style>
+</head>
+<body>
+<div id="bootMsg">Cargando RUTALOG…</div>
+<script>
+(function(){
+  var SRC = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html";
+  fetch(SRC, {cache:"no-store"}).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.text();
+  }).then(function(html){
+    // Quitar botones export/import día
+    html = html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi, "");
+    html = html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi, "");
+    html = html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi, "");
+    // Inyectar boot al inicio del head
+    var boot = document.head.innerHTML;
+    // Reescribir documento completo
+    document.open();
+    document.write(html);
+    document.close();
+    // Re-aplicar clases de boot tras document.write
+    try {
+      var hasSession=false;
+      try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
+      var needLogin=false;
+      try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}
+      if(needLogin){document.documentElement.classList.add("rutalog-need-login");document.documentElement.classList.remove("rutalog-ready")}
+      else if(hasSession){document.documentElement.classList.add("rutalog-ready");document.documentElement.classList.remove("rutalog-need-login","rutalog-booting")}
+      else {document.documentElement.classList.add("rutalog-booting")}
+    } catch(e){}
+    // Cargar app.js local (con fixes) en lugar del embebido del CDN si es necesario
+    var s = document.createElement("script");
+    s.src = "./app.js?v=boot3";
+    s.defer = true;
+    document.body.appendChild(s);
+  }).catch(function(err){
+    document.getElementById("bootMsg").innerHTML = "No se pudo cargar. <a href=\""+SRC+"\" style=\"color:#60a5fa\">Abrir respaldo</a><br><small>"+err+"</small>";
+  });
+})();
+</script>
+</body>
+</html>
