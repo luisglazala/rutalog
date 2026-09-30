@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-citas v6 — pegar tabla robusto */
+/* RUTALOG mejoras-citas v6b — pegar tabla robusto */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV6) return;
-  window.__rutalogCitasV6 = true;
+  if (window.__rutalogCitasV6b) return;
+  window.__rutalogCitasV6b = true;
 
   function el(id) { return document.getElementById(id); }
   function esc(s) {
@@ -303,7 +303,7 @@
   }
 
   function ensureUI() {
-    var page = el("page-citas");
+    var page = el("page-citas") || (el("listaCitas") && el("listaCitas").closest(".page")) || (el("btnAddCita") && el("btnAddCita").closest(".page"));
     if (!page) return;
     var existing = el("citaPasteBox");
     if (existing) {
