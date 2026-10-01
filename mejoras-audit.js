@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-audit v4 — ocultar Cliente + Cita/Condición + colores + totales sticky */
+/* RUTALOG mejoras-audit v5 — modal ancho + ocultar Cliente + colores botones viaje */
 (function () {
   "use strict";
-  if (window.__rutalogAuditV4) return;
-  window.__rutalogAuditV4 = true;
+  if (window.__rutalogAuditV5) return;
+  window.__rutalogAuditV5 = true;
 
   function el(id) { return document.getElementById(id); }
 
@@ -225,13 +225,17 @@
   }
 
   function injectCSS() {
-    if (el("rutalog-audit-v4-css")) return;
+    if (el("rutalog-audit-v5-css")) return;
     var st = document.createElement("style");
-    st.id = "rutalog-audit-v4-css";
+    st.id = "rutalog-audit-v5-css";
     st.textContent = [
-      "#auditOverlay .audit-body{max-height:calc(100vh - 280px);overflow:auto;}",
-      "#auditOverlay table.audit-table{border-collapse:separate;border-spacing:0;width:100%;}",
-      "#auditOverlay table thead th{position:sticky;top:0;z-index:3;background:#141414;}",
+      "#auditOverlay.audit-overlay{padding:12px!important;}",
+      "#auditOverlay .audit-modal{width:min(98vw,1900px)!important;max-width:98vw!important;max-height:96vh!important;}",
+      "#auditOverlay .audit-body{max-height:calc(100vh - 240px);overflow:auto;}",
+      "#auditOverlay table.audit-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;}",
+      "#auditOverlay table thead th{position:sticky;top:0;z-index:3;background:#141414;white-space:nowrap;}",
+      "#auditOverlay table tbody td{white-space:nowrap;}",
+      "#auditOverlay table thead th:last-child,#auditOverlay table tbody td:last-child{min-width:88px;padding-right:14px;}",
       "#auditTfootEmbed{position:sticky;bottom:0;z-index:4;}",
       "#auditTfootEmbed td{background:#0d0d0d;border-top:2px solid #333;padding:8px 8px;font-size:12.5px;}",
       "#auditOverlay .audit-foot{position:sticky;bottom:0;z-index:5;background:#111!important;border-top:1px solid #2a2a2a;box-shadow:0 -6px 18px rgba(0,0,0,.3);}",
@@ -243,16 +247,35 @@
       "tr.audit-row-tope,tr.audit-tope-exceed{box-shadow:inset 3px 0 0 #ef4444;}",
       "td.audit-td-cita{white-space:nowrap;max-width:110px;}",
       "td.audit-td-cond{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
-      "#auditOverlay table thead th:nth-child(3),",
-      "#auditOverlay table tbody td:nth-child(3),",
-      "#auditOverlay th.audit-col-cliente,",
-      "#auditOverlay td.audit-col-cliente{",
-      "  display:none!important;width:0!important;min-width:0!important;padding:0!important;border:none!important;overflow:hidden!important;",
-      "}",
+      "#auditOverlay table thead th:nth-child(3),#auditOverlay table tbody td:nth-child(3),#auditOverlay th.audit-col-cliente,#auditOverlay td.audit-col-cliente{display:none!important;width:0!important;min-width:0!important;padding:0!important;border:none!important;overflow:hidden!important;}",
       "#auditOverlay .audit-nombre{max-width:220px;}",
-      "#auditCapacidad{color:#86efac;}"
+      "#auditCapacidad{color:#86efac;}",
+      "#btnGuardarViaje{background:linear-gradient(135deg,#8b5cf6,#a78bfa)!important;border-color:#7c3aed!important;color:#fff!important;box-shadow:0 2px 10px rgba(139,92,246,.35);}",
+      "#btnGuardarViaje:hover:not(:disabled){filter:brightness(1.08);}",
+      "#btnGuardarViaje:disabled{opacity:.45;filter:grayscale(.3);}",
+      "#btnOptimizarRuta,button#btnGenerarViaje{background:linear-gradient(135deg,#0d9488,#14b8a6)!important;border-color:#0f766e!important;color:#fff!important;box-shadow:0 2px 10px rgba(13,148,136,.3);}",
+      "#btnOptimizarRuta:hover:not(:disabled),button#btnGenerarViaje:hover:not(:disabled){filter:brightness(1.08);}"
     ].join("");
     document.head.appendChild(st);
+  }
+
+  function colorizeViajeButtons() {
+    try {
+      var g = el("btnGuardarViaje");
+      if (g) {
+        g.style.background = "linear-gradient(135deg,#8b5cf6,#a78bfa)";
+        g.style.borderColor = "#7c3aed";
+        g.style.color = "#fff";
+      }
+      document.querySelectorAll("button").forEach(function (b) {
+        var t = (b.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+        if (t.indexOf("generar viaje") !== -1 || b.id === "btnGenerarViaje") {
+          b.style.background = "linear-gradient(135deg,#0d9488,#14b8a6)";
+          b.style.borderColor = "#0f766e";
+          b.style.color = "#fff";
+        }
+      });
+    } catch (e) {}
   }
 
   function afterRender() {
@@ -262,22 +285,22 @@
       hideClienteColumn();
       renderTfoot();
       hideFootTextStats();
-    } catch (e) { console.warn("[audit-v4]", e); }
+    } catch (e) { console.warn("[audit-v5]", e); }
   }
 
   function hookRender() {
-    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV4) return;
+    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV5) return;
     var orig = window.renderAuditoriaTabla;
     window.renderAuditoriaTabla = function () {
       var r = orig.apply(this, arguments);
       afterRender();
       return r;
     };
-    window.renderAuditoriaTabla._auditV4 = true;
+    window.renderAuditoriaTabla._auditV5 = true;
   }
 
   function hookStats() {
-    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV4) return;
+    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV5) return;
     var orig = window.actualizarAuditStats;
     window.actualizarAuditStats = function () {
       var r = orig.apply(this, arguments);
@@ -289,11 +312,12 @@
       } catch (e) {}
       return r;
     };
-    window.actualizarAuditStats._auditV4 = true;
+    window.actualizarAuditStats._auditV5 = true;
   }
 
   function tick() {
     injectCSS();
+    colorizeViajeButtons();
     hookRender();
     hookStats();
     if (el("auditOverlay") && !el("auditOverlay").hidden) afterRender();
