@@ -4,12 +4,13 @@
 <link rel="stylesheet" href="./boot.css">
 <script src="./boot.js"></script>
 <style id="rutalog-boot-css">
-html,body{background:#0a0a0a!important}
+html,body{background:#0a0a0a!important;height:100%;margin:0}
 html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
 html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
 .leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}
-.leaflet-div-icon .marcador{border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;color:#fff!important;font-weight:700!important}
+.leaflet-div-icon .marcador{border-radius:50%!important}
+.app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
 </style>
 <script>
 (function(){try{var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}var needLogin=false;try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}if(needLogin)document.documentElement.classList.add("rutalog-need-login");else if(hasSession)document.documentElement.classList.add("rutalog-ready");else document.documentElement.classList.add("rutalog-booting")}catch(e){document.documentElement.classList.add("rutalog-booting")}})();
@@ -26,8 +27,9 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot28">
+<link rel="stylesheet" href="./styles.css?v=boot29">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
+<link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 </head>
@@ -74,7 +76,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot28';
+    s.src='./app.js?v=boot29';
     s.onload=function(){
       var mi=document.createElement('script');
       mi.src='./mejoras-map-icons.js?v=1';
