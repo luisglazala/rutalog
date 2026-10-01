@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-audit v3 — Cita/Condición + colores + totales embebidos sticky */
+/* RUTALOG mejoras-audit v4 — ocultar Cliente + Cita/Condición + colores + totales sticky */
 (function () {
   "use strict";
-  if (window.__rutalogAuditV3) return;
-  window.__rutalogAuditV3 = true;
+  if (window.__rutalogAuditV4) return;
+  window.__rutalogAuditV4 = true;
 
   function el(id) { return document.getElementById(id); }
 
@@ -26,8 +26,7 @@
         }
       }
     } catch (e) {}
-    var d = new Date().getDay();
-    return DIAS[d].key;
+    return DIAS[new Date().getDay()].key;
   }
 
   function condicionRestringeDia(cond, diaProg) {
@@ -79,10 +78,6 @@
     return "";
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  }
-
   function ensureColumns() {
     var thead = document.querySelector("#auditOverlay table thead tr");
     if (!thead) return;
@@ -101,6 +96,27 @@
     thCond.textContent = "Condición";
     ciudadTh.insertAdjacentElement("afterend", thCond);
     ciudadTh.insertAdjacentElement("afterend", thCita);
+  }
+
+  function hideClienteColumn() {
+    try {
+      var thead = document.querySelector("#auditOverlay table thead tr");
+      if (thead) {
+        thead.querySelectorAll("th").forEach(function (th) {
+          if (/^\s*cliente\s*$/i.test(th.textContent || "")) {
+            th.classList.add("audit-col-cliente");
+            th.style.display = "none";
+          }
+        });
+      }
+      document.querySelectorAll("#auditTbody tr").forEach(function (tr) {
+        var tds = tr.children;
+        if (tds[2] && !tds[2].classList.contains("audit-td-cita") && !tds[2].classList.contains("audit-td-cond")) {
+          tds[2].classList.add("audit-col-cliente");
+          tds[2].style.display = "none";
+        }
+      });
+    } catch (e) {}
   }
 
   function calcTotales() {
@@ -141,7 +157,7 @@
     var pesoTxt = t.peso.toFixed(2);
     tfoot.innerHTML =
       '<tr class="audit-totales-embed">' +
-      '<td colspan="12" style="text-align:right;font-weight:700;padding:8px 10px;">Total sel. (' + t.n + ' líneas)</td>' +
+      '<td colspan="11" style="text-align:right;font-weight:700;padding:8px 10px;">Total sel. (' + t.n + ' líneas)</td>' +
       '<td class="mono audit-tf-cajas" style="font-weight:800;color:#86efac;" title="Suma cajas">' + cajasTxt + '</td>' +
       '<td class="mono audit-tf-emp" style="font-weight:800;color:#86efac;" title="Suma a despachar">' + empTxt + '</td>' +
       '<td class="mono audit-tf-peso" style="font-weight:800;color:#86efac;" title="Suma peso kg">' + pesoTxt + '</td>' +
@@ -157,8 +173,7 @@
     var excessKeys = {};
     excesos.forEach(function (e) { excessKeys[e.key] = e; });
 
-    var rows = tb.querySelectorAll("tr[data-idx]");
-    rows.forEach(function (tr) {
+    tb.querySelectorAll("tr[data-idx]").forEach(function (tr) {
       var i = Number(tr.dataset.idx);
       var ln = estado.auditLineas[i];
       if (!ln) return;
@@ -202,19 +217,20 @@
     if (!foot) return;
     foot.querySelectorAll(".stat-line").forEach(function (sl) {
       if (sl.querySelector('input[name="auditPlantilla"]') || sl.querySelector("#auditCapacidad")) return;
-      if (sl.querySelector("#auditLineasSel") || sl.querySelector("#auditPesoSel") || sl.querySelector("#auditEmp") || sl.querySelector("#auditCajas") || sl.querySelector("#auditPesoRem")) {
+      if (sl.querySelector("#auditLineasSel") || sl.querySelector("#auditPesoSel") ||
+          sl.querySelector("#auditEmp") || sl.querySelector("#auditCajas") || sl.querySelector("#auditPesoRem")) {
         sl.style.display = "none";
       }
     });
   }
 
   function injectCSS() {
-    if (el("rutalog-audit-v3-css")) return;
+    if (el("rutalog-audit-v4-css")) return;
     var st = document.createElement("style");
-    st.id = "rutalog-audit-v3-css";
+    st.id = "rutalog-audit-v4-css";
     st.textContent = [
       "#auditOverlay .audit-body{max-height:calc(100vh - 280px);overflow:auto;}",
-      "#auditOverlay table.audit-table{border-collapse:separate;border-spacing:0;}",
+      "#auditOverlay table.audit-table{border-collapse:separate;border-spacing:0;width:100%;}",
       "#auditOverlay table thead th{position:sticky;top:0;z-index:3;background:#141414;}",
       "#auditTfootEmbed{position:sticky;bottom:0;z-index:4;}",
       "#auditTfootEmbed td{background:#0d0d0d;border-top:2px solid #333;padding:8px 8px;font-size:12.5px;}",
@@ -226,7 +242,9 @@
       "tr.audit-row-tope td,tr.audit-tope-exceed td{background:rgba(239,68,68,.16)!important;}",
       "tr.audit-row-tope,tr.audit-tope-exceed{box-shadow:inset 3px 0 0 #ef4444;}",
       "td.audit-td-cita{white-space:nowrap;max-width:110px;}",
-      "td.audit-td-cond{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
+      "td.audit-td-cond{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
+      "#auditOverlay th.audit-col-cliente,#auditOverlay td.audit-col-cliente{display:none!important;}",
+      "#auditOverlay .audit-nombre{max-width:220px;}",
       "#auditCapacidad{color:#86efac;}"
     ].join("");
     document.head.appendChild(st);
@@ -236,31 +254,37 @@
     try {
       ensureColumns();
       decorateRows();
+      hideClienteColumn();
       renderTfoot();
       hideFootTextStats();
-    } catch (e) { console.warn("[audit-v3]", e); }
+    } catch (e) { console.warn("[audit-v4]", e); }
   }
 
   function hookRender() {
-    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV3) return;
+    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV4) return;
     var orig = window.renderAuditoriaTabla;
     window.renderAuditoriaTabla = function () {
       var r = orig.apply(this, arguments);
       afterRender();
       return r;
     };
-    window.renderAuditoriaTabla._auditV3 = true;
+    window.renderAuditoriaTabla._auditV4 = true;
   }
 
   function hookStats() {
-    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV3) return;
+    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV4) return;
     var orig = window.actualizarAuditStats;
     window.actualizarAuditStats = function () {
       var r = orig.apply(this, arguments);
-      try { renderTfoot(); decorateRows(); hideFootTextStats(); } catch (e) {}
+      try {
+        decorateRows();
+        hideClienteColumn();
+        renderTfoot();
+        hideFootTextStats();
+      } catch (e) {}
       return r;
     };
-    window.actualizarAuditStats._auditV3 = true;
+    window.actualizarAuditStats._auditV4 = true;
   }
 
   function tick() {
