@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout + marcadores */
+/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v2 + marcadores */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -171,7 +171,7 @@
         var lLayout = document.createElement("link");
         lLayout.id = "rutalog-layout-css";
         lLayout.rel = "stylesheet";
-        lLayout.href = "./mejoras-layout.css?v=1";
+        lLayout.href = "./mejoras-layout.css?v=2";
         document.head.appendChild(lLayout);
       }
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
