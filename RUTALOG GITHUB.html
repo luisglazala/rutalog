@@ -8,6 +8,8 @@ html,body{background:#0a0a0a!important}
 html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
 html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
+.page{display:none!important}
+.page.active{display:flex!important;flex-direction:column!important}
 </style>
 <script>
 (function(){try{var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}var needLogin=false;try{var usersRaw=localStorage.getItem("rutalog_usuarios_v2");var users=usersRaw?JSON.parse(usersRaw):[];if(Array.isArray(users)&&users.some(function(x){return x&&x.activo!==false}))needLogin=!hasSession}catch(e){}if(needLogin)document.documentElement.classList.add("rutalog-need-login");else if(hasSession)document.documentElement.classList.add("rutalog-ready");else document.documentElement.classList.add("rutalog-booting")}catch(e){document.documentElement.classList.add("rutalog-booting")}})();
@@ -24,7 +26,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=final5">
+<link rel="stylesheet" href="./styles.css?v=final6">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
@@ -76,7 +78,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
     removeDiaButtons(document);
     bootSessionClasses();
     var s=document.createElement("script");
-    s.src="./app.js?v=final5";
+    s.src="./app.js?v=final6";
     s.defer=true;
     s.onerror=function(){ console.error("[RUTALOG] app.js fail"); };
     document.body.appendChild(s);
