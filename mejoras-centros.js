@@ -1,8 +1,36 @@
-/* RUTALOG centros CI en mapa v2 — solo origen seleccionado, icono sutil */
+/* RUTALOG centros CI en mapa v3 — solo origen seleccionado, icono sutil */
 (function () {
   "use strict";
-  if (window.__rutalogCentrosCI) return;
-  window.__rutalogCentrosCI = true;
+  if (window.__rutalogCentrosCIv3) return;
+  window.__rutalogCentrosCIv3 = true;
+
+  function injectMapIconCSS() {
+    if (document.getElementById("rutalog-map-icon-css")) return;
+    var st = document.createElement("style");
+    st.id = "rutalog-map-icon-css";
+    st.textContent = [
+      ".leaflet-div-icon{",
+      "  background:transparent!important;",
+      "  border:none!important;",
+      "  box-shadow:none!important;",
+      "}",
+      ".leaflet-marker-icon.leaflet-div-icon{",
+      "  background:transparent!important;",
+      "  border:none!important;",
+      "}",
+      ".rutalog-origen-ico{",
+      "  background:transparent!important;",
+      "  border:none!important;",
+      "}",
+      ".leaflet-div-icon .marcador{",
+      "  border-radius:50%!important;",
+      "  display:flex!important;align-items:center!important;justify-content:center!important;",
+      "  color:#fff!important;font-weight:700!important;",
+      "  box-shadow:0 1px 4px rgba(0,0,0,.35)!important;",
+      "}"
+    ].join("");
+    document.head.appendChild(st);
+  }
 
   var ALMACENES_MAPA = [
     { id: "almacen-spm", corto: "SPM", nombre: "Cesar Iglesias - San Pedro de Macoris (CEDI)", direccion: "C/ Cesar Iglesias No.1, Zona Industrial", lat: 18.46601, lon: -69.31717, color: "#dc2626" },
@@ -11,7 +39,6 @@
   ];
 
   function iconoOrigenSutil(a) {
-    /* Pin discreto: círculo pequeño + anillo suave, sin texto grande */
     var html =
       '<div style="position:relative;width:28px;height:28px;">' +
       '<div style="position:absolute;inset:0;border-radius:50%;background:' + a.color +
@@ -21,7 +48,7 @@
       ';border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>' +
       '</div>';
     return L.divIcon({
-      className: "rutalog-origen-ico",
+      className: "rutalog-origen-ico leaflet-div-icon-clean",
       html: html,
       iconSize: [28, 28],
       iconAnchor: [14, 14],
@@ -46,7 +73,6 @@
     try {
       if (!window.estado || !estado.origenActual) return null;
       var o = estado.origenActual;
-      /* Preferir datos canónicos por id */
       if (o.id) {
         for (var i = 0; i < ALMACENES_MAPA.length; i++) {
           if (ALMACENES_MAPA[i].id === o.id) return ALMACENES_MAPA[i];
@@ -58,9 +84,9 @@
           corto: o.corto || "Origen",
           nombre: o.nombre || o.corto || "Centro de trabajo",
           direccion: o.direccion || "",
-          lat: o.lat,
-          lon: o.lon,
-          color: o.color || "#16a34a"
+          lat: Number(o.lat),
+          lon: Number(o.lon),
+          color: o.color || "#64748b"
         };
       }
     } catch (e) {}
@@ -69,34 +95,26 @@
 
   function pintar() {
     try {
-      if (typeof L === "undefined" || !window.estado) return;
-      if (!estado.mapPanel && !estado.mapRutas) return;
+      if (typeof L === "undefined") return;
       clearMarkers();
+      if (!window.estado) return;
       if (!estado.markersAlmacenes) estado.markersAlmacenes = [];
-
       var a = getOrigenActivo();
-      if (!a) return; /* Sin centro seleccionado → nada en el mapa */
-
-      var popup =
-        '<div style="min-width:170px">' +
-        '<div style="font-size:11px;color:#888;margin-bottom:2px">Origen del viaje</div>' +
-        '<strong style="font-size:13px">' + a.nombre + '</strong>' +
-        (a.direccion ? '<div style="font-size:12px;color:#666;margin-top:4px">' + a.direccion + '</div>' : '') +
-        '</div>';
-
-      function addTo(map) {
+      if (!a) return;
+      var maps = [];
+      if (estado.mapPanel) maps.push(estado.mapPanel);
+      if (estado.mapRutas) maps.push(estado.mapRutas);
+      maps.forEach(function (map) {
         if (!map) return;
         var m = L.marker([a.lat, a.lon], {
           icon: iconoOrigenSutil(a),
-          zIndexOffset: 4500,
-          title: "Origen: " + a.corto
+          zIndexOffset: 500,
+          interactive: true
         });
-        m.bindPopup(popup);
+        m.bindPopup("<strong>" + (a.corto || "Origen") + "</strong><br>" + (a.nombre || "") + (a.direccion ? "<br><small>" + a.direccion + "</small>" : ""));
         m.addTo(map);
         estado.markersAlmacenes.push(m);
-      }
-      addTo(estado.mapPanel);
-      addTo(estado.mapRutas);
+      });
     } catch (e) {
       console.warn("[RUTALOG] centros CI", e);
     }
@@ -124,10 +142,12 @@
   }
 
   function boot() {
+    injectMapIconCSS();
     hook();
     pintar();
   }
 
+  injectMapIconCSS();
   setTimeout(boot, 800);
   setTimeout(boot, 2000);
   setTimeout(boot, 4500);
