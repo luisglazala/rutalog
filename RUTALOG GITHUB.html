@@ -8,7 +8,6 @@ html,body{background:#0a0a0a!important}
 html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
 html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
-/* Leaflet: sin caja en divIcon (evita cuadrados al refrescar) */
 .leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}
 .leaflet-div-icon .marcador{border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;color:#fff!important;font-weight:700!important}
 </style>
@@ -27,7 +26,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot27">
+<link rel="stylesheet" href="./styles.css?v=boot28">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
@@ -75,7 +74,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot27';
+    s.src='./app.js?v=boot28';
     s.onload=function(){
       var mi=document.createElement('script');
       mi.src='./mejoras-map-icons.js?v=1';
