@@ -1,42 +1,14 @@
-/* mejoras-layout.css — mapa panel más grande, sin cortes, cascada de paradas */
+/* mejoras-layout.css v2 — mapa panel más grande SOLO en página activa */
 
 /* Ocultar Optimizar orden (pedido) */
 #btnOptimizarRuta { display: none !important; }
 
-/* Página panel: mapa ocupa más altura */
-#page-panel {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 12px !important;
-}
-#page-panel .drop {
-  flex: 0 0 auto !important;
-}
-#page-panel .stats {
-  flex: 0 0 auto !important;
-}
-#page-panel .map-box {
-  flex: 1 1 auto !important;
-  min-height: min(62vh, 720px) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}
-#page-panel #mapPanel {
-  flex: 1 1 auto !important;
-  min-height: 420px !important;
-  height: 100% !important;
+/* Páginas inactivas: nunca visibles (anula display:flex accidental) */
+.page:not(.active) {
+  display: none !important;
 }
 
-/* Layout general: evitar que el contenido se corte a la mitad */
-.app, .main, .page {
-  min-height: 0 !important;
-}
-.main {
-  overflow: auto !important;
-}
+/* Solo la página activa usa flex */
 .page.active {
   display: flex !important;
   flex-direction: column !important;
@@ -44,8 +16,39 @@
   min-height: 0 !important;
 }
 
-/* Mapa de rutas + side panel */
-#page-rutas .map-layout {
+/* Página panel ACTIVA: mapa ocupa más altura */
+#page-panel.active {
+  gap: 12px !important;
+}
+#page-panel.active .drop {
+  flex: 0 0 auto !important;
+}
+#page-panel.active .stats {
+  flex: 0 0 auto !important;
+}
+#page-panel.active .map-box {
+  flex: 1 1 auto !important;
+  min-height: min(62vh, 720px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+#page-panel.active #mapPanel {
+  flex: 1 1 auto !important;
+  min-height: 420px !important;
+  height: 100% !important;
+}
+
+/* Layout general */
+.app, .main {
+  min-height: 0 !important;
+}
+.main {
+  overflow: auto !important;
+}
+
+/* Mapa de rutas ACTIVO + side panel */
+#page-rutas.active .map-layout {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   display: grid !important;
@@ -53,24 +56,24 @@
   gap: 12px !important;
   align-items: stretch !important;
 }
-#page-rutas .map-box {
+#page-rutas.active .map-box {
   min-height: min(58vh, 680px) !important;
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
 }
-#page-rutas #mapRutas {
+#page-rutas.active #mapRutas {
   flex: 1 1 auto !important;
   min-height: 400px !important;
 }
-#page-rutas .side-panel {
+#page-rutas.active .side-panel {
   max-height: none !important;
   min-height: min(58vh, 680px) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
 }
 
-/* Cascada de clientes del viaje: más visible */
+/* Cascada de clientes del viaje */
 #listaViajeActual {
   max-height: none !important;
   min-height: 120px !important;
@@ -92,37 +95,35 @@
   overflow: auto !important;
 }
 
-/* Stats / KPIs: no se aplastan en pantallas medianas */
+/* Stats / KPIs */
 .stats {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
   gap: 10px !important;
 }
 
-/* Filtros y headers no se cortan */
 .filters, .map-head {
   flex-wrap: wrap !important;
   gap: 8px !important;
 }
 
-/* Responsive */
 @media (max-width: 960px) {
-  #page-rutas .map-layout {
+  #page-rutas.active .map-layout {
     grid-template-columns: 1fr !important;
   }
-  #page-rutas .side-panel {
+  #page-rutas.active .side-panel {
     min-height: 280px !important;
     max-height: 50vh !important;
   }
-  #page-panel .map-box,
-  #page-rutas .map-box {
+  #page-panel.active .map-box,
+  #page-rutas.active .map-box {
     min-height: 45vh !important;
   }
 }
 
 @media (max-width: 720px) {
-  #page-panel #mapPanel,
-  #page-rutas #mapRutas {
+  #page-panel.active #mapPanel,
+  #page-rutas.active #mapRutas {
     min-height: 320px !important;
   }
   .stat .v {
