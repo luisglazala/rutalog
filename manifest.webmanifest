@@ -2,17 +2,24 @@
   "name": "RUTALOG — Consolidador territorial",
   "short_name": "RUTALOG",
   "description": "Consolidador territorial y planificador de rutas",
-  "start_url": "./index.html",
+  "start_url": "./RUTALOG%20GITHUB.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "lang": "es",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Cpath d='M8 22 L16 7 L24 22' fill='none' stroke='%23fafafa' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E",
+      "src": "./favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
