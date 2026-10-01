@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v2 + marcadores */
+/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v3 + marcadores */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -7,6 +7,9 @@
     "html.rutalog-booting .sidebar,html.rutalog-booting .main,html:not(.rutalog-ready) .sidebar,html:not(.rutalog-ready) .main,html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
     "html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
+    /* Páginas: solo la activa visible (corrige CSS viejo en caché) */
+    ".page{display:none!important}",
+    ".page.active{display:flex!important;flex-direction:column!important;gap:14px!important}",
     "#rutalogTokenGate{position:fixed;inset:0;z-index:100000;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
     "#rutalogTokenGate .tg-card{width:min(420px,94vw);background:#171717;border:1px solid #1f1f1f;border-radius:16px;padding:28px 24px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:#fafafa}",
     "#rutalogTokenGate h2{font-size:18px;font-weight:700;margin:0 0 6px}",
@@ -28,6 +31,29 @@
   }
   removeDiaBtns();
 
+  function forcePageVisibility() {
+    try {
+      document.querySelectorAll(".page").forEach(function (p) {
+        if (p.classList.contains("active")) {
+          p.style.setProperty("display", "flex", "important");
+        } else {
+          p.style.setProperty("display", "none", "important");
+        }
+      });
+    } catch (e) {}
+  }
+
+  function patchGo() {
+    if (typeof window.go !== "function" || window.go.__rutalogPatched) return;
+    var _go = window.go;
+    window.go = function (page) {
+      var r = _go.apply(this, arguments);
+      forcePageVisibility();
+      return r;
+    };
+    window.go.__rutalogPatched = true;
+  }
+
   function revealApp() {
     try {
       document.documentElement.classList.remove("rutalog-booting");
@@ -45,6 +71,7 @@
       if (main) { main.style.visibility = ""; main.style.opacity = ""; }
       if (sb) { sb.style.visibility = ""; sb.style.opacity = ""; }
     }
+    forcePageVisibility();
   }
 
   function hasToken() {
@@ -98,6 +125,10 @@
 
   function afterAppReady() {
     removeDiaBtns();
+    patchGo();
+    setTimeout(patchGo, 500);
+    setTimeout(patchGo, 1500);
+    setTimeout(forcePageVisibility, 200);
     if (typeof mostrarLogin === "function") {
       var _ml = mostrarLogin;
       window.mostrarLogin = function (show) {
@@ -119,6 +150,7 @@
             document.documentElement.classList.remove("rutalog-need-login");
             document.documentElement.classList.add("rutalog-ready");
           } catch (e) {}
+          forcePageVisibility();
         }
       };
     }
@@ -133,6 +165,7 @@
           var ov = document.getElementById("loginOverlay");
           var loginOn = ov && !ov.hidden && getComputedStyle(ov).display !== "none";
           if (!loginOn) revealApp();
+          forcePageVisibility();
         }, 900);
       }, 100);
     }
@@ -167,13 +200,14 @@
         l.href = "./mejoras-v2.css?v=11";
         document.head.appendChild(l);
       }
-      if (!document.getElementById("rutalog-layout-css")) {
-        var lLayout = document.createElement("link");
-        lLayout.id = "rutalog-layout-css";
-        lLayout.rel = "stylesheet";
-        lLayout.href = "./mejoras-layout.css?v=2";
-        document.head.appendChild(lLayout);
-      }
+      // Quitar link viejo de layout si existe y forzar v3
+      var oldL = document.getElementById("rutalog-layout-css");
+      if (oldL) oldL.remove();
+      var lLayout = document.createElement("link");
+      lLayout.id = "rutalog-layout-css";
+      lLayout.rel = "stylesheet";
+      lLayout.href = "./mejoras-layout.css?v=3";
+      document.head.appendChild(lLayout);
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=8");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=2");
@@ -182,6 +216,8 @@
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=1");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=1");
+      patchGo();
+      forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
