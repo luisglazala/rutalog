@@ -103,17 +103,17 @@
       var thead = document.querySelector("#auditOverlay table thead tr");
       if (thead) {
         thead.querySelectorAll("th").forEach(function (th) {
-          if (/^\s*cliente\s*$/i.test(th.textContent || "")) {
+          if (/cliente/i.test((th.textContent || "").trim()) && !/ciudad/i.test(th.textContent || "")) {
             th.classList.add("audit-col-cliente");
-            th.style.display = "none";
+            th.style.cssText = "display:none!important;width:0;padding:0;border:0;overflow:hidden;";
           }
         });
       }
       document.querySelectorAll("#auditTbody tr").forEach(function (tr) {
         var tds = tr.children;
-        if (tds[2] && !tds[2].classList.contains("audit-td-cita") && !tds[2].classList.contains("audit-td-cond")) {
+        if (tds.length > 2) {
           tds[2].classList.add("audit-col-cliente");
-          tds[2].style.display = "none";
+          tds[2].style.cssText = "display:none!important;width:0;padding:0;border:0;overflow:hidden;";
         }
       });
     } catch (e) {}
@@ -243,7 +243,12 @@
       "tr.audit-row-tope,tr.audit-tope-exceed{box-shadow:inset 3px 0 0 #ef4444;}",
       "td.audit-td-cita{white-space:nowrap;max-width:110px;}",
       "td.audit-td-cond{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}",
-      "#auditOverlay th.audit-col-cliente,#auditOverlay td.audit-col-cliente{display:none!important;}",
+      "#auditOverlay table thead th:nth-child(3),",
+      "#auditOverlay table tbody td:nth-child(3),",
+      "#auditOverlay th.audit-col-cliente,",
+      "#auditOverlay td.audit-col-cliente{",
+      "  display:none!important;width:0!important;min-width:0!important;padding:0!important;border:none!important;overflow:hidden!important;",
+      "}",
       "#auditOverlay .audit-nombre{max-width:220px;}",
       "#auditCapacidad{color:#86efac;}"
     ].join("");
@@ -297,5 +302,5 @@
   setTimeout(tick, 600);
   setTimeout(tick, 1500);
   setTimeout(tick, 3000);
-  setInterval(tick, 2500);
+  setInterval(tick, 2000);
 })();
