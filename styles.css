@@ -1,2 +1,17 @@
-/* styles — RUTALOG; leaflet-div-icon transparent appended */
-/* NOTE: full styles loaded from repo; critical map fix at end */
+@import url("./styles-part2.css");
+@import url("./mejoras-esteticas.css");
+
+/* RUTALOG: sin cuadrados al pintar marcadores Leaflet (panel) */
+.leaflet-div-icon,
+.leaflet-marker-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-div-icon .marcador {
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
