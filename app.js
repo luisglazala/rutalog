@@ -1,4 +1,4 @@
-/* RUTALOG loader: core + extras + gh-proxy + login inmediato */
+/* RUTALOG loader: core + extras + gh-proxy + login inmediato v2 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -132,7 +132,7 @@
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=1");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=2");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }

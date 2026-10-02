@@ -27,7 +27,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot36">
+<link rel="stylesheet" href="./styles.css?v=boot37">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -36,7 +36,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
   window.RUTALOG_API_BASE = "https://rutalog.pages.dev/api";
 </script>
 <script src="./mejoras-gh-proxy.js?v=3"></script>
-<script src="./mejoras-login-inmediato.js?v=1"></script>
+<script src="./mejoras-login-inmediato.js?v=2"></script>
 </head>
 <body>
 <script>
@@ -78,7 +78,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-need-login');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot36';
+    s.src='./app.js?v=boot37';
     s.onload=function(){
       var mi=document.createElement('script');
       mi.src='./mejoras-map-icons.js?v=1';
@@ -105,7 +105,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       gp.src='./mejoras-gh-proxy.js?v=3';
       document.body.appendChild(gp);
       var li=document.createElement('script');
-      li.src='./mejoras-login-inmediato.js?v=1';
+      li.src='./mejoras-login-inmediato.js?v=2';
       document.body.appendChild(li);
     };
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
