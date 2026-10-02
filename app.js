@@ -1,4 +1,4 @@
-/* RUTALOG loader + login-inmediato v3 */
+/* RUTALOG loader + login-inmediato v4 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -9,7 +9,7 @@
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
     ".page.active{display:flex!important;flex-direction:column!important;gap:14px!important}",
-    ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}"
+    ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}"
   ].join("\n");
   document.head.appendChild(css);
 
@@ -127,7 +127,7 @@
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=3");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
