@@ -1,8 +1,11 @@
-/* RUTALOG mejoras-login-inmediato v1 — pedir login al abrir el link si no hay sesión */
+/* RUTALOG mejoras-login-inmediato v2 — login al abrir, sin borrar lo que escribes */
 (function () {
   "use strict";
-  if (window.__rutalogLoginInmediatoV1) return;
-  window.__rutalogLoginInmediatoV1 = true;
+  if (window.__rutalogLoginInmediatoV2) return;
+  window.__rutalogLoginInmediatoV2 = true;
+
+  var shownOnce = false;
+  var syncStarted = false;
 
   function hasSession() {
     try {
@@ -21,14 +24,15 @@
     }
   }
 
-  function forceLoginUI() {
-    if (hasSession()) {
-      try {
-        document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting");
-        document.documentElement.classList.add("rutalog-ready");
-      } catch (e) {}
-      return false;
-    }
+  function isTypingInLogin() {
+    var ae = document.activeElement;
+    if (!ae) return false;
+    return ae.id === "loginUser" || ae.id === "loginPass";
+  }
+
+  function showOverlayOnly(msg) {
+    if (hasSession()) return;
+
     try {
       document.documentElement.classList.add("rutalog-need-login");
       document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
@@ -43,6 +47,7 @@
       ov.style.pointerEvents = "auto";
       ov.style.zIndex = "99999";
     }
+
     var main = document.querySelector(".main");
     if (main) {
       main.style.visibility = "hidden";
@@ -60,81 +65,114 @@
     var chip = document.getElementById("userChipBar");
     if (chip) chip.hidden = true;
 
-    if (typeof mostrarLogin === "function") {
-      try { mostrarLogin(true); } catch (e) {}
+    if (msg) {
+      var err = document.getElementById("loginError");
+      if (err && !isTypingInLogin()) {
+        err.textContent = msg;
+        err.classList.add("visible");
+      }
     }
-    return true;
+
+    if (!shownOnce && !isTypingInLogin()) {
+      var u = document.getElementById("loginUser");
+      if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 80);
+    }
+    shownOnce = true;
   }
 
-  function afterSyncGate() {
-    if (hasSession()) return;
-    forceLoginUI();
-    var err = document.getElementById("loginError");
-    var n = 0;
-    try {
-      if (typeof loadUsers === "function") {
-        n = loadUsers().filter(function (u) { return u.activo !== false; }).length;
+  function patchMostrarLogin() {
+    if (typeof window.mostrarLogin !== "function" || window.mostrarLogin._stablePatch) return;
+    var _orig = window.mostrarLogin;
+    window.mostrarLogin = function (show) {
+      if (show) {
+        var ov = document.getElementById("loginOverlay");
+        if (!ov) return _orig.apply(this, arguments);
+        ov.hidden = false;
+        ov.removeAttribute("hidden");
+        ov.style.display = "flex";
+        // NO vaciar loginUser / loginPass (el core original sí los borra)
+        if (!isTypingInLogin()) {
+          var u = document.getElementById("loginUser");
+          setTimeout(function () {
+            if (u && !isTypingInLogin()) try { u.focus(); } catch (e) {}
+          }, 50);
+        }
+        return;
       }
-    } catch (e) {}
-    if (err) {
-      if (n > 0) {
-        err.textContent = "Introduce usuario y contraseña";
-        err.classList.add("visible");
-      } else {
-        err.textContent = "Sincronizando usuarios… si no carga, pulsa Actualizar tras el primer acceso admin.";
-        err.classList.add("visible");
-      }
-    }
+      return _orig.apply(this, arguments);
+    };
+    window.mostrarLogin._stablePatch = true;
   }
 
   function patchGate() {
-    if (typeof window.aplicarGateLoginDesdeSync === "function" && !window.aplicarGateLoginDesdeSync._loginInmediato) {
-      var _orig = window.aplicarGateLoginDesdeSync;
+    if (typeof window.aplicarGateLoginDesdeSync === "function" && !window.aplicarGateLoginDesdeSync._stable) {
+      var _g = window.aplicarGateLoginDesdeSync;
       window.aplicarGateLoginDesdeSync = function () {
-        try { _orig.apply(this, arguments); } catch (e) { console.warn(e); }
-        if (!hasSession()) forceLoginUI();
+        try { _g.apply(this, arguments); } catch (e) {}
+        if (!hasSession()) showOverlayOnly(null);
       };
-      window.aplicarGateLoginDesdeSync._loginInmediato = true;
+      window.aplicarGateLoginDesdeSync._stable = true;
     }
-    if (typeof window.requiereLogin === "function" && !window.requiereLogin._loginInmediato) {
-      var _req = window.requiereLogin;
+    if (typeof window.requiereLogin === "function" && !window.requiereLogin._stable) {
+      var _r = window.requiereLogin;
       window.requiereLogin = function () {
         if (!hasSession()) return true;
-        return _req.apply(this, arguments);
+        return _r.apply(this, arguments);
       };
-      window.requiereLogin._loginInmediato = true;
+      window.requiereLogin._stable = true;
     }
   }
 
-  function kickSync() {
+  function kickSyncOnce() {
+    if (syncStarted || hasSession()) return;
+    syncStarted = true;
+    showOverlayOnly("Sincronizando usuarios desde la nube…");
+    if (typeof ghActualizar !== "function") {
+      showOverlayOnly("Introduce usuario y contraseña");
+      return;
+    }
+    Promise.resolve(ghActualizar({ silent: true }))
+      .then(function () {
+        if (hasSession()) return;
+        var n = 0;
+        try {
+          if (typeof loadUsers === "function") {
+            n = loadUsers().filter(function (u) { return u.activo !== false; }).length;
+          }
+        } catch (e) {}
+        showOverlayOnly(
+          n > 0
+            ? "Introduce usuario y contraseña"
+            : "Usuarios no cargados aún. Reintenta en unos segundos."
+        );
+      })
+      .catch(function () {
+        showOverlayOnly(
+          "No se pudo sincronizar. Puedes intentar iniciar sesión si ya hay usuarios locales."
+        );
+      });
+  }
+
+  function boot() {
+    patchMostrarLogin();
+    patchGate();
     if (hasSession()) return;
-    forceLoginUI();
-    var err = document.getElementById("loginError");
-    if (err) {
-      err.textContent = "Sincronizando usuarios desde la nube…";
-      err.classList.add("visible");
-    }
-    if (typeof ghActualizar === "function") {
-      Promise.resolve(ghActualizar({ silent: true }))
-        .then(function () { afterSyncGate(); })
-        .catch(function () { afterSyncGate(); });
-    } else {
-      afterSyncGate();
-    }
+    showOverlayOnly(null);
   }
 
-  function tick() {
+  boot();
+  var tries = 0;
+  var t = setInterval(function () {
+    tries++;
+    patchMostrarLogin();
     patchGate();
-    if (!hasSession()) forceLoginUI();
-  }
+    if (!hasSession() && document.getElementById("loginOverlay")) {
+      showOverlayOnly(null);
+      if (!syncStarted) kickSyncOnce();
+      if (shownOnce && tries > 8) clearInterval(t);
+    }
+    if (tries > 40) clearInterval(t);
+  }, 300);
 
-  tick();
-  setTimeout(tick, 100);
-  setTimeout(function () { tick(); kickSync(); }, 700);
-  setTimeout(tick, 1500);
-  setTimeout(tick, 3000);
-  setInterval(function () {
-    patchGate();
-    if (!hasSession()) forceLoginUI();
-  }, 2500);
+  setTimeout(kickSyncOnce, 900);
 })();
