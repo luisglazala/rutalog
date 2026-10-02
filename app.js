@@ -120,7 +120,7 @@
       onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=8");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
-      onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=5");
+      onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=1");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");

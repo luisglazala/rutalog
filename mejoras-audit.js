@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-audit v5 — modal ancho + ocultar Cliente + colores botones viaje */
+/* RUTALOG mejoras-audit v6 — modal ancho + leyenda alertas + poll suave */
 (function () {
   "use strict";
-  if (window.__rutalogAuditV5) return;
-  window.__rutalogAuditV5 = true;
+  if (window.__rutalogAuditV6) return;
+  window.__rutalogAuditV6 = true;
 
   function el(id) { return document.getElementById(id); }
 
@@ -96,6 +96,25 @@
     thCond.textContent = "Condición";
     ciudadTh.insertAdjacentElement("afterend", thCond);
     ciudadTh.insertAdjacentElement("afterend", thCita);
+  }
+
+  function ensureLegend() {
+    var modal = document.querySelector("#auditOverlay .audit-modal") || document.querySelector("#auditOverlay");
+    if (!modal) return;
+    if (document.getElementById("auditAlertLegend")) return;
+    var head = modal.querySelector(".audit-head") || modal.querySelector("header") || modal.firstElementChild;
+    var leg = document.createElement("div");
+    leg.id = "auditAlertLegend";
+    leg.className = "audit-alert-legend";
+    leg.innerHTML =
+      '<span class="alg-item alg-cita"><i></i> Cita</span>' +
+      '<span class="alg-item alg-cond"><i></i> Condición vs día</span>' +
+      '<span class="alg-item alg-tope"><i></i> Tope SKU</span>';
+    if (head && head.parentNode) {
+      head.insertAdjacentElement("afterend", leg);
+    } else {
+      modal.insertBefore(leg, modal.firstChild);
+    }
   }
 
   function hideClienteColumn() {
@@ -225,9 +244,9 @@
   }
 
   function injectCSS() {
-    if (el("rutalog-audit-v5-css")) return;
+    if (el("rutalog-audit-v6-css")) return;
     var st = document.createElement("style");
-    st.id = "rutalog-audit-v5-css";
+    st.id = "rutalog-audit-v6-css";
     st.textContent = [
       "#auditOverlay.audit-overlay{padding:12px!important;}",
       "#auditOverlay .audit-modal{width:min(98vw,1900px)!important;max-width:98vw!important;max-height:96vh!important;}",
@@ -250,6 +269,12 @@
       "#auditOverlay table thead th:nth-child(3),#auditOverlay table tbody td:nth-child(3),#auditOverlay th.audit-col-cliente,#auditOverlay td.audit-col-cliente{display:none!important;width:0!important;min-width:0!important;padding:0!important;border:none!important;overflow:hidden!important;}",
       "#auditOverlay .audit-nombre{max-width:220px;}",
       "#auditCapacidad{color:#86efac;}",
+      "#auditAlertLegend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:6px 14px 10px;font-size:12px;color:#a3a3a3;}",
+      "#auditAlertLegend .alg-item{display:inline-flex;align-items:center;gap:6px;}",
+      "#auditAlertLegend .alg-item i{display:inline-block;width:10px;height:10px;border-radius:2px;}",
+      "#auditAlertLegend .alg-cita i{background:#f97316;}",
+      "#auditAlertLegend .alg-cond i{background:#eab308;}",
+      "#auditAlertLegend .alg-tope i{background:#ef4444;}",
       "#btnGuardarViaje{background:linear-gradient(135deg,#8b5cf6,#a78bfa)!important;border-color:#7c3aed!important;color:#fff!important;box-shadow:0 2px 10px rgba(139,92,246,.35);}",
       "#btnGuardarViaje:hover:not(:disabled){filter:brightness(1.08);}",
       "#btnGuardarViaje:disabled{opacity:.45;filter:grayscale(.3);}",
@@ -281,26 +306,27 @@
   function afterRender() {
     try {
       ensureColumns();
+      ensureLegend();
       decorateRows();
       hideClienteColumn();
       renderTfoot();
       hideFootTextStats();
-    } catch (e) { console.warn("[audit-v5]", e); }
+    } catch (e) { console.warn("[audit-v6]", e); }
   }
 
   function hookRender() {
-    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV5) return;
+    if (typeof window.renderAuditoriaTabla !== "function" || window.renderAuditoriaTabla._auditV6) return;
     var orig = window.renderAuditoriaTabla;
     window.renderAuditoriaTabla = function () {
       var r = orig.apply(this, arguments);
       afterRender();
       return r;
     };
-    window.renderAuditoriaTabla._auditV5 = true;
+    window.renderAuditoriaTabla._auditV6 = true;
   }
 
   function hookStats() {
-    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV5) return;
+    if (typeof window.actualizarAuditStats !== "function" || window.actualizarAuditStats._auditV6) return;
     var orig = window.actualizarAuditStats;
     window.actualizarAuditStats = function () {
       var r = orig.apply(this, arguments);
@@ -312,7 +338,7 @@
       } catch (e) {}
       return r;
     };
-    window.actualizarAuditStats._auditV5 = true;
+    window.actualizarAuditStats._auditV6 = true;
   }
 
   function tick() {
@@ -323,8 +349,12 @@
     if (el("auditOverlay") && !el("auditOverlay").hidden) afterRender();
   }
 
-  setTimeout(tick, 600);
-  setTimeout(tick, 1500);
-  setTimeout(tick, 3000);
-  setInterval(tick, 2000);
+  function scheduleTick() {
+    tick();
+    var ov = el("auditOverlay");
+    var open = ov && !ov.hidden && ov.style.display !== "none";
+    setTimeout(scheduleTick, open ? 2500 : 8000);
+  }
+  setTimeout(scheduleTick, 700);
+  setTimeout(tick, 1800);
 })();
