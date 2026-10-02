@@ -1,4 +1,4 @@
-/* RUTALOG loader + login-inmediato v4 + sync v1 + core local fallback */
+/* RUTALOG loader + login-inmediato v4 + sync v1 + storage v1 + core local fallback */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -129,6 +129,7 @@
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=1");
+      onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
