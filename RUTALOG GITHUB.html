@@ -27,7 +27,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot32">
+<link rel="stylesheet" href="./styles.css?v=boot33">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -76,7 +76,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-booting');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot32';
+    s.src='./app.js?v=boot33';
     s.onload=function(){
       var mi=document.createElement('script');
       mi.src='./mejoras-map-icons.js?v=1';
@@ -99,6 +99,9 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       var ex=document.createElement('script');
       ex.src='./mejoras-excel-export.js?v=3';
       document.body.appendChild(ex);
+      var gp=document.createElement('script');
+      gp.src='./mejoras-gh-proxy.js?v=1';
+      document.body.appendChild(gp);
     };
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
     document.body.appendChild(s);
