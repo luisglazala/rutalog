@@ -138,7 +138,7 @@
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
-      onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=2");
+      onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
