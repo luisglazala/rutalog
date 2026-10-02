@@ -27,7 +27,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot40">
+<link rel="stylesheet" href="./styles.css?v=boot41">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -78,7 +78,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-need-login');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot40';
+    s.src='./app.js?v=boot41';
     s.onload=function(){
       function add(src){ var x=document.createElement('script'); x.src=src; document.body.appendChild(x); }
       add('./mejoras-map-icons.js?v=1');
@@ -86,7 +86,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       add('./mejoras-v2.js?v=11');
       add('./mejoras-centros.js?v=4');
       add('./mejoras-cruzados.js?v=4');
-      add('./mejoras-audit.js?v=5');
+      add('./mejoras-audit.js?v=6');
       add('./mejoras-excel-export.js?v=3');
       add('./mejoras-gh-proxy.js?v=3');
       add('./mejoras-login-inmediato.js?v=4');
