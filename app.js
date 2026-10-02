@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado boot43 — un solo loadExtras, sin cascade HTML */
+/* RUTALOG loader unificado boot44 + mapa unificado */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -116,7 +116,6 @@
       lLayout.rel = "stylesheet";
       lLayout.href = "./mejoras-layout.css?v=3";
       document.head.appendChild(lLayout);
-      /* Orden: storage → proxy/login → UI → dominio */
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
@@ -128,8 +127,7 @@
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=1");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
-      onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
-      onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
+      onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -146,7 +144,7 @@
   }
   loadCore().then(function () {
     forceLeafletIcons();
-    onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
+    onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
     afterAppReady();
     return loadScript("./app-core-construirHoy.js?v=5");
   }).then(function () {
