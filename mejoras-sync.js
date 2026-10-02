@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3 — cerca de tiempo real: foco, online, badge clicable, dirty 10s */
+/* RUTALOG mejoras-sync v3.1 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
 (function () {
   "use strict";
   if (window.__rutalogSyncV3) return;
@@ -6,8 +6,8 @@
   window.__rutalogSyncV2 = true;
   window.__rutalogSyncV1 = true;
 
-  var PULL_MS_FOCUS = 18000;
-  var PULL_MS_DIRTY = 10000;
+  var PULL_MS_FOCUS = 10000;
+  var PULL_MS_DIRTY = 7000;
   var _pullTimer = null;
   var _lastOkAt = null;
   var _lastErr = null;
@@ -277,7 +277,7 @@
       broadcast: broadcast
     };
     console.info(
-      "[RUTALOG] sync v3 · " +
+      "[RUTALOG] sync v3.1 · " +
         PULL_MS_FOCUS / 1000 +
         "s foco · " +
         PULL_MS_DIRTY / 1000 +
