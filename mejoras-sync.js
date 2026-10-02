@@ -1,13 +1,17 @@
-/* RUTALOG mejoras-sync v1 — pull más frecuente en foco + badge claro */
+/* RUTALOG mejoras-sync v2 — pull en foco + BroadcastChannel entre pestañas */
 (function () {
   "use strict";
-  if (window.__rutalogSyncV1) return;
+  if (window.__rutalogSyncV2) return;
+  window.__rutalogSyncV2 = true;
   window.__rutalogSyncV1 = true;
 
   var PULL_MS_FOCUS = 25000;
+  var PULL_MS_DIRTY = 12000;
   var _pullTimer = null;
   var _lastOkAt = null;
   var _lastErr = null;
+  var _tabId = "t" + Math.random().toString(36).slice(2, 10);
+  var _bc = null;
 
   function el(id) {
     return document.getElementById(id);
@@ -18,6 +22,14 @@
       if (typeof ghGetToken === "function") return !!ghGetToken();
     } catch (e) {}
     return false;
+  }
+
+  function isDirty() {
+    try {
+      return localStorage.getItem("rutalog_gh_dirty") === "1";
+    } catch (e) {
+      return false;
+    }
   }
 
   function fmtAgo(ts) {
@@ -55,6 +67,18 @@
     } catch (e) {}
   }
 
+  function broadcast(type, extra) {
+    try {
+      if (!_bc) return;
+      _bc.postMessage({
+        type: type,
+        tabId: _tabId,
+        at: Date.now(),
+        extra: extra || null
+      });
+    } catch (e) {}
+  }
+
   async function pullOnce(silent) {
     if (!hasToken()) return;
     if (typeof ghActualizar !== "function") return;
@@ -63,10 +87,11 @@
       _lastOkAt = Date.now();
       _lastErr = null;
       refreshBadge();
+      broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
       refreshBadge();
-      console.warn("[sync-v1] pull", e);
+      console.warn("[sync-v2] pull", e);
     }
   }
 
@@ -83,16 +108,65 @@
     _pullTimer = setInterval(function () {
       if (document.hidden) return;
       pullOnce(true);
-    }, PULL_MS_FOCUS);
+    }, isDirty() ? PULL_MS_DIRTY : PULL_MS_FOCUS);
   }
 
   function onVisibility() {
     if (document.hidden) return;
     pullOnce(true);
+    startPullLoop();
+  }
+
+  function setupBroadcast() {
+    try {
+      if (typeof BroadcastChannel === "undefined") return;
+      _bc = new BroadcastChannel("rutalog_sync");
+      _bc.onmessage = function (ev) {
+        var msg = ev && ev.data;
+        if (!msg || msg.tabId === _tabId) return;
+        if (msg.type === "data-changed" || msg.type === "push-ok") {
+          setTimeout(function () {
+            pullOnce(true);
+          }, 400);
+        }
+        if (msg.type === "pull-ok" && msg.at) {
+          _lastOkAt = msg.at;
+          _lastErr = null;
+          refreshBadge();
+        }
+      };
+    } catch (e) {
+      console.warn("[sync-v2] BroadcastChannel no disponible", e);
+    }
+  }
+
+  function hookDirtyAndPush() {
+    try {
+      if (window.__rutalogSyncSetItemPatched) return;
+      window.__rutalogSyncSetItemPatched = true;
+      var proto = Storage.prototype;
+      var orig = proto.setItem;
+      if (orig._syncV2) return;
+      proto.setItem = function (k, v) {
+        var r = orig.apply(this, arguments);
+        try {
+          if (this === localStorage && String(k) === "rutalog_gh_dirty") {
+            if (String(v) === "1") {
+              broadcast("data-changed");
+              startPullLoop();
+            } else {
+              broadcast("push-ok");
+            }
+          }
+        } catch (e) {}
+        return r;
+      };
+      proto.setItem._syncV2 = true;
+    } catch (e) {}
   }
 
   function hookBadgeRefresh() {
-    if (typeof window.ghUpdateSyncBadge === "function" && !window.ghUpdateSyncBadge._syncV1) {
+    if (typeof window.ghUpdateSyncBadge === "function" && !window.ghUpdateSyncBadge._syncV2) {
       var orig = window.ghUpdateSyncBadge;
       window.ghUpdateSyncBadge = function () {
         try {
@@ -100,9 +174,9 @@
         } catch (e) {}
         refreshBadge();
       };
-      window.ghUpdateSyncBadge._syncV1 = true;
+      window.ghUpdateSyncBadge._syncV2 = true;
     }
-    if (typeof window.ghStartPullLoop === "function" && !window.ghStartPullLoop._syncV1) {
+    if (typeof window.ghStartPullLoop === "function" && !window.ghStartPullLoop._syncV2) {
       window.ghStartPullLoop = function (on) {
         if (!on) {
           stopPullLoop();
@@ -110,11 +184,13 @@
         }
         startPullLoop();
       };
-      window.ghStartPullLoop._syncV1 = true;
+      window.ghStartPullLoop._syncV2 = true;
     }
   }
 
   function boot() {
+    setupBroadcast();
+    hookDirtyAndPush();
     hookBadgeRefresh();
     startPullLoop();
     setTimeout(function () {
@@ -127,7 +203,19 @@
     }, 4000);
     document.addEventListener("visibilitychange", onVisibility);
     setInterval(refreshBadge, 10000);
-    console.info("[RUTALOG] sync v1 · pull cada " + PULL_MS_FOCUS / 1000 + "s en foco");
+    window.rutalogSync = {
+      pull: function () {
+        return pullOnce(false);
+      },
+      broadcast: broadcast
+    };
+    console.info(
+      "[RUTALOG] sync v2 · pull " +
+        PULL_MS_FOCUS / 1000 +
+        "s foco · " +
+        PULL_MS_DIRTY / 1000 +
+        "s si dirty · BroadcastChannel"
+    );
   }
 
   if (document.readyState === "loading") {
