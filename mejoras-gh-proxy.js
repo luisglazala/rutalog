@@ -1,15 +1,15 @@
-/* RUTALOG mejoras-gh-proxy v2 — Cloudflare Workers (sin token en el navegador) */
+/* RUTALOG mejoras-gh-proxy v3 — Cloudflare Pages (sin token en el navegador) */
 (function () {
   "use strict";
-  if (window.__rutalogGhProxyV2) return;
-  window.__rutalogGhProxyV2 = true;
+  if (window.__rutalogGhProxyV3) return;
+  window.__rutalogGhProxyV3 = true;
 
-  var CF_API_DEFAULT = "https://rutalog.luisgerardo024.workers.dev/api";
+  var CF_API_DEFAULT = "https://rutalog.pages.dev/api";
 
   function apiBase() {
     if (window.RUTALOG_API_BASE) return String(window.RUTALOG_API_BASE).replace(/\/$/, "");
     try {
-      if (location && /rutalog\.luisgerardo024\.workers\.dev/i.test(location.hostname)) {
+      if (location && /rutalog\.pages\.dev$/i.test(location.hostname)) {
         return "/api";
       }
     } catch (e) {}
