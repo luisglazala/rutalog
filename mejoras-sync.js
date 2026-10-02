@@ -1,15 +1,17 @@
-/* RUTALOG mejoras-sync v2 — pull en foco + BroadcastChannel entre pestañas */
+/* RUTALOG mejoras-sync v3 — cerca de tiempo real: foco, online, badge clicable, dirty 10s */
 (function () {
   "use strict";
-  if (window.__rutalogSyncV2) return;
+  if (window.__rutalogSyncV3) return;
+  window.__rutalogSyncV3 = true;
   window.__rutalogSyncV2 = true;
   window.__rutalogSyncV1 = true;
 
-  var PULL_MS_FOCUS = 25000;
-  var PULL_MS_DIRTY = 12000;
+  var PULL_MS_FOCUS = 18000;
+  var PULL_MS_DIRTY = 10000;
   var _pullTimer = null;
   var _lastOkAt = null;
   var _lastErr = null;
+  var _pulling = false;
   var _tabId = "t" + Math.random().toString(36).slice(2, 10);
   var _bc = null;
 
@@ -21,7 +23,11 @@
     try {
       if (typeof ghGetToken === "function") return !!ghGetToken();
     } catch (e) {}
-    return false;
+    try {
+      return !!(localStorage.getItem("rutalog_gh_token") || "").trim();
+    } catch (e2) {
+      return false;
+    }
   }
 
   function isDirty() {
@@ -47,23 +53,46 @@
     if (!b) return;
     b.textContent = text;
     if (title) b.title = title;
+    b.style.cursor = "pointer";
+  }
+
+  function setStatusLine() {
+    var st = el("syncStatus");
+    if (!st) return;
+    if (_lastErr) {
+      st.textContent = "Error: " + String(_lastErr).slice(0, 80);
+      return;
+    }
+    if (_lastOkAt) {
+      st.textContent = "Última sync: " + new Date(_lastOkAt).toLocaleString() + " (" + fmtAgo(_lastOkAt) + ")";
+      return;
+    }
+    st.textContent = "Última sync: —";
   }
 
   function refreshBadge() {
     try {
       if (!hasToken()) {
-        setBadge("sin sync", "Sin token / proxy de sync");
+        setBadge("sin sync", "Sin token — Configuración → GitHub");
+        setStatusLine();
+        return;
+      }
+      if (_pulling) {
+        setBadge("sincronizando…", "Pull en curso");
         return;
       }
       if (_lastErr) {
         setBadge("sync error", String(_lastErr).slice(0, 120));
+        setStatusLine();
         return;
       }
       if (_lastOkAt) {
-        setBadge("Sync · " + fmtAgo(_lastOkAt), "Última sync OK: " + new Date(_lastOkAt).toLocaleString());
+        setBadge("Sync · " + fmtAgo(_lastOkAt), "Clic para actualizar ahora");
+        setStatusLine();
         return;
       }
-      setBadge("sync listo", "Esperando primera sincronización");
+      setBadge("sync listo", "Clic para actualizar ahora");
+      setStatusLine();
     } catch (e) {}
   }
 
@@ -82,16 +111,20 @@
   async function pullOnce(silent) {
     if (!hasToken()) return;
     if (typeof ghActualizar !== "function") return;
+    if (_pulling) return;
+    _pulling = true;
+    refreshBadge();
     try {
       await ghActualizar({ silent: silent !== false });
       _lastOkAt = Date.now();
       _lastErr = null;
-      refreshBadge();
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
+      console.warn("[sync-v3] pull", e);
+    } finally {
+      _pulling = false;
       refreshBadge();
-      console.warn("[sync-v2] pull", e);
     }
   }
 
@@ -105,14 +138,24 @@
   function startPullLoop() {
     stopPullLoop();
     if (!hasToken()) return;
+    var ms = isDirty() ? PULL_MS_DIRTY : PULL_MS_FOCUS;
     _pullTimer = setInterval(function () {
       if (document.hidden) return;
       pullOnce(true);
-    }, isDirty() ? PULL_MS_DIRTY : PULL_MS_FOCUS);
+    }, ms);
   }
 
   function onVisibility() {
     if (document.hidden) return;
+    pullOnce(true);
+    startPullLoop();
+  }
+
+  function onFocus() {
+    pullOnce(true);
+  }
+
+  function onOnline() {
     pullOnce(true);
     startPullLoop();
   }
@@ -127,7 +170,7 @@
         if (msg.type === "data-changed" || msg.type === "push-ok") {
           setTimeout(function () {
             pullOnce(true);
-          }, 400);
+          }, 350);
         }
         if (msg.type === "pull-ok" && msg.at) {
           _lastOkAt = msg.at;
@@ -136,17 +179,17 @@
         }
       };
     } catch (e) {
-      console.warn("[sync-v2] BroadcastChannel no disponible", e);
+      console.warn("[sync-v3] BroadcastChannel no disponible", e);
     }
   }
 
   function hookDirtyAndPush() {
     try {
-      if (window.__rutalogSyncSetItemPatched) return;
-      window.__rutalogSyncSetItemPatched = true;
+      if (window.__rutalogSyncSetItemPatchedV3) return;
+      window.__rutalogSyncSetItemPatchedV3 = true;
       var proto = Storage.prototype;
       var orig = proto.setItem;
-      if (orig._syncV2) return;
+      if (orig._syncV3) return;
       proto.setItem = function (k, v) {
         var r = orig.apply(this, arguments);
         try {
@@ -161,12 +204,31 @@
         } catch (e) {}
         return r;
       };
-      proto.setItem._syncV2 = true;
+      proto.setItem._syncV3 = true;
     } catch (e) {}
   }
 
+  function wireManualControls() {
+    var btn = el("btnSyncActualizar");
+    if (btn && !btn._syncV3) {
+      btn._syncV3 = true;
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        pullOnce(false);
+      });
+    }
+    var badge = el("badgeSync");
+    if (badge && !badge._syncV3) {
+      badge._syncV3 = true;
+      badge.title = "Clic para actualizar ahora";
+      badge.addEventListener("click", function () {
+        pullOnce(false);
+      });
+    }
+  }
+
   function hookBadgeRefresh() {
-    if (typeof window.ghUpdateSyncBadge === "function" && !window.ghUpdateSyncBadge._syncV2) {
+    if (typeof window.ghUpdateSyncBadge === "function" && !window.ghUpdateSyncBadge._syncV3) {
       var orig = window.ghUpdateSyncBadge;
       window.ghUpdateSyncBadge = function () {
         try {
@@ -174,9 +236,9 @@
         } catch (e) {}
         refreshBadge();
       };
-      window.ghUpdateSyncBadge._syncV2 = true;
+      window.ghUpdateSyncBadge._syncV3 = true;
     }
-    if (typeof window.ghStartPullLoop === "function" && !window.ghStartPullLoop._syncV2) {
+    if (typeof window.ghStartPullLoop === "function" && !window.ghStartPullLoop._syncV3) {
       window.ghStartPullLoop = function (on) {
         if (!on) {
           stopPullLoop();
@@ -184,7 +246,7 @@
         }
         startPullLoop();
       };
-      window.ghStartPullLoop._syncV2 = true;
+      window.ghStartPullLoop._syncV3 = true;
     }
   }
 
@@ -192,17 +254,22 @@
     setupBroadcast();
     hookDirtyAndPush();
     hookBadgeRefresh();
+    wireManualControls();
     startPullLoop();
     setTimeout(function () {
       pullOnce(true);
       refreshBadge();
-    }, 1200);
+      wireManualControls();
+    }, 1000);
     setTimeout(function () {
       pullOnce(true);
       refreshBadge();
-    }, 4000);
+    }, 3500);
     document.addEventListener("visibilitychange", onVisibility);
-    setInterval(refreshBadge, 10000);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+    setInterval(refreshBadge, 8000);
+    setInterval(wireManualControls, 5000);
     window.rutalogSync = {
       pull: function () {
         return pullOnce(false);
@@ -210,20 +277,20 @@
       broadcast: broadcast
     };
     console.info(
-      "[RUTALOG] sync v2 · pull " +
+      "[RUTALOG] sync v3 · " +
         PULL_MS_FOCUS / 1000 +
         "s foco · " +
         PULL_MS_DIRTY / 1000 +
-        "s si dirty · BroadcastChannel"
+        "s dirty · focus/online/badge"
     );
   }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
-      setTimeout(boot, 800);
+      setTimeout(boot, 700);
     });
   } else {
-    setTimeout(boot, 800);
+    setTimeout(boot, 700);
   }
-  setTimeout(boot, 2500);
+  setTimeout(boot, 2200);
 })();

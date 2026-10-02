@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado boot45 + mapa unificado */
+/* RUTALOG loader unificado boot46 + mapa unificado */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -119,7 +119,7 @@
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
-      onceScript("__rutalogSync", "./mejoras-sync.js?v=2");
+      onceScript("__rutalogSync", "./mejoras-sync.js?v=3");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=8");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
