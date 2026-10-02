@@ -1,16 +1,25 @@
-/* RUTALOG mejoras-gh-proxy v1 — sync GitHub vía Cloudflare /api (sin token en el navegador) */
+/* RUTALOG mejoras-gh-proxy v2 — Cloudflare Workers (sin token en el navegador) */
 (function () {
   "use strict";
-  if (window.__rutalogGhProxyV1) return;
-  window.__rutalogGhProxyV1 = true;
+  if (window.__rutalogGhProxyV2) return;
+  window.__rutalogGhProxyV2 = true;
+
+  var CF_API_DEFAULT = "https://rutalog.luisgerardo024.workers.dev/api";
 
   function apiBase() {
     if (window.RUTALOG_API_BASE) return String(window.RUTALOG_API_BASE).replace(/\/$/, "");
-    return "/api";
+    try {
+      if (location && /rutalog\.luisgerardo024\.workers\.dev/i.test(location.hostname)) {
+        return "/api";
+      }
+    } catch (e) {}
+    return CF_API_DEFAULT;
   }
 
+  window.RUTALOG_API_BASE = window.RUTALOG_API_BASE || CF_API_DEFAULT;
+
   function toProxyUrl(url) {
-    var s = String(url);
+    var s = String(url || "");
     if (s.indexOf("https://api.github.com") === 0) {
       return apiBase() + s.slice("https://api.github.com".length);
     }
@@ -52,17 +61,17 @@
       localStorage.removeItem("rutalog_gh_token");
     } catch (e) {}
 
-    if (typeof window.ghUpdateSyncBadge === "function") {
-      window.ghUpdateSyncBadge = function () {
-        var b = document.getElementById("badgeSync");
-        if (b) b.textContent = "Cloudflare · OK";
-      };
-      try { window.ghUpdateSyncBadge(); } catch (e) {}
-    }
+    window.ghUpdateSyncBadge = function () {
+      var b = document.getElementById("badgeSync");
+      if (b) b.textContent = "Cloudflare · OK";
+    };
+    try {
+      window.ghUpdateSyncBadge();
+    } catch (e) {}
   }
 
   function hideTokenUI() {
-    var ids = [
+    [
       "syncToken",
       "btnSaveToken",
       "btnClearToken",
@@ -70,16 +79,14 @@
       "rutalogTokenGate",
       "tokenGate",
       "ghTokenRow"
-    ];
-    ids.forEach(function (id) {
+    ].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) {
-        el.style.display = "none";
-        el.setAttribute("hidden", "");
-        if (el.tagName === "INPUT") {
-          el.value = "";
-          el.disabled = true;
-        }
+      if (!el) return;
+      el.style.display = "none";
+      el.setAttribute("hidden", "");
+      if (el.tagName === "INPUT") {
+        el.value = "";
+        el.disabled = true;
       }
     });
   }
@@ -90,8 +97,8 @@
   }
 
   tick();
-  setTimeout(tick, 500);
-  setTimeout(tick, 1500);
+  setTimeout(tick, 400);
+  setTimeout(tick, 1200);
   setTimeout(tick, 3000);
   setInterval(hideTokenUI, 4000);
 })();
