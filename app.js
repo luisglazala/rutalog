@@ -1,4 +1,4 @@
-/* RUTALOG loader + login-inmediato v4 + sync v1 + storage v1 + core local fallback */
+/* RUTALOG loader unificado boot43 — un solo loadExtras, sin cascade HTML */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -116,6 +116,11 @@
       lLayout.rel = "stylesheet";
       lLayout.href = "./mejoras-layout.css?v=3";
       document.head.appendChild(lLayout);
+      /* Orden: storage → proxy/login → UI → dominio */
+      onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
+      onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
+      onceScript("__rutalogSync", "./mejoras-sync.js?v=1");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=8");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
@@ -126,10 +131,6 @@
       onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
-      onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
-      onceScript("__rutalogSync", "./mejoras-sync.js?v=1");
-      onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
