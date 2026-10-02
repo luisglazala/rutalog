@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-login-inmediato v3 — login al abrir + liberar UI al entrar */
+/* RUTALOG mejoras-login-inmediato v4 — login al abrir + re-login al cerrar sesión */
 (function () {
   "use strict";
-  if (window.__rutalogLoginInmediatoV3) return;
-  window.__rutalogLoginInmediatoV3 = true;
+  if (window.__rutalogLoginInmediatoV4) return;
+  window.__rutalogLoginInmediatoV4 = true;
 
   var shownOnce = false;
   var syncStarted = false;
@@ -31,7 +31,6 @@
     return ae.id === "loginUser" || ae.id === "loginPass";
   }
 
-  /** Quitar bloqueo de login y mostrar la app */
   function unlockApp() {
     unlocked = true;
     try {
@@ -70,11 +69,24 @@
     }
   }
 
+  /** Volver a exigir login (p. ej. tras cerrar sesión) */
+  function lockToLogin(msg) {
+    unlocked = false;
+    shownOnce = false;
+    try {
+      document.documentElement.classList.add("rutalog-need-login");
+      document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
+    } catch (e) {}
+    showOverlayOnly(msg || "Introduce usuario y contraseña");
+  }
+
   function showOverlayOnly(msg) {
-    if (unlocked || hasSession()) {
+    if (hasSession()) {
       unlockApp();
       return;
     }
+    // Sin sesión siempre se puede (re)mostrar login, aunque unlocked fuera true
+    unlocked = false;
 
     try {
       document.documentElement.classList.add("rutalog-need-login");
@@ -128,16 +140,28 @@
     var _orig = window.mostrarLogin;
     window.mostrarLogin = function (show) {
       if (show) {
-        if (unlocked || hasSession()) {
+        // Pedir login de nuevo (cerrar sesión u otro gate)
+        if (hasSession()) {
           unlockApp();
           return;
         }
+        unlocked = false;
         var ov = document.getElementById("loginOverlay");
         if (!ov) return _orig.apply(this, arguments);
         ov.hidden = false;
         ov.removeAttribute("hidden");
         ov.style.display = "flex";
-        // NO vaciar loginUser / loginPass
+        ov.style.visibility = "visible";
+        ov.style.pointerEvents = "auto";
+        try {
+          document.documentElement.classList.add("rutalog-need-login");
+          document.documentElement.classList.remove("rutalog-ready");
+        } catch (e) {}
+        var main = document.querySelector(".main");
+        if (main) {
+          main.style.visibility = "hidden";
+          main.style.opacity = "0";
+        }
         if (!isTypingInLogin()) {
           var u = document.getElementById("loginUser");
           setTimeout(function () {
@@ -146,7 +170,6 @@
         }
         return;
       }
-      // Cerrar login → liberar app
       unlockApp();
       try {
         return _orig.apply(this, arguments);
@@ -160,7 +183,6 @@
     var _login = window.intentarLogin;
     window.intentarLogin = async function () {
       var r = await _login.apply(this, arguments);
-      // Si quedó sesión, liberar UI (aunque el core falle en CSS)
       setTimeout(function () {
         if (hasSession()) unlockApp();
       }, 50);
@@ -170,6 +192,28 @@
       return r;
     };
     window.intentarLogin._stablePatch = true;
+  }
+
+  function patchCerrarSesion() {
+    if (typeof window.cerrarSesion !== "function" || window.cerrarSesion._stablePatch) return;
+    var _cerrar = window.cerrarSesion;
+    window.cerrarSesion = function () {
+      try {
+        _cerrar.apply(this, arguments);
+      } catch (e) {
+        console.warn(e);
+      }
+      // Siempre volver al login tras salir
+      unlocked = false;
+      shownOnce = false;
+      setTimeout(function () {
+        lockToLogin("Sesión cerrada. Introduce usuario y contraseña");
+      }, 30);
+      setTimeout(function () {
+        if (!hasSession()) lockToLogin("Introduce usuario y contraseña");
+      }, 200);
+    };
+    window.cerrarSesion._stablePatch = true;
   }
 
   function patchGate() {
@@ -228,6 +272,7 @@
   function boot() {
     patchMostrarLogin();
     patchIntentarLogin();
+    patchCerrarSesion();
     patchGate();
     if (hasSession()) {
       unlockApp();
@@ -243,10 +288,11 @@
     tries++;
     patchMostrarLogin();
     patchIntentarLogin();
+    patchCerrarSesion();
     patchGate();
     if (hasSession()) {
       unlockApp();
-      clearInterval(t);
+      if (tries > 5) clearInterval(t);
       return;
     }
     if (document.getElementById("loginOverlay")) {
@@ -259,8 +305,10 @@
 
   setTimeout(kickSyncOnce, 900);
 
-  // Por si el usuario entra y el overlay sigue bloqueado por CSS
+  // Si hay sesión → app; si no y no estamos en proceso de login forzado, no reabrir en bucle
   setInterval(function () {
-    if (hasSession() && !unlocked) unlockApp();
+    if (hasSession()) {
+      if (!unlocked) unlockApp();
+    }
   }, 1000);
 })();
