@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v3 + marcadores + excel + gh-proxy */
+/* RUTALOG loader: core + extras + gh-proxy + login inmediato */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -9,16 +9,6 @@
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
     ".page.active{display:flex!important;flex-direction:column!important;gap:14px!important}",
-    "#rutalogTokenGate{position:fixed;inset:0;z-index:100000;background:#0a0a0a;display:flex;align-items:center;justify-content:center;padding:24px}",
-    "#rutalogTokenGate .tg-card{width:min(420px,94vw);background:#171717;border:1px solid #1f1f1f;border-radius:16px;padding:28px 24px;box-shadow:0 24px 60px rgba(0,0,0,.45);color:#fafafa}",
-    "#rutalogTokenGate h2{font-size:18px;font-weight:700;margin:0 0 6px}",
-    "#rutalogTokenGate p{font-size:13px;color:#a3a3a3;margin:0 0 16px;line-height:1.45}",
-    "#rutalogTokenGate label{display:block;font-size:12px;font-weight:600;color:#a3a3a3;margin-bottom:4px}",
-    "#rutalogTokenGate input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #1f1f1f;background:#0f0f0f;color:#fafafa;font-size:14px;box-sizing:border-box;margin-bottom:12px}",
-    "#rutalogTokenGate .btn{width:100%;justify-content:center;margin-top:4px}",
-    "#rutalogTokenGate .tg-skip{margin-top:10px;background:transparent;border:none;color:#a3a3a3;font-size:12px;cursor:pointer;width:100%;text-align:center}",
-    "#rutalogTokenGate .tg-err{display:none;background:#422006;border:1px solid #d97706;color:#fde68a;border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:12px}",
-    "#rutalogTokenGate .tg-err.visible{display:block}",
     ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}",
     ".leaflet-div-icon .marcador,.rutalog-pin .rutalog-pin-dot{border-radius:50%!important}"
   ].join("\n");
@@ -57,21 +47,23 @@
 
   function revealApp() {
     try {
+      var hasSession = false;
+      try {
+        var raw = localStorage.getItem("rutalog_session");
+        if (raw) {
+          var u = JSON.parse(raw);
+          if (u && u.id && u.username) hasSession = true;
+        }
+      } catch (e) {}
       document.documentElement.classList.remove("rutalog-booting");
-      document.documentElement.classList.remove("rutalog-need-login");
-      document.documentElement.classList.add("rutalog-ready");
+      if (hasSession) {
+        document.documentElement.classList.remove("rutalog-need-login");
+        document.documentElement.classList.add("rutalog-ready");
+      } else {
+        document.documentElement.classList.add("rutalog-need-login");
+        document.documentElement.classList.remove("rutalog-ready");
+      }
     } catch (e) {}
-    var main = document.querySelector(".main");
-    var sb = document.querySelector(".sidebar");
-    var ov = document.getElementById("loginOverlay");
-    var loginOn = ov && !ov.hidden && ov.style.display !== "none";
-    if (loginOn) {
-      if (main) { main.style.visibility = "hidden"; main.style.opacity = "0"; }
-      if (sb) { sb.style.visibility = "hidden"; sb.style.opacity = "0"; }
-    } else {
-      if (main) { main.style.visibility = ""; main.style.opacity = ""; }
-      if (sb) { sb.style.visibility = ""; sb.style.opacity = ""; }
-    }
     forcePageVisibility();
   }
 
@@ -140,6 +132,7 @@
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=1");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
@@ -158,9 +151,8 @@
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
     try {
-      document.documentElement.classList.add("rutalog-ready");
+      document.documentElement.classList.add("rutalog-need-login");
       document.documentElement.classList.remove("rutalog-booting");
-      document.documentElement.classList.remove("rutalog-need-login");
     } catch (err) {}
     loadExtras();
   });
