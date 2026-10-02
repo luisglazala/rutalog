@@ -1,4 +1,4 @@
-/* RUTALOG loader: core + extras + gh-proxy + login inmediato v2 */
+/* RUTALOG loader + login-inmediato v3 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -9,8 +9,7 @@
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
     ".page.active{display:flex!important;flex-direction:column!important;gap:14px!important}",
-    ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}",
-    ".leaflet-div-icon .marcador,.rutalog-pin .rutalog-pin-dot{border-radius:50%!important}"
+    ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}"
   ].join("\n");
   document.head.appendChild(css);
 
@@ -25,11 +24,8 @@
   function forcePageVisibility() {
     try {
       document.querySelectorAll(".page").forEach(function (p) {
-        if (p.classList.contains("active")) {
-          p.style.setProperty("display", "flex", "important");
-        } else {
-          p.style.setProperty("display", "none", "important");
-        }
+        if (p.classList.contains("active")) p.style.setProperty("display", "flex", "important");
+        else p.style.setProperty("display", "none", "important");
       });
     } catch (e) {}
   }
@@ -68,11 +64,10 @@
   }
 
   function forceLeafletIcons() {
-    var id = "rutalog-leaflet-no-square";
-    if (document.getElementById(id)) return;
+    if (document.getElementById("rutalog-leaflet-no-square")) return;
     var st = document.createElement("style");
-    st.id = id;
-    st.textContent = ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}";
+    st.id = "rutalog-leaflet-no-square";
+    st.textContent = ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}";
     (document.head || document.documentElement).appendChild(st);
   }
   forceLeafletIcons();
@@ -132,7 +127,7 @@
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=2");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=3");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
