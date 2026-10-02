@@ -1,169 +1,105 @@
-/* RUTALOG mejoras-citas v7 — pegar tabla (escapeHtml arreglado) */
+/* RUTALOG mejoras-citas v8 — pegar tabla (escapeHtml arreglado) */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV7) return;
+  if (window.__rutalogCitasV8 || window.__rutalogCitasV7) return;
+  window.__rutalogCitasV8 = true;
   window.__rutalogCitasV7 = true;
 
   function el(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&"+"amp;")
-      .replace(/</g, "&"+"lt;")
-      .replace(/>/g, "&"+"gt;")
-      .replace(/"/g, "&"+"quot;");
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
   function toastSafe(msg) {
-    try { if (typeof toast === "function") { toast(msg); return; } } catch (e) {}
+    try {
+      if (typeof toast === "function") { toast(msg); return; }
+    } catch (e) {}
     try {
       var t = document.createElement("div");
-      t.textContent = msg;
-      t.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 18px;border-radius:10px;z-index:999999;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.4);";
+      t.textContent = String(msg);
+      t.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:99999;background:#1f2937;color:#fff;padding:10px 14px;border-radius:8px;font:13px system-ui";
       document.body.appendChild(t);
       setTimeout(function () { try { t.remove(); } catch (e) {} }, 3000);
-    } catch (e2) { try { alert(msg); } catch (e3) {} }
+    } catch (e) {}
   }
   function normName(s) {
-    return String(s || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^A-Z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
   }
   function isoDate(d) {
-    if (!d || isNaN(d.getTime())) return null;
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    if (!(d instanceof Date) || isNaN(d)) return "";
+    return d.toISOString().slice(0, 10);
   }
   function parseCitaFecha(raw, ref) {
-    var t = String(raw || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-    if (!t) return null;
-    if (/ENTREGA\s*INMEDIATA|INMEDIATA|\bHOY\b/.test(t)) return isoDate(ref || new Date());
-    var m = t.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    var s = String(raw || "").trim();
+    if (!s) return "";
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if (m) {
-      var yy = +m[3]; if (yy < 100) yy += 2000;
-      return isoDate(new Date(yy, +m[2] - 1, +m[1]));
+      var dd = (+m[1]), mm = (+m[2]), yy = +m[3];
+      if (yy < 100) yy += 2000;
+      return yy + "-" + String(mm).padStart(2, "0") + "-" + String(dd).padStart(2, "0");
     }
-    m = t.match(/(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*(\d{1,2})(?:[\/\-](\d{1,2}))?/i);
-    if (m) {
-      var day = +m[2], month = m[3] ? +m[3] : null;
-      var base = ref || new Date();
-      var mo = month != null ? month - 1 : base.getMonth();
-      var cand = new Date(base.getFullYear(), mo, day);
-      if (month == null && day < base.getDate() - 5) cand = new Date(base.getFullYear(), mo + 1, day);
-      return isoDate(cand);
-    }
-    return null;
+    return s;
   }
   function findIdByName(nombre) {
     try {
       if (!window.estado) return null;
-      var q = normName(nombre);
-      if (!q) return null;
+      var target = normName(nombre);
+      if (!target) return null;
       var best = null, sc = 0;
       function score(n) {
-        n = normName(n);
-        if (!n) return 0;
-        if (n === q) return 100;
-        if (n.indexOf(q) >= 0 || q.indexOf(n) >= 0) return 80;
+        var nn = normName(n);
+        if (!nn) return 0;
+        if (nn === target) return 100;
+        if (nn.indexOf(target) >= 0 || target.indexOf(nn) >= 0) return 80;
         return 0;
       }
       if (estado.maestro) estado.maestro.forEach(function (c) {
-        var s = score(c.nombre);
-        if (s > sc) { sc = s; best = c.id; }
+        var s = score(c.nombre || c.name || "");
+        if (s > sc) { sc = s; best = c.id || c.idCliente || null; }
       });
       if (sc < 80 && estado.clientesHoy) estado.clientesHoy.forEach(function (c) {
-        var s = score(c.nombre);
-        if (s > sc) { sc = s; best = c.idCliente; }
+        var s = score(c.nombre || "");
+        if (s > sc) { sc = s; best = c.idCliente || c.id || null; }
       });
-      if (sc >= 50 && best != null) {
-        var s = String(best).replace(/\D/g, "");
-        while (s.length < 9) s = "0" + s;
-        return s.slice(-9);
-      }
-    } catch (e) {}
-    return null;
+      return sc >= 80 ? String(best) : null;
+    } catch (e) { return null; }
   }
-
   function parseLine(line) {
-    line = String(line || "").replace(/\u00a0/g, " ").trim();
+    line = String(line || "").trim();
     if (!line) return null;
-    var up = normName(line);
-    if (/^(ZONA|CITA|CLIENTE|ORDEN|NOTA)/.test(up) && /ZONA|CITA|CLIENTE/.test(up)) return null;
-
-    var ov = "", ovIdx = -1;
-    var ovMatch = line.match(/\b(OV[- ]?\d{6,})\b/i);
-    if (ovMatch) {
-      ov = ovMatch[1].replace(/\s+/g, "");
-      ovIdx = ovMatch.index;
+    var cols = line.split("\t").map(function (x) { return x.trim(); });
+    if (cols.length < 2) cols = line.split(/\s{2,}/).map(function (x) { return x.trim(); });
+    if (cols.length < 2) return null;
+    var id = cols[0], nombre = cols[1] || "", fecha = cols[2] || cols[1] || "";
+    if (/^id|cliente|código/i.test(id)) return null;
+    var fechaIso = parseCitaFecha(fecha);
+    if (!/^\d+$/.test(String(id).replace(/\D/g, "")) && nombre) {
+      var found = findIdByName(id);
+      if (found) { nombre = id; id = found; }
     }
-
-    var before = ovIdx >= 0 ? line.slice(0, ovIdx).trim() : line;
-    var after = ovIdx >= 0 ? line.slice(ovIdx + ovMatch[0].length).trim() : "";
-    before = before.replace(/\s+Z\s*\/\s*\d+\s*$/i, "").trim();
-
-    var zona = "", citaRaw = "", cliente = "";
-
-    var zm = before.match(/^(\d{1,4})\b\s*(.*)$/);
-    if (zm) {
-      zona = zm[1];
-      before = zm[2].trim();
-    }
-
-    var cm = before.match(/^((?:LUNES|MARTES|MI[EÉ]RCOLES|JUEVES|VIERNES|S[AÁ]BADO|DOMINGO)\s*\d{0,2}(?:\s*[\/\-]\s*\d{1,2})?|ENTREGA\s*INMEDIATA)\s+(.*)$/i);
-    if (cm) {
-      citaRaw = cm[1].replace(/\s+/g, " ").trim();
-      cliente = cm[2].trim();
-    } else {
-      cliente = before;
-    }
-
-    var nota = after;
-    if (line.indexOf("\t") >= 0) {
-      var cols = line.split("\t").map(function (x) { return x.trim(); });
-      if (cols.length >= 5) {
-        zona = cols[0] || zona;
-        citaRaw = cols[1] || citaRaw;
-        cliente = cols[2] || cliente;
-        if (/^OV/i.test(cols[3])) ov = cols[3].replace(/\s+/g, "");
-        nota = cols.slice(4).join(" ") || nota;
-      }
-    }
-
-    cliente = String(cliente || "").replace(/\s+Z\s*\/\s*\d+\s*$/i, "").trim();
-    if (!cliente && !ov) return null;
-    if (!cliente) cliente = ov || "Sin nombre";
-
-    var ref = new Date();
-    var fecha = parseCitaFecha(citaRaw, ref);
-    if (!fecha) fecha = parseCitaFecha(nota, ref);
-    if (!fecha) fecha = isoDate(ref);
-
-    return {
-      zona: String(zona || "").trim(),
-      citaRaw: String(citaRaw || "").trim(),
-      clienteNombre: cliente,
-      ov: String(ov || "").trim(),
-      nota: String(nota || "").trim(),
-      fecha: fecha,
-      idCliente: findIdByName(cliente)
-    };
+    id = String(id || "").replace(/\D/g, "");
+    if (!id) return null;
+    return { idCliente: id, nombre: nombre, fecha: fechaIso || fecha, citaRaw: line };
   }
-
   function parsePasteTable(text) {
-    var lines = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
     var rows = [];
-    for (var i = 0; i < lines.length; i++) {
-      var r = parseLine(lines[i]);
+    String(text || "").split(/\r?\n/).forEach(function (line) {
+      var r = parseLine(line);
       if (r) rows.push(r);
-    }
+    });
     return rows;
   }
-
   function makeKey(r) {
-    if (r.idCliente) return r.idCliente;
-    if (r.ov) return "OV:" + String(r.ov).replace(/\s+/g, "");
-    return "N:" + normName(r.clienteNombre).replace(/\s+/g, "_").slice(0, 40);
+    return String(r.idCliente || "") + "|" + String(r.fecha || "");
   }
-
   function getCitasMap() {
     if (!window.estado) window.estado = {};
-    if (!estado.citas || typeof estado.citas.set !== "function") {
+    if (!(estado.citas instanceof Map)) {
       var map = new Map();
       try {
         var raw = localStorage.getItem("rutalog_citas");
@@ -176,244 +112,117 @@
     }
     return estado.citas;
   }
-
   function persistCitas() {
-    try { if (typeof saveCitas === "function") { saveCitas(); return; } } catch (e) {}
     try {
       var o = {};
       getCitasMap().forEach(function (v, k) { o[k] = v; });
       localStorage.setItem("rutalog_citas", JSON.stringify(o));
-    } catch (e2) {}
+    } catch (e) {}
   }
-
   function applyRows(rows, replaceAll) {
-    var citas = getCitasMap();
-    if (replaceAll) citas.clear();
-    var ok = 0;
+    var map = getCitasMap();
+    if (replaceAll) map.clear();
     rows.forEach(function (r) {
-      var key = makeKey(r);
-      var prev = citas.get(key);
-      var ovs = (prev && prev.ovs) ? prev.ovs.slice() : [];
-      ovs.push({
-        ov: r.ov, fecha: r.fecha, nota: r.nota, zona: r.zona,
-        citaRaw: r.citaRaw, nombre: r.clienteNombre
-      });
-      var seen = {};
-      ovs = ovs.filter(function (o) {
-        var k = (o.ov || "") + "|" + (o.fecha || "") + "|" + (o.nota || "");
-        if (seen[k]) return false;
-        seen[k] = 1;
-        return true;
-      });
+      var id = String(r.idCliente);
+      var prev = map.get(id) || { idCliente: id, nombre: r.nombre, ovs: [], fuente: "pegar-tabla" };
+      var ovs = Array.isArray(prev.ovs) ? prev.ovs.slice() : [];
+      ovs = ovs.filter(function (o) { return String(o.fecha) !== String(r.fecha); });
+      ovs.push({ fecha: r.fecha, ov: r.ov || "", nota: r.nota || "" });
       ovs.sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
-      var rec = {
-        fecha: ovs[0].fecha,
-        ov: ovs[0].ov || null,
-        nota: ovs[0].nota || null,
-        zona: ovs[0].zona || null,
-        nombre: r.clienteNombre,
+      map.set(id, {
+        idCliente: id,
+        nombre: r.nombre || prev.nombre || "",
+        fecha: r.fecha,
+        citaRaw: r.citaRaw || "",
         ovs: ovs,
         fuente: "pegar-tabla"
-      };
-      citas.set(key, rec);
-      if (r.idCliente && key !== r.idCliente) citas.set(r.idCliente, rec);
-      ok++;
+      });
     });
     persistCitas();
-    renderList();
-    try { if (typeof renderMapas === "function") renderMapas(); } catch (e) {}
-    return ok;
   }
-
   function renderList() {
-    var cont = el("listaCitas");
+    var cont = el("citasList") || el("listaCitas") || document.querySelector("#page-citas .citas-list");
     if (!cont) return;
     var citas = getCitasMap();
-    if (!citas.size) {
-      cont.innerHTML = '<div class="vacio">Sin fechas de cita todavía.</div>';
-      return;
-    }
-    var items = [], seen = {};
+    var items = [];
     citas.forEach(function (v, id) {
-      var ovs = (v.ovs && v.ovs.length) ? v.ovs : [{ ov: v.ov, fecha: v.fecha, nota: v.nota, zona: v.zona, nombre: v.nombre }];
+      var ovs = Array.isArray(v.ovs) ? v.ovs : [];
+      if (!ovs.length && v.fecha) ovs = [{ fecha: v.fecha }];
       ovs.forEach(function (o) {
-        var rk = (o.ov || id) + "|" + (o.fecha || "") + "|" + (o.nota || "");
-        if (seen[rk]) return;
-        seen[rk] = 1;
-        items.push({
-          id: id,
-          nombre: o.nombre || v.nombre || id,
-          fecha: o.fecha || v.fecha || "",
-          ov: o.ov || "",
-          nota: o.nota || "",
-          zona: o.zona || ""
-        });
+        items.push({ id: id, nombre: v.nombre || "", fecha: o.fecha || v.fecha || "" });
       });
     });
     items.sort(function (a, b) {
-      return String(a.fecha).localeCompare(String(b.fecha)) || String(a.nombre).localeCompare(String(b.nombre), "es");
+      return String(a.fecha).localeCompare(String(b.fecha)) || String(a.nombre).localeCompare(String(b.nombre));
     });
     cont.innerHTML = items.map(function (it) {
-      return '<div class="cita-item"><div style="min-width:0;flex:1;">' +
-        "<div><strong>" + esc(it.nombre) + "</strong>" +
-        (it.ov ? ' <span class="mono" style="color:var(--muted);font-size:12px;">' + esc(it.ov) + "</span>" : "") +
-        "</div>" +
-        '<div style="font-size:12px;color:var(--muted);">' + esc(it.fecha) +
-        (it.zona ? " · Zona " + esc(it.zona) : "") + "</div>" +
-        (it.nota ? '<div style="font-size:12px;color:#e5e5e5;margin-top:4px;line-height:1.35;">' + esc(it.nota) + "</div>" : "") +
-        '</div><button type="button" data-id="' + esc(it.id) + '" class="del-cita" title="Eliminar">✕</button></div>';
-    }).join("");
+      return '<div class="cita-row" data-id="' + esc(it.id) + '" data-fecha="' + esc(it.fecha) + '">' +
+        '<span class="mono">' + esc(it.id) + '</span> ' +
+        '<span>' + esc(it.nombre) + '</span> ' +
+        '<span class="mono">' + esc(it.fecha) + '</span> ' +
+        '<button type="button" class="del-cita" data-id="' + esc(it.id) + '" data-fecha="' + esc(it.fecha) + '">×</button></div>';
+    }).join("") || '<div class="muted">Sin citas</div>';
     cont.querySelectorAll(".del-cita").forEach(function (b) {
       b.onclick = function () {
-        getCitasMap().delete(b.getAttribute("data-id"));
+        var id = b.getAttribute("data-id");
+        var map = getCitasMap();
+        map.delete(id);
         persistCitas();
         renderList();
-        try { if (typeof renderMapas === "function") renderMapas(); } catch (e) {}
       };
     });
   }
-
   function wireButtons(root) {
-    var a = (root || document).querySelector("#btnCitaPasteAplicar");
-    var r = (root || document).querySelector("#btnCitaPasteReemplazar");
-    var c = (root || document).querySelector("#btnCitaPasteLimpiar");
-    if (a && !a._wiredV7) {
-      a._wiredV7 = true;
-      a.onclick = function (e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        doApply(false);
+    root = root || document;
+    var area = el("citasPaste") || el("txtCitasPaste") || root.querySelector("textarea[data-citas],#page-citas textarea");
+    var btnA = el("btnCitasAplicar") || root.querySelector("[data-citas-apply]");
+    var btnR = el("btnCitasReemplazar") || root.querySelector("[data-citas-replace]");
+    if (btnA && !btnA._citasWired) {
+      btnA._citasWired = true;
+      btnA.onclick = function (e) {
+        e.preventDefault();
+        var rows = parsePasteTable(area ? area.value : "");
+        if (!rows.length) { toastSafe("No se detectaron filas de cita"); return; }
+        applyRows(rows, false);
+        renderList();
+        toastSafe("Citas aplicadas: " + rows.length);
       };
     }
-    if (r && !r._wiredV7) {
-      r._wiredV7 = true;
-      r.onclick = function (e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        doApply(true);
-      };
-    }
-    if (c && !c._wiredV7) {
-      c._wiredV7 = true;
-      c.onclick = function (e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        var ta = el("citaPasteArea");
-        if (ta) ta.value = "";
-        var prev = el("citaPastePreview");
-        if (prev) { prev.hidden = true; prev.innerHTML = ""; }
-        var st = el("citaPasteStatus");
-        if (st) st.textContent = "";
+    if (btnR && !btnR._citasWired) {
+      btnR._citasWired = true;
+      btnR.onclick = function (e) {
+        e.preventDefault();
+        var rows = parsePasteTable(area ? area.value : "");
+        applyRows(rows, true);
+        renderList();
+        toastSafe("Citas reemplazadas: " + rows.length);
       };
     }
   }
-
-  function ensureUI() {
-    var page = el("page-citas") || (el("listaCitas") && el("listaCitas").closest(".page")) || (el("btnAddCita") && el("btnAddCita").closest(".page"));
+  function ensurePasteUI() {
+    var page = el("page-citas");
     if (!page) return;
-    var existing = el("citaPasteBox");
-    if (existing) {
-      wireButtons(existing);
-      return;
+    if (!el("citasPaste") && !page.querySelector("textarea")) {
+      var box = document.createElement("div");
+      box.className = "citas-paste-box";
+      box.innerHTML = '<label>Pegar tabla de citas</label><textarea id="citasPaste" rows="6" placeholder="ID\tNombre\tFecha"></textarea>' +
+        '<div class="row gap"><button type="button" id="btnCitasAplicar" class="btn">Aplicar</button>' +
+        '<button type="button" id="btnCitasReemplazar" class="btn ghost">Reemplazar todo</button></div>' +
+        '<div id="citasList" class="citas-list"></div>';
+      page.appendChild(box);
     }
-    var card = page.querySelector(".card") || page;
-    var box = document.createElement("div");
-    box.id = "citaPasteBox";
-    box.className = "cita-paste-box";
-    box.innerHTML =
-      '<h4 class="cita-paste-title">Pegar tabla de citas</h4>' +
-      '<p class="cita-paste-hint">Pega las filas de Excel y pulsa <strong>Procesar y agregar</strong>. Se lee zona, cita, cliente, OV y nota.</p>' +
-      '<textarea id="citaPasteArea" rows="6" placeholder="Pega aquí la tabla (Ctrl+V)…"></textarea>' +
-      '<div class="cita-paste-actions">' +
-      '<button type="button" class="btn btn-primary btn-sm" id="btnCitaPasteAplicar">Procesar y agregar</button>' +
-      '<button type="button" class="btn btn-secondary btn-sm" id="btnCitaPasteReemplazar">Reemplazar todas</button>' +
-      '<button type="button" class="btn btn-secondary btn-sm" id="btnCitaPasteLimpiar">Limpiar caja</button>' +
-      '<span id="citaPasteStatus" class="cita-paste-status"></span></div>' +
-      '<div id="citaPastePreview" class="cita-paste-preview" hidden></div>';
-    var h3 = card.querySelector("h3");
-    if (h3) card.insertBefore(box, h3.nextSibling);
-    else card.insertBefore(box, card.firstChild);
-    wireButtons(box);
-    var ta = el("citaPasteArea");
-    if (ta && !ta._wiredPaste) {
-      ta._wiredPaste = true;
-      ta.addEventListener("input", function () { preview(); });
-      ta.addEventListener("paste", function () { setTimeout(preview, 40); });
-    }
+    wireButtons(page);
+    renderList();
   }
-
-  function preview() {
-    var ta = el("citaPasteArea");
-    var prev = el("citaPastePreview");
-    if (!ta || !prev) return;
-    var rows = parsePasteTable(ta.value);
-    if (!rows.length) {
-      prev.hidden = true;
-      prev.innerHTML = "";
-      return;
-    }
-    prev.hidden = false;
-    prev.innerHTML =
-      '<div class="cita-paste-sum">' + rows.length + " filas listas — pulsa Procesar y agregar</div>" +
-      '<div class="cita-paste-table-wrap"><table class="cita-paste-table"><thead><tr>' +
-      "<th>Cliente</th><th>OV</th><th>Fecha</th><th>Zona</th><th>Nota</th></tr></thead><tbody>" +
-      rows.map(function (r) {
-        return '<tr class="ok"><td>' + esc(r.clienteNombre) + '</td><td class="mono">' + esc(r.ov || "—") +
-          '</td><td class="mono">' + esc(r.fecha) + '</td><td>' + esc(r.zona) +
-          '</td><td>' + esc(r.nota) + '</td></tr>';
-      }).join("") + "</tbody></table></div>";
+  function tick() {
+    try { ensurePasteUI(); wireButtons(); } catch (e) { console.warn("[citas-v8]", e); }
   }
-
-  function doApply(replaceAll) {
-    var ta = el("citaPasteArea");
-    if (!ta) { toastSafe("No se encontró el cuadro de pegado"); return; }
-    var text = ta.value || "";
-    if (!String(text).trim()) { toastSafe("Pega primero la tabla en el cuadro"); return; }
-    var rows = parsePasteTable(text);
-    preview();
-    if (!rows.length) {
-      toastSafe("No se pudo leer ninguna fila");
-      return;
-    }
-    var n = applyRows(rows, !!replaceAll);
-    var st = el("citaPasteStatus");
-    if (st) st.textContent = n + " citas agregadas";
-    toastSafe(n + " cita(s) procesada(s)");
-  }
-
+  setTimeout(tick, 600);
+  setTimeout(tick, 1500);
+  setTimeout(tick, 3000);
   document.addEventListener("click", function (e) {
     var t = e.target;
-    if (!t) return;
-    var btn = t.id ? t : (t.closest ? t.closest("button") : t.parentNode);
-    if (!btn || !btn.id) return;
-    if (btn.id === "btnCitaPasteAplicar") {
-      e.preventDefault(); e.stopPropagation();
-      doApply(false);
-    } else if (btn.id === "btnCitaPasteReemplazar") {
-      e.preventDefault(); e.stopPropagation();
-      doApply(true);
-    }
-  }, true);
-
-  function boot() {
-    ensureUI();
-    wireButtons(document);
-    if (typeof window.renderCitas === "function" && !window.renderCitas._enhanced) {
-      var orig = window.renderCitas;
-      window.renderCitas = function () {
-        try { renderList(); } catch (e) { try { orig(); } catch (e2) {} }
-      };
-      window.renderCitas._enhanced = true;
-    }
-    try { renderList(); } catch (e) {}
-  }
-
-  setTimeout(boot, 300);
-  setTimeout(boot, 1000);
-  setTimeout(boot, 2500);
-  setTimeout(boot, 5000);
-  setInterval(function () {
-    ensureUI();
-    wireButtons(document);
-  }, 2000);
-
-  window.__citasParseTest = parsePasteTable;
-  window.__citasApply = doApply;
+    if (t && t.closest && t.closest("[data-page='citas'],#nav-citas,.nav [data-page=\"citas\"]")) setTimeout(tick, 100);
+  });
+  console.info("[RUTALOG] citas v8");
 })();
