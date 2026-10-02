@@ -1,4 +1,4 @@
-/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v3 + marcadores */
+/* RUTALOG loader: core e638c98 + construirHoy v5 + planificacion v4 + layout v3 + marcadores + excel */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -75,13 +75,6 @@
     forcePageVisibility();
   }
 
-  function hasToken() {
-    try {
-      if (typeof ghGetToken === "function") return !!ghGetToken();
-      return !!(localStorage.getItem("rutalog_gh_token") || "");
-    } catch (e) { return false; }
-  }
-
   function forceLeafletIcons() {
     var id = "rutalog-leaflet-no-square";
     if (document.getElementById(id)) return;
@@ -145,6 +138,7 @@
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
       onceScript("__rutalogMapIcons", "./mejoras-map-icons.js?v=1");
+      onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=1");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
