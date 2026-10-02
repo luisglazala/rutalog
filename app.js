@@ -1,4 +1,4 @@
-/* RUTALOG loader + login-inmediato v4 */
+/* RUTALOG loader + login-inmediato v4 + sync v1 + core local fallback */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -128,13 +128,21 @@
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=4");
+      onceScript("__rutalogSync", "./mejoras-sync.js?v=1");
       patchGo();
       forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
-  var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
-  loadScript(APP).then(function () {
+  var CORE_LOCAL = "./app-core-runtime.js";
+  var CORE_CDN = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
+  function loadCore() {
+    return loadScript(CORE_LOCAL).catch(function () {
+      console.warn("[RUTALOG] core local no disponible, usando CDN");
+      return loadScript(CORE_CDN);
+    });
+  }
+  loadCore().then(function () {
     forceLeafletIcons();
     onceScript("__rutalogMarcadores", "./mejoras-marcadores.js?v=2");
     afterAppReady();
