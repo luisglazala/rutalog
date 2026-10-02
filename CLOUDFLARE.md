@@ -1,31 +1,39 @@
-# Cloudflare Pages — RUTALOG
+# Cloudflare Worker — RUTALOG
 
-## 1. Conectar el repo
-En Cloudflare Dashboard → Workers & Pages → Create → Pages → Connect to Git → `luisglazala/rutalog`.
+URL: `https://rutalog.luisgerardo024.workers.dev`
 
-- Framework preset: **None**
-- Build command: *(vacío)*
-- Build output directory: `/` (o `.`)
+## Por qué daba 404 en `/api`
+El Worker solo servía archivos estáticos (HTML/JS). **No había código que atendiera `/api/*`**.
 
-## 2. Secret del token
-Settings → Environment variables → Add:
+Solución: `worker.js` en la raíz del repo (proxy a GitHub API).
 
-| Name | Value |
-|------|--------|
-| `GITHUB_SECRET_TOKEN` | Tu PAT de GitHub (repo `rutalog-datos`, contents read/write) |
+## Qué hacer ahora (Dashboard)
 
-Marcar como **Encrypt** / Secret. Aplicar a Production (y Preview si quieres).
+1. Entra a **Workers & Pages → rutalog**
+2. **Edit code** / Deploy y asegúrate de que el script del Worker sea el contenido de **`worker.js`** del repo (o conecta el repo y redeploy).
+3. **Settings → Variables and Secrets**:
+   - `GITHUB_SECRET_TOKEN` = tu PAT (acceso a `luisglazala/rutalog-datos`)
+4. **Save and deploy**
 
-## 3. Cómo funciona
-- `functions/api/[[path]].js` recibe `/api/repos/...` y llama a `https://api.github.com/repos/...` con el token del servidor.
-- `mejoras-gh-proxy.js` reescribe los `fetch` del navegador de `api.github.com` → `/api` y **elimina** la cabecera Authorization.
-- El token **nunca** viaja al frontend.
+## Deploy con Wrangler (alternativa)
 
-## 4. Dominio
-Tras el deploy, la app queda en `https://<proyecto>.pages.dev`.  
-Si sigues en GitHub Pages, el proxy `/api` no existirá ahí: hay que usar la URL de Cloudflare Pages.
-
-Opcional en consola del navegador antes de sync:
-```js
-window.RUTALOG_API_BASE = "https://<proyecto>.pages.dev/api";
+```bash
+npm i -g wrangler
+cd rutalog
+wrangler secret put GITHUB_SECRET_TOKEN
+wrangler deploy
 ```
+
+## Cómo comprobar que el proxy funciona
+
+1. Abre: https://rutalog.luisgerardo024.workers.dev/api  
+   Debe responder algo como: `{"ok":true,"service":"RUTALOG GitHub proxy"}`
+
+2. Luego:  
+   https://rutalog.luisgerardo024.workers.dev/api/repos/luisglazala/rutalog-datos/contents/data.json?ref=main  
+   Debe devolver JSON de GitHub (no la página de error 404 del navegador).
+
+## App
+https://rutalog.luisgerardo024.workers.dev/RUTALOG%20GITHUB.html
+
+El frontend ya apunta el proxy a `/api` en ese dominio.

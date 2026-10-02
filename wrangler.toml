@@ -1,0 +1,12 @@
+name = "rutalog"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+[assets]
+directory = "."
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Secret (no pongas el token en este archivo):
+# wrangler secret put GITHUB_SECRET_TOKEN
