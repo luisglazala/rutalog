@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-excel-export v2 — formato + nombre usuario/centro/fecha + carpeta recordada */
+/* RUTALOG mejoras-excel-export v3 — formato + username/centro/fecha + carpeta recordada */
 (function () {
   "use strict";
-  if (window.__rutalogExcelExportV2) return;
-  window.__rutalogExcelExportV2 = true;
+  if (window.__rutalogExcelExportV3) return;
+  window.__rutalogExcelExportV3 = true;
 
   var COLORS = [
     "F5E6C8", "C5D9F0", "D4EDDA", "E2D5F1",
@@ -44,17 +44,24 @@
   }
 
   function getUsuarioDescarga() {
+    // Solo login/username (ej. llazala), nunca el nombre completo
     try {
       if (typeof getSessionUser === "function") {
         var u = getSessionUser();
-        if (u) return u.nombre || u.username || u.user || "";
+        if (u) {
+          var login = u.username || u.user || u.usuario || "";
+          if (login) return String(login).trim();
+        }
       }
     } catch (e) {}
     try {
       var raw = localStorage.getItem("rutalog_session");
       if (raw) {
         var s = JSON.parse(raw);
-        if (s) return s.nombre || s.username || s.user || "";
+        if (s) {
+          var login2 = s.username || s.user || s.usuario || "";
+          if (login2) return String(login2).trim();
+        }
       }
     } catch (e) {}
     return "usuario";
@@ -410,12 +417,12 @@
 
   function hook() {
     if (typeof window.descargarExcel !== "function") return false;
-    if (window.descargarExcel._styledV2) return true;
+    if (window.descargarExcel._styledV3) return true;
     window.__descargarExcelOriginal = window.descargarExcel;
     window.descargarExcel = function () {
       descargarExcelEstilizado({});
     };
-    window.descargarExcel._styledV2 = true;
+    window.descargarExcel._styledV3 = true;
     window.descargarExcel.cambiarCarpeta = function () {
       descargarExcelEstilizado({ forcePickFolder: true });
     };
