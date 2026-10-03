@@ -1,23 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RUTALOG</title>
-<meta http-equiv="refresh" content="0; url=./RUTALOG%20GITHUB.html">
-<script>
-  location.replace("./RUTALOG%20GITHUB.html");
-</script>
-<style>
-  body{margin:0;background:#0a0a0a;color:#fafafa;font-family:system-ui,sans-serif;
-       display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
-  a{color:#38bdf8}
-  .muted{color:#a3a3a3;font-size:13px}
+<link rel="stylesheet" href="./boot.css">
+<script src="./boot.js"></script>
+<style id="rutalog-boot-css">
+html,body{background:#0a0a0a!important;height:100%;margin:0}
+html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
+html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
+.leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}
+.leaflet-div-icon .marcador{border-radius:50%!important}
+.app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
 </style>
+<script>
+(function(){try{var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}if(hasSession){document.documentElement.classList.add("rutalog-ready")}else{document.documentElement.classList.add("rutalog-need-login")}}catch(e){document.documentElement.classList.add("rutalog-need-login")}})();
+</script>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>RUTALOG — Consolidador Territorial · Lazala</title>
+<link rel="icon" href="./favicon.svg?v=1" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<link rel="stylesheet" href="./styles.css?v=boot48">
+<link rel="stylesheet" href="./mejoras-v2.css?v=11">
+<link rel="stylesheet" href="./mejoras-layout.css?v=3">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0a0a0a">
+<script>
+  window.RUTALOG_API_BASE = "https://rutalog.pages.dev/api";
+</script>
+<script src="./mejoras-gh-proxy.js?v=3"></script>
+<script src="./mejoras-login-inmediato.js?v=5"></script>
+<script src="./mejoras-storage.js?v=1"></script>
 </head>
 <body>
-  <p>Abriendo RUTALOG…</p>
-  <p><a href="./RUTALOG%20GITHUB.html">Entrar a la app</a></p>
-  <p class="muted">URL oficial: <a href="https://rutalog.pages.dev/RUTALOG%20GITHUB.html">rutalog.pages.dev</a></p>
+<script>
+(function(){
+  var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html';
+  function loadScript(src){
+    return new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=src;
+      s.onload=function(){resolve();};
+      s.onerror=function(){reject(new Error(src));};
+      document.head.appendChild(s);
+    });
+  }
+  function strip(html){
+    html=html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
+    html=html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
+    html=html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi,'');
+    return html;
+  }
+  loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js')
+  .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js'); })
+  .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); })
+  .then(function(){ return fetch(SRC,{cache:'no-store'}).then(function(r){return r.text();}); })
+  .then(function(html){
+    html=strip(html);
+    var parser=new DOMParser();
+    var doc=parser.parseFromString(html,'text/html');
+    document.body.innerHTML=doc.body.innerHTML;
+    Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
+      if(!s.src) return;
+      if(s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1 || s.src.indexOf('xlsx')!==-1) s.remove();
+    });
+    try{
+      var hasSession=false;
+      try{var raw=localStorage.getItem('rutalog_session');if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
+      document.documentElement.classList.remove('rutalog-ready','rutalog-need-login','rutalog-booting');
+      if(hasSession) document.documentElement.classList.add('rutalog-ready');
+      else document.documentElement.classList.add('rutalog-need-login');
+    }catch(e){}
+    var s=document.createElement('script');
+    s.src='./app.js?v=boot48';
+    s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
+    document.body.appendChild(s);
+  }).catch(function(err){
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a><br><small style="color:#a3a3a3">'+err+'</small></p>';
+  });
+})();
+</script>
 </body>
 </html>
