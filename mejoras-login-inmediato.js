@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-login-inmediato v4 — login al abrir + re-login al cerrar sesión */
+/* RUTALOG mejoras-login-inmediato v5 — login al abrir + limpiar credenciales al cerrar sesión */
 (function () {
   "use strict";
-  if (window.__rutalogLoginInmediatoV4) return;
-  window.__rutalogLoginInmediatoV4 = true;
+  if (window.__rutalogLoginInmediatoV5) return;
+  window.__rutalogLoginInmediatoV5 = true;
 
   var shownOnce = false;
   var syncStarted = false;
@@ -29,6 +29,26 @@
     var ae = document.activeElement;
     if (!ae) return false;
     return ae.id === "loginUser" || ae.id === "loginPass";
+  }
+
+  /** Seguridad: no dejar credenciales en el formulario al cerrar sesión */
+  function clearLoginFields() {
+    try {
+      var u = document.getElementById("loginUser");
+      var p = document.getElementById("loginPass");
+      if (u) {
+        u.value = "";
+        u.defaultValue = "";
+        u.setAttribute("autocomplete", "username");
+        u.blur();
+      }
+      if (p) {
+        p.value = "";
+        p.defaultValue = "";
+        p.setAttribute("autocomplete", "new-password");
+        p.blur();
+      }
+    } catch (e) {}
   }
 
   function unlockApp() {
@@ -69,15 +89,17 @@
     }
   }
 
-  /** Volver a exigir login (p. ej. tras cerrar sesión) */
   function lockToLogin(msg) {
     unlocked = false;
     shownOnce = false;
+    clearLoginFields();
     try {
       document.documentElement.classList.add("rutalog-need-login");
       document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
     } catch (e) {}
     showOverlayOnly(msg || "Introduce usuario y contraseña");
+    setTimeout(clearLoginFields, 50);
+    setTimeout(clearLoginFields, 300);
   }
 
   function showOverlayOnly(msg) {
@@ -85,7 +107,6 @@
       unlockApp();
       return;
     }
-    // Sin sesión siempre se puede (re)mostrar login, aunque unlocked fuera true
     unlocked = false;
 
     try {
@@ -140,12 +161,12 @@
     var _orig = window.mostrarLogin;
     window.mostrarLogin = function (show) {
       if (show) {
-        // Pedir login de nuevo (cerrar sesión u otro gate)
         if (hasSession()) {
           unlockApp();
           return;
         }
         unlocked = false;
+        clearLoginFields();
         var ov = document.getElementById("loginOverlay");
         if (!ov) return _orig.apply(this, arguments);
         ov.hidden = false;
@@ -153,27 +174,11 @@
         ov.style.display = "flex";
         ov.style.visibility = "visible";
         ov.style.pointerEvents = "auto";
-        try {
-          document.documentElement.classList.add("rutalog-need-login");
-          document.documentElement.classList.remove("rutalog-ready");
-        } catch (e) {}
-        var main = document.querySelector(".main");
-        if (main) {
-          main.style.visibility = "hidden";
-          main.style.opacity = "0";
-        }
-        if (!isTypingInLogin()) {
-          var u = document.getElementById("loginUser");
-          setTimeout(function () {
-            if (u && !isTypingInLogin()) try { u.focus(); } catch (e) {}
-          }, 50);
-        }
+        showOverlayOnly(null);
+        clearLoginFields();
         return;
       }
-      unlockApp();
-      try {
-        return _orig.apply(this, arguments);
-      } catch (e) {}
+      return _orig.apply(this, arguments);
     };
     window.mostrarLogin._stablePatch = true;
   }
@@ -181,11 +186,11 @@
   function patchIntentarLogin() {
     if (typeof window.intentarLogin !== "function" || window.intentarLogin._stablePatch) return;
     var _login = window.intentarLogin;
-    window.intentarLogin = async function () {
-      var r = await _login.apply(this, arguments);
+    window.intentarLogin = function () {
+      var r = _login.apply(this, arguments);
       setTimeout(function () {
         if (hasSession()) unlockApp();
-      }, 50);
+      }, 100);
       setTimeout(function () {
         if (hasSession()) unlockApp();
       }, 300);
@@ -198,19 +203,24 @@
     if (typeof window.cerrarSesion !== "function" || window.cerrarSesion._stablePatch) return;
     var _cerrar = window.cerrarSesion;
     window.cerrarSesion = function () {
+      clearLoginFields();
       try {
         _cerrar.apply(this, arguments);
       } catch (e) {
         console.warn(e);
       }
-      // Siempre volver al login tras salir
       unlocked = false;
       shownOnce = false;
+      clearLoginFields();
       setTimeout(function () {
         lockToLogin("Sesión cerrada. Introduce usuario y contraseña");
+        clearLoginFields();
       }, 30);
       setTimeout(function () {
-        if (!hasSession()) lockToLogin("Introduce usuario y contraseña");
+        if (!hasSession()) {
+          lockToLogin("Introduce usuario y contraseña");
+          clearLoginFields();
+        }
       }, 200);
     };
     window.cerrarSesion._stablePatch = true;
@@ -246,26 +256,11 @@
     }
     Promise.resolve(ghActualizar({ silent: true }))
       .then(function () {
-        if (hasSession()) {
-          unlockApp();
-          return;
-        }
-        var n = 0;
-        try {
-          if (typeof loadUsers === "function") {
-            n = loadUsers().filter(function (u) { return u.activo !== false; }).length;
-          }
-        } catch (e) {}
-        showOverlayOnly(
-          n > 0
-            ? "Introduce usuario y contraseña"
-            : "Usuarios no cargados aún. Espera un momento o recarga."
-        );
+        if (hasSession()) unlockApp();
+        else showOverlayOnly("Introduce usuario y contraseña");
       })
       .catch(function () {
-        showOverlayOnly(
-          "No se pudo sincronizar. Si ya hay usuarios en este equipo, prueba de nuevo."
-        );
+        showOverlayOnly("Introduce usuario y contraseña");
       });
   }
 
@@ -276,39 +271,26 @@
     patchGate();
     if (hasSession()) {
       unlockApp();
-      return;
+    } else {
+      showOverlayOnly(null);
+      setTimeout(kickSyncOnce, 400);
     }
-    showOverlayOnly(null);
+    setInterval(function () {
+      patchMostrarLogin();
+      patchCerrarSesion();
+      if (hasSession()) {
+        if (!unlocked) unlockApp();
+      } else if (unlocked) {
+        lockToLogin("Introduce usuario y contraseña");
+      }
+    }, 1500);
   }
 
-  boot();
-
-  var tries = 0;
-  var t = setInterval(function () {
-    tries++;
-    patchMostrarLogin();
-    patchIntentarLogin();
-    patchCerrarSesion();
-    patchGate();
-    if (hasSession()) {
-      unlockApp();
-      if (tries > 5) clearInterval(t);
-      return;
-    }
-    if (document.getElementById("loginOverlay")) {
-      showOverlayOnly(null);
-      if (!syncStarted) kickSyncOnce();
-      if (shownOnce && tries > 12) clearInterval(t);
-    }
-    if (tries > 50) clearInterval(t);
-  }, 300);
-
-  setTimeout(kickSyncOnce, 900);
-
-  // Si hay sesión → app; si no y no estamos en proceso de login forzado, no reabrir en bucle
-  setInterval(function () {
-    if (hasSession()) {
-      if (!unlocked) unlockApp();
-    }
-  }, 1000);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(boot, 200); });
+  } else {
+    setTimeout(boot, 200);
+  }
+  setTimeout(boot, 800);
+  setTimeout(boot, 2000);
 })();
