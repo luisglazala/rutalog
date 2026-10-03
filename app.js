@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado boot52 + mapa unificado */
+/* RUTALOG loader unificado + citas-tabla v2 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -123,7 +123,7 @@
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=9");
       onceScript("__rutalogCitasFutura", "./mejoras-citas-futura.js?v=1");
-      onceScript("__rutalogCitasTabla", "./mejoras-citas-tabla.js?v=1");
+      onceScript("__rutalogCitasTabla", "./mejoras-citas-tabla.js?v=2");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
@@ -136,15 +136,8 @@
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
-  var CORE_LOCAL = "./app-core-runtime.js";
-  var CORE_CDN = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
-  function loadCore() {
-    return loadScript(CORE_LOCAL).catch(function () {
-      console.warn("[RUTALOG] core local no disponible, usando CDN");
-      return loadScript(CORE_CDN);
-    });
-  }
-  loadCore().then(function () {
+  var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
+  loadScript(APP).then(function () {
     forceLeafletIcons();
     onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
     afterAppReady();
