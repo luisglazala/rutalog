@@ -1,47 +1,43 @@
-/* RUTALOG mejoras-citas-tabla v1 — pinta de alertas como tabla Excel; sin lista "Citas aplicadas" */
+/* RUTALOG mejoras-citas-tabla v2 — pinta de alertas como tabla Excel (estilo Dynamics) */
 (function () {
   "use strict";
-  if (window.__rutalogCitasTablaV1) return;
+  if (window.__rutalogCitasTablaV2) return;
+  window.__rutalogCitasTablaV2 = true;
   window.__rutalogCitasTablaV1 = true;
 
   function el(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      .replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
   }
 
   function injectCSS() {
-    if (el("rutalog-citas-tabla-css")) return;
-    var st = document.createElement("style");
-    st.id = "rutalog-citas-tabla-css";
+    var st = el("rutalog-citas-tabla-css");
+    if (!st) {
+      st = document.createElement("style");
+      st.id = "rutalog-citas-tabla-css";
+      document.head.appendChild(st);
+    }
     st.textContent = [
-      "#citasListEnhanced { display:none!important; height:0!important; overflow:hidden!important; margin:0!important; padding:0!important; }",
-      "#citasPasteBox p.cita-paste-title:nth-of-type(2) { display:none!important; }",
-      "#listaCitas { overflow:auto; max-height:min(55vh,520px); border:1px solid #2a2a2a; border-radius:10px; }",
-      "#listaCitas .vacio { padding:20px; color:#737373; }",
-      "#listaCitas table.citas-excel { width:100%; border-collapse:collapse; font-size:12.5px; }",
-      "#listaCitas table.citas-excel thead th {",
-      "  position:sticky; top:0; z-index:1;",
-      "  background:#4d7c0f; color:#ecfccb;",
-      "  text-align:left; padding:10px 12px; font-weight:700;",
-      "  white-space:nowrap; border-bottom:2px solid #365314;",
-      "  letter-spacing:.02em; font-size:11.5px;",
-      "}",
-      "#listaCitas table.citas-excel tbody td {",
-      "  padding:9px 12px; border-bottom:1px solid #1f1f1f; color:#e5e5e5;",
-      "  vertical-align:top; max-width:220px;",
-      "}",
-      "#listaCitas table.citas-excel tbody tr:hover td { background:#1a1a1a; }",
-      "#listaCitas table.citas-excel .mono { font-family:ui-monospace,Menlo,monospace; font-size:12px; color:#86efac; }",
-      "#listaCitas table.citas-excel .nota { color:#a3a3a3; font-size:12px; line-height:1.35; word-break:break-word; max-width:280px; }",
-      "#listaCitas table.citas-excel .futura { color:#fb923c; font-weight:600; }",
-      "#listaCitas table.citas-excel .del-cita {",
-      "  background:transparent; border:1px solid #333; color:#f87171;",
-      "  border-radius:6px; width:28px; height:28px; cursor:pointer; font-size:14px;",
-      "}",
-      "#listaCitas table.citas-excel .del-cita:hover { background:#3f1d1d; }"
+      "#citasListEnhanced{display:none!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important}",
+      "#citasPasteBox p.cita-paste-title:nth-of-type(2){display:none!important}",
+      "#listaCitas{overflow:auto;max-height:min(58vh,560px);border:1px solid #2a2a2a;border-radius:10px;background:#0c0c0c}",
+      "#listaCitas .vacio{padding:20px;color:#737373}",
+      "#listaCitas table.citas-excel{width:100%;border-collapse:collapse;font-size:13px;min-width:780px}",
+      "#listaCitas table.citas-excel thead th{position:sticky;top:0;z-index:2;background:#171717;color:#a3a3a3;text-align:left;padding:11px 14px;font-weight:700;white-space:nowrap;border-bottom:2px solid #333;letter-spacing:.04em;font-size:11px;text-transform:uppercase}",
+      "#listaCitas table.citas-excel tbody td{padding:11px 14px;border-bottom:1px solid #1f1f1f;border-right:1px solid #1a1a1a;color:#e5e5e5;vertical-align:middle}",
+      "#listaCitas table.citas-excel tbody td:last-child,#listaCitas table.citas-excel thead th:last-child{border-right:none}",
+      "#listaCitas table.citas-excel tbody tr:nth-child(even) td{background:#111}",
+      "#listaCitas table.citas-excel tbody tr:hover td{background:#1a1a1a}",
+      "#listaCitas table.citas-excel .col-zona{color:#a3a3a3;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;width:64px}",
+      "#listaCitas table.citas-excel .col-cita{color:#fb923c;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;white-space:nowrap;background:rgba(234,88,12,.08)}",
+      "#listaCitas table.citas-excel .col-cita.futura{color:#fdba74}",
+      "#listaCitas table.citas-excel .col-cliente{font-weight:600;color:#f5f5f5;max-width:220px}",
+      "#listaCitas table.citas-excel .col-ov{color:#93c5fd;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;white-space:nowrap}",
+      "#listaCitas table.citas-excel .col-nota{color:#fafafa;font-weight:700;font-size:12.5px;line-height:1.4;word-break:break-word;max-width:340px}",
+      "#listaCitas table.citas-excel .del-cita{background:transparent;border:1px solid #333;color:#737373;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:14px}",
+      "#listaCitas table.citas-excel .del-cita:hover{background:#3f1d1d;color:#f87171;border-color:#7f1d1d}"
     ].join("");
-    document.head.appendChild(st);
   }
 
   function hideCitasAplicadas() {
@@ -65,43 +61,50 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
+  function maestroDe(id, nombre) {
+    try {
+      if (!estado || !estado.maestro) return null;
+      if (estado.maestro.get) {
+        var m = estado.maestro.get(id) || estado.maestro.get(String(id));
+        if (m) return m;
+      }
+      if (estado.maestro.forEach) {
+        var found = null;
+        var q = String(nombre || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+        estado.maestro.forEach(function (r) {
+          if (found) return;
+          if (String(r.id) === String(id) || String(r.idCliente) === String(id)) found = r;
+          else if (q && String(r.nombre || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim() === q) found = r;
+        });
+        return found;
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function rowsFromCitas() {
     if (!window.estado || !(estado.citas instanceof Map)) return [];
     var rows = [];
     var hoy = fechaPrograma();
     estado.citas.forEach(function (v, id) {
       if (String(id).indexOf("n:") === 0) return;
-      var nombre = v.nombre || "";
-      try {
-        if (!nombre && estado.maestro) {
-          if (estado.maestro.get) {
-            var m = estado.maestro.get(id);
-            if (m) nombre = m.nombre || "";
-          }
-          if (!nombre && estado.maestro.forEach) {
-            estado.maestro.forEach(function (r) {
-              if (String(r.id) === String(id) || String(r.idCliente) === String(id)) nombre = r.nombre || nombre;
-            });
-          }
-        }
-      } catch (e) {}
-      var ovs = Array.isArray(v.ovs) && v.ovs.length ? v.ovs : [{
-        fecha: v.fecha || "",
-        ov: v.ov || "",
-        nota: v.nota || "",
-        citaRaw: v.citaRaw || ""
-      }];
+      var m = maestroDe(id, v.nombre);
+      var nombre = v.nombre || (m && m.nombre) || "";
+      var zona = v.zona || (m && (m.zona || m.ZONA || m.ruta)) || "";
+      var ovs = Array.isArray(v.ovs) && v.ovs.length
+        ? v.ovs
+        : [{ fecha: v.fecha || "", ov: v.ov || "", nota: v.nota || "", citaRaw: v.citaRaw || "" }];
       ovs.forEach(function (o) {
         var f = o.fecha || v.fecha || "";
         rows.push({
           id: id,
-          zona: v.zona || "",
+          zona: zona,
           cita: o.citaRaw || f || "—",
           fecha: f,
           cliente: nombre || String(id),
           ov: o.ov || v.ov || "",
           nota: o.nota || v.nota || "",
-          futura: f && hoy && f > hoy
+          futura: !!(f && hoy && f > hoy)
         });
       });
     });
@@ -127,12 +130,12 @@
       "</tr></thead><tbody>" +
       rows.map(function (r) {
         return (
-          "<tr data-id=\"" + esc(r.id) + "\">" +
-          "<td>" + esc(r.zona || "—") + "</td>" +
-          '<td class="' + (r.futura ? "futura" : "mono") + '">' + esc(r.cita) + (r.futura ? " · posterior" : "") + "</td>" +
-          "<td><span class=\"mono\">" + esc(r.id) + "</span><br>" + esc(r.cliente) + "</td>" +
-          "<td class=\"mono\">" + esc(r.ov || "—") + "</td>" +
-          '<td class="nota" title="' + esc(r.nota) + '">' + esc(r.nota || "—") + "</td>" +
+          '<tr data-id="' + esc(r.id) + '">' +
+          '<td class="col-zona">' + esc(r.zona || "—") + "</td>" +
+          '<td class="col-cita' + (r.futura ? " futura" : "") + '">' + esc(r.cita) + "</td>" +
+          '<td class="col-cliente" title="' + esc(r.cliente) + '">' + esc(r.cliente) + "</td>" +
+          '<td class="col-ov">' + esc(r.ov || "—") + "</td>" +
+          '<td class="col-nota" title="' + esc(r.nota) + '">' + esc(r.nota || "—") + "</td>" +
           '<td><button type="button" class="del-cita" data-id="' + esc(r.id) + '" title="Eliminar">×</button></td>' +
           "</tr>"
         );
@@ -156,8 +159,9 @@
   }
 
   function patchRenderCitas() {
-    if (window.renderCitas && window.renderCitas._tablaExcel) return;
+    if (window.renderCitas && window.renderCitas._tablaExcelV2) return;
     window.renderCitas = function () { renderTablaExcel(); };
+    window.renderCitas._tablaExcelV2 = true;
     window.renderCitas._tablaExcel = true;
   }
 
@@ -168,14 +172,14 @@
     renderTablaExcel();
   }
 
-  setTimeout(tick, 500);
-  setTimeout(tick, 1500);
-  setTimeout(tick, 3500);
+  setTimeout(tick, 400);
+  setTimeout(tick, 1200);
+  setTimeout(tick, 3000);
   setInterval(function () {
     injectCSS();
     hideCitasAplicadas();
     patchRenderCitas();
-  }, 4000);
+  }, 5000);
 
   document.addEventListener("click", function (e) {
     var t = e.target;
@@ -186,5 +190,5 @@
     }
   }, true);
 
-  console.info("[RUTALOG] citas-tabla v1 — pinta como Excel");
+  console.info("[RUTALOG] citas-tabla v2 — Excel ZONA/CITA/CLIENTE/OV/NOTA");
 })();
