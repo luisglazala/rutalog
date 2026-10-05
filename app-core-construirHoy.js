@@ -1,5 +1,6 @@
-/* app-core-construirHoy.js — e638c98 + ciudades filtro + sinPunto */
+/* app-core-construirHoy.js — e638c98 + ciudades filtro + sinPunto (escape fijo v7) */
 (function () {
+"use strict";
 function construirHoy(filas) {
   const lineas = [];
   let lineId = 0;
@@ -38,11 +39,13 @@ function construirHoy(filas) {
     if (porOV[ln.ov]) {
       porOV[ln.ov].peso += ln.peso;
       if (!porOV[ln.ov].ciudadExcel && ln.ciudadExcel) porOV[ln.ov].ciudadExcel = ln.ciudadExcel;
-    } else porOV[ln.ov] = {
-      ov: ln.ov, idCliente: ln.idCliente,
-      nombreRaw: ln.nombreRaw, peso: ln.peso, estado: ln.estado,
-      ciudadExcel: ln.ciudadExcel || "",
-    };
+    } else {
+      porOV[ln.ov] = {
+        ov: ln.ov, idCliente: ln.idCliente,
+        nombreRaw: ln.nombreRaw, peso: ln.peso, estado: ln.estado,
+        ciudadExcel: ln.ciudadExcel || "",
+      };
+    }
   }
 
   const porCli = {};
@@ -56,9 +59,9 @@ function construirHoy(filas) {
       };
     }
     porCli[r.idCliente].peso += r.peso;
-    if (!porCli[r.idCliente].ciudadExcel && r.ciudadExcel) porCli[r.idCliente].ciudadExcel = r.ciudadExcel;
     porCli[r.idCliente].ovs.push({ ov: r.ov, peso: r.peso, estado: r.estado });
-    const rank = { Factura: 3, "Confirmación": 2, Ninguno: 1 };
+    if (!porCli[r.idCliente].ciudadExcel && r.ciudadExcel) porCli[r.idCliente].ciudadExcel = r.ciudadExcel;
+    const rank = { Factura: 3, Confirmación: 2, Ninguno: 1 };
     if ((rank[r.estado] || 0) > (rank[porCli[r.idCliente].estado] || 0))
       porCli[r.idCliente].estado = r.estado;
   });
@@ -77,6 +80,7 @@ function construirHoy(filas) {
     }
     return null;
   }
+
   estado.clientesHoy = Object.values(porCli).map(c => {
     const m = resolverMaestro(c.idCliente);
     if (!m || m.lat == null || m.lon == null) return null;
@@ -99,7 +103,7 @@ function construirHoy(filas) {
   estado.lineasPendientes = new Map();
   for (const ln of lineas) {
     if (!estado.lineasPendientes.has(ln.idCliente)) estado.lineasPendientes.set(ln.idCliente, []);
-    estado.lineasPendientes.get(ln.idCliente).push({ ...ln, despachado: false, aDespachar: ln.cantidad });
+    estado.lineasPendientes.get(ln.idCliente).push({ ...ln, despachado: ln.devolucion === true, aDespachar: ln.cantidad });
   }
 
   estado.controlOVs.clear();
@@ -132,6 +136,10 @@ function construirHoy(filas) {
       if (m.localidad) ciudadesSet.add(m.localidad);
     }
   });
+  estado.clientesHoy.forEach(c => {
+    if (c.localidad) ciudadesSet.add(c.localidad);
+    if (c.provincia) ciudadesSet.add(c.provincia);
+  });
   const ciudades = [...ciudadesSet].filter(Boolean).sort((a,b)=>a.localeCompare(b,"es"));
   const lista = document.getElementById("listaCiudades");
   if (lista) {
@@ -144,7 +152,7 @@ function construirHoy(filas) {
     if (keep.length) keep = keep.filter(c => ciudades.includes(c));
     lista.innerHTML = ciudades.map(c => {
       const ck = keep.length ? (keep.includes(c) ? "checked" : "") : "";
-      const safe = String(c).replace(/"/g, """);
+      const safe = String(c).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
       return `<label class="ciu-chip"><input type="checkbox" class="chk-ciudad" value="${safe}" ${ck}> ${safe}</label>`;
     }).join("");
     const chkTodas = document.getElementById("chkTodasCiudades");
@@ -153,7 +161,7 @@ function construirHoy(filas) {
     if (typeof actualizarLabelCiudad === "function") actualizarLabelCiudad();
     try {
       const any = document.querySelector(".chk-ciudad:checked");
-      if (chkTodas && !any) { chkTodas.checked = true; }
+      if (!any && chkTodas) chkTodas.checked = true;
     } catch (e) {}
   }
 
@@ -199,8 +207,12 @@ function construirHoy(filas) {
       abrirSelectorCentro({ forzar: false });
     }
   }, 350);
+  if (typeof window.rutalogForceMapRefresh === "function") {
+    setTimeout(function () { window.rutalogForceMapRefresh("construirHoy-v7"); }, 100);
+    setTimeout(function () { window.rutalogForceMapRefresh("construirHoy-v7-2"); }, 500);
+  }
 }
 
   window.construirHoy = construirHoy;
-  console.info("[RUTALOG] construirHoy v5 ciudades filtro");
+  console.info("[RUTALOG] construirHoy v7 ciudades filtro (escape OK)");
 })();
