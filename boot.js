@@ -1,4 +1,4 @@
-/* Gate síncrono: no pintar app hasta que el loader termine (evita parpadeo) */
+/* Gate: con sesión → solo booting (pantalla negra). Sin sesión → need-login. */
 (function () {
   try {
     document.documentElement.classList.add("rutalog-booting");
@@ -10,10 +10,13 @@
         if (u && u.id && u.username) hasSession = true;
       }
     } catch (e) {}
-    if (!hasSession) {
+    if (hasSession) {
+      document.documentElement.classList.add("rutalog-session-pending");
+      document.documentElement.classList.remove("rutalog-need-login");
+    } else {
       document.documentElement.classList.add("rutalog-need-login");
+      document.documentElement.classList.remove("rutalog-session-pending");
     }
-    /* Nunca agregar rutalog-ready aquí — lo hace app.js al final */
   } catch (e) {
     document.documentElement.classList.add("rutalog-booting");
     document.documentElement.classList.add("rutalog-need-login");
