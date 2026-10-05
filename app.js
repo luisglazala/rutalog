@@ -173,7 +173,7 @@
       onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=9");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
-      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=2");
+      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=3");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=33");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=17");
