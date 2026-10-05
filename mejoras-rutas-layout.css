@@ -1,0 +1,32 @@
+/* Rutas side-panel: viaje actual visible; guardados con scroll abajo */
+#page-rutas .side-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: calc(100vh - 140px) !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+#page-rutas .side-panel #listaViajeActual {
+  flex: 1 1 auto !important;
+  min-height: 80px !important;
+  max-height: min(38vh, 280px) !important;
+  overflow-y: auto !important;
+}
+#page-rutas .side-panel #listaViajesGuardados {
+  flex: 0 1 32% !important;
+  min-height: 72px !important;
+  max-height: min(32vh, 240px) !important;
+  overflow-y: auto !important;
+}
+#listaCiudades {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  max-height: 160px !important;
+  overflow-y: auto !important;
+}
+#listaCiudades .ciu-chip {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
