@@ -15,8 +15,7 @@
 
   function removeDiaBtns() {
     ["btnExportSesion","btnImportSesion","fileImportSesion"].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.remove();
+      var el = document.getElementById(id); if (el) el.remove();
     });
   }
   removeDiaBtns();
@@ -39,9 +38,7 @@
       try {
         var t = document.getElementById("pageTitle");
         if (t && page === "panel") t.textContent = "Inicio";
-        document.querySelectorAll('.nav button[data-page="panel"] .nav-label').forEach(function (n) {
-          n.textContent = "Inicio";
-        });
+        document.querySelectorAll('.nav button[data-page="panel"] .nav-label').forEach(function (n) { n.textContent = "Inicio"; });
       } catch (e) {}
       return r;
     };
@@ -67,10 +64,7 @@
       var hasSession = false;
       try {
         var raw = localStorage.getItem("rutalog_session");
-        if (raw) {
-          var u = JSON.parse(raw);
-          if (u && u.id && u.username) hasSession = true;
-        }
+        if (raw) { var u = JSON.parse(raw); if (u && u.id && u.username) hasSession = true; }
       } catch (e) {}
       requestAnimationFrame(function () {
         try {
@@ -131,30 +125,21 @@
     try {
       if (!document.getElementById("rutalog-mejoras-v2-css")) {
         var l = document.createElement("link");
-        l.id = "rutalog-mejoras-v2-css";
-        l.rel = "stylesheet";
-        l.href = "./mejoras-v2.css?v=11";
+        l.id = "rutalog-mejoras-v2-css"; l.rel = "stylesheet"; l.href = "./mejoras-v2.css?v=11";
         document.head.appendChild(l);
       }
-      var oldL = document.getElementById("rutalog-layout-css");
-      if (oldL) oldL.remove();
+      var oldL = document.getElementById("rutalog-layout-css"); if (oldL) oldL.remove();
       var lLayout = document.createElement("link");
-      lLayout.id = "rutalog-layout-css";
-      lLayout.rel = "stylesheet";
-      lLayout.href = "./mejoras-layout.css?v=3";
+      lLayout.id = "rutalog-layout-css"; lLayout.rel = "stylesheet"; lLayout.href = "./mejoras-layout.css?v=3";
       document.head.appendChild(lLayout);
       if (!document.getElementById("rutalog-ui-polish-css")) {
         var lUi = document.createElement("link");
-        lUi.id = "rutalog-ui-polish-css";
-        lUi.rel = "stylesheet";
-        lUi.href = "./mejoras-ui-polish.css?v=1";
+        lUi.id = "rutalog-ui-polish-css"; lUi.rel = "stylesheet"; lUi.href = "./mejoras-ui-polish.css?v=1";
         document.head.appendChild(lUi);
       }
       if (!document.getElementById("rutalog-rutas-layout-css")) {
         var lR = document.createElement("link");
-        lR.id = "rutalog-rutas-layout-css";
-        lR.rel = "stylesheet";
-        lR.href = "./mejoras-rutas-layout.css?v=1";
+        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=1";
         document.head.appendChild(lR);
       }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
@@ -174,7 +159,7 @@
       onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
       onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-      onceScript("__rutalogMapaFixV3", "./mejoras-mapa-fix.js?v=3");
+      onceScript("__rutalogMapaFixV4", "./mejoras-mapa-fix.js?v=4");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -193,7 +178,7 @@
     onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
     onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-    onceScript("__rutalogMapaFixV3", "./mejoras-mapa-fix.js?v=3");
+    onceScript("__rutalogMapaFixV4", "./mejoras-mapa-fix.js?v=4");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
