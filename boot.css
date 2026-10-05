@@ -1,10 +1,10 @@
-/* Boot anti-flash + login estricto */
 html, body {
   background: #0a0a0a !important;
   color: #f5f5f5;
   height: 100%;
   margin: 0;
 }
+/* Mientras carga: todo oculto (negro) */
 html.rutalog-booting .app,
 html.rutalog-booting .sidebar,
 html.rutalog-booting .main,
@@ -13,19 +13,22 @@ html.rutalog-booting .topbar {
   opacity: 0 !important;
   pointer-events: none !important;
 }
-/* Sin sesión: NUNCA mostrar chrome de la app (solo login) */
-html.rutalog-need-login .sidebar,
-html.rutalog-need-login .main,
-html.rutalog-need-login .topbar,
-html.rutalog-need-login .app > :not(#loginOverlay) {
+/* Con sesión pendiente: NO mostrar login (evita flash fuera→dentro) */
+html.rutalog-session-pending #loginOverlay,
+html.rutalog-booting.rutalog-session-pending #loginOverlay {
+  display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
-html:not(.rutalog-ready) .app {
-  /* el overlay de login puede vivir fuera o dentro; el chrome sigue oculto vía need-login */
+html.rutalog-need-login:not(.rutalog-session-pending) .sidebar,
+html.rutalog-need-login:not(.rutalog-session-pending) .main,
+html.rutalog-need-login:not(.rutalog-session-pending) .topbar {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
-html.rutalog-need-login #loginOverlay {
+html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -38,7 +41,7 @@ html.rutalog-need-login #loginOverlay {
   justify-content: center !important;
   padding: 24px !important;
 }
-html.rutalog-need-login #loginOverlay[hidden] {
+html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden] {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
