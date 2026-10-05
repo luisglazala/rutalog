@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="stylesheet" href="./boot.css?v=2">
-<script src="./boot.js?v=2"></script>
+<link rel="stylesheet" href="./boot.css?v=3">
+<script src="./boot.js?v=3"></script>
 <style id="rutalog-boot-css">
 html,body{background:#0a0a0a!important;height:100%;margin:0;color:#f5f5f5}
 html.rutalog-booting .app,
@@ -18,7 +18,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 .app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
 </style>
 <script>
-(function(){try{/* No rutalog-ready hasta que app.js termine: evita parpadeo del topbar */document.documentElement.classList.add("rutalog-booting");var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}if(!hasSession){document.documentElement.classList.add("rutalog-need-login")}}catch(e){document.documentElement.classList.add("rutalog-booting");document.documentElement.classList.add("rutalog-need-login")}})();
+(function(){try{document.documentElement.classList.add("rutalog-booting");var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}if(hasSession){document.documentElement.classList.add("rutalog-session-pending");document.documentElement.classList.remove("rutalog-need-login")}else{document.documentElement.classList.add("rutalog-need-login");document.documentElement.classList.remove("rutalog-session-pending")}}catch(e){document.documentElement.classList.add("rutalog-booting");document.documentElement.classList.add("rutalog-need-login")}})();
 </script>
 <meta charset="UTF-8">
 <meta name="color-scheme" content="dark">
