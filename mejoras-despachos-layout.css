@@ -1,12 +1,6 @@
-/* RUTALOG despachos-layout v2 — tabla casi a pantalla completa */
-html, body {
-  height: 100% !important;
-}
-
-.app, .main, .content, main {
-  min-height: 0 !important;
-}
-
+/* RUTALOG despachos-layout v3 — altura + acciones Cliente/Viaje */
+html, body { height: 100% !important; }
+.app, .main, .content, main { min-height: 0 !important; }
 .main, .content {
   display: flex !important;
   flex-direction: column !important;
@@ -14,7 +8,6 @@ html, body {
   max-height: 100% !important;
   overflow: hidden !important;
 }
-
 #page-despachos.active {
   display: flex !important;
   flex-direction: column !important;
@@ -26,7 +19,6 @@ html, body {
   overflow: hidden !important;
   padding-bottom: 4px !important;
 }
-
 #page-despachos.active > .card {
   flex: 1 1 auto !important;
   display: flex !important;
@@ -38,18 +30,13 @@ html, body {
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
-
 #page-despachos.active > .card > div:first-child,
-#page-despachos.active > .card > p {
-  flex: 0 0 auto !important;
-}
-
+#page-despachos.active > .card > p { flex: 0 0 auto !important; }
 #page-despachos.active > .card > p {
   margin: 0 0 6px !important;
   font-size: 11.5px !important;
   line-height: 1.3 !important;
 }
-
 #page-despachos.active .table-wrap {
   flex: 1 1 auto !important;
   min-height: 0 !important;
@@ -59,13 +46,11 @@ html, body {
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.06);
 }
-
 #page-despachos.active .table-wrap table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
 }
-
 #page-despachos.active .table-wrap thead th {
   position: sticky;
   top: 0;
@@ -75,17 +60,11 @@ html, body {
   font-size: 10.5px !important;
   white-space: nowrap;
 }
-
 #page-despachos.active .table-wrap tbody td {
   padding: 5px 8px !important;
   line-height: 1.2 !important;
   vertical-align: middle !important;
 }
-
-#page-despachos.active .table-wrap tbody tr {
-  height: auto !important;
-}
-
 #page-despachos.active .btn-del-viaje-desp {
   background: transparent;
   border: 1px solid rgba(225, 29, 72, .35);
@@ -93,19 +72,26 @@ html, body {
   border-radius: 6px;
   padding: 2px 6px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 10.5px;
   line-height: 1.2;
   white-space: nowrap;
 }
 #page-despachos.active .btn-del-viaje-desp:hover {
   background: rgba(225, 29, 72, .15);
   border-color: #e11d48;
-  color: #fecdd3;
 }
-
+#page-despachos.active .btn-quitar-cli {
+  border-color: rgba(148, 163, 184, .4);
+  color: #cbd5e1;
+}
+#page-despachos.active .btn-quitar-cli:hover {
+  background: rgba(148, 163, 184, .12);
+  border-color: #94a3b8;
+  color: #f1f5f9;
+}
 #page-despachos.active th.col-acciones,
 #page-despachos.active td.col-acciones {
-  width: 72px;
+  width: 118px;
   text-align: center;
   white-space: nowrap;
 }
