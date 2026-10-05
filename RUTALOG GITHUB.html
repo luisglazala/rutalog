@@ -42,7 +42,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
 <body>
 <script>
 (function(){
-  var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@dbb313fbe86246228841486f56cd0c9b141f4354/RUTALOG%20GITHUB.html';
+  var SRC='./shell-body.html?v=capa1';
   function loadScript(src){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script');
@@ -79,7 +79,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-need-login');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=boot49';
+    s.src='./app.js?v=capa1';
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
     document.body.appendChild(s);
   }).catch(function(err){
