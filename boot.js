@@ -1,4 +1,4 @@
-/* Gate: con sesión → solo booting (pantalla negra). Sin sesión → need-login. */
+/* Gate: con sesión → solo booting + session-pending (nunca login flash) */
 (function () {
   try {
     document.documentElement.classList.add("rutalog-booting");
