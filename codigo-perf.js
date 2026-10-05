@@ -1,12 +1,14 @@
-/* RUTALOG — Código SKU performance v4: paginación 50 + override real de renderCodigoTable */
+/* RUTALOG — Código SKU performance v5: abrir panel sin tirón (post-refresh) */
 (function () {
   "use strict";
-  if (window.__rutalogCodigoPerfV4) return;
-  window.__rutalogCodigoPerfV4 = true;
+  if (window.__rutalogCodigoPerfV5) return;
+  window.__rutalogCodigoPerfV5 = true;
 
   var PAGE_SIZE = 50;
   var codigoPage = 0;
   var _renderTimer = null;
+  var _cacheKey = "";
+  var _cacheRows = null;
 
   function ensurePager() {
     var pager = document.getElementById("codigoPager");
@@ -24,17 +26,21 @@
     return pager;
   }
 
-  function doRender() {
+  function showPlaceholder() {
     var tb = document.getElementById("codigoTbody");
-    if (!tb || !window.estado || !estado.maestroCodigo) return;
+    if (!tb) return;
+    if (tb.getAttribute("data-cp-ready") === "1" && tb.children.length) return;
+    tb.innerHTML = '<tr><td colspan="6" class="vacio" style="opacity:.7">Cargando catálogo SKU…</td></tr>';
+  }
 
+  function getFilteredRows() {
+    if (!window.estado || !estado.maestroCodigo) return [];
     var qEl = document.getElementById("qCodigo");
     var filEl = document.getElementById("filCodigoUnd");
     var q = (qEl && qEl.value || "").trim().toLowerCase();
     var fil = (filEl && filEl.value) || "";
-    var esc = function (s) {
-      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-    };
+    var key = estado.maestroCodigo.size + "|" + q + "|" + fil;
+    if (_cacheKey === key && _cacheRows) return _cacheRows;
 
     var rows = Array.from(estado.maestroCodigo.values());
     if (q) {
@@ -52,7 +58,20 @@
       if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
       return String(a.sku).localeCompare(String(b.sku));
     });
+    _cacheKey = key;
+    _cacheRows = rows;
+    return rows;
+  }
 
+  function doRender() {
+    var tb = document.getElementById("codigoTbody");
+    if (!tb || !window.estado || !estado.maestroCodigo) return;
+
+    var esc = function (s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+    };
+
+    var rows = getFilteredRows();
     var total = rows.length;
     var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE) || 1);
     if (codigoPage >= totalPages) codigoPage = totalPages - 1;
@@ -60,6 +79,9 @@
 
     var start = codigoPage * PAGE_SIZE;
     var pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    var q = (document.getElementById("qCodigo") && document.getElementById("qCodigo").value || "").trim();
+    var fil = (document.getElementById("filCodigoUnd") && document.getElementById("filCodigoUnd").value) || "";
 
     var badge = document.getElementById("badgeCodigo");
     if (badge) {
@@ -74,6 +96,7 @@
 
     if (!pageRows.length) {
       tb.innerHTML = '<tr><td colspan="6" class="vacio">Sin registros. Ajusta el filtro o agrega un SKU.</td></tr>';
+      tb.setAttribute("data-cp-ready", "1");
     } else {
       var html = "";
       for (var i = 0; i < pageRows.length; i++) {
@@ -92,9 +115,12 @@
           '</tr>';
       }
       tb.innerHTML = html;
+      tb.setAttribute("data-cp-ready", "1");
 
       tb.querySelectorAll(".ed-cell").forEach(function (inp) {
         inp.onchange = function () {
+          _cacheRows = null;
+          _cacheKey = "";
           var tr = inp.closest("tr");
           var oldKey = tr.dataset.key;
           var rec = estado.maestroCodigo.get(oldKey);
@@ -134,6 +160,8 @@
       });
       tb.querySelectorAll(".cod-del").forEach(function (btn) {
         btn.onclick = async function () {
+          _cacheRows = null;
+          _cacheKey = "";
           var key = btn.dataset.key;
           var rec = estado.maestroCodigo.get(key);
           if (!rec) return;
@@ -169,9 +197,13 @@
   function installRender() {
     window.renderCodigoTable = function renderCodigoTable() {
       if (_renderTimer) cancelAnimationFrame(_renderTimer);
+      /* Dos frames: 1) panel visible + placeholder, 2) pintar filas */
+      showPlaceholder();
       _renderTimer = requestAnimationFrame(function () {
-        _renderTimer = null;
-        try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
+        _renderTimer = requestAnimationFrame(function () {
+          _renderTimer = null;
+          try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
+        });
       });
     };
   }
@@ -181,27 +213,39 @@
     var fil = document.getElementById("filCodigoUnd");
     if (q && !q._codigoPerfWired) {
       q._codigoPerfWired = true;
-      q.addEventListener("input", function () { codigoPage = 0; });
+      q.addEventListener("input", function () {
+        codigoPage = 0;
+        _cacheRows = null;
+        _cacheKey = "";
+      });
     }
     if (fil && !fil._codigoPerfWired) {
       fil._codigoPerfWired = true;
-      fil.addEventListener("change", function () { codigoPage = 0; });
+      fil.addEventListener("change", function () {
+        codigoPage = 0;
+        _cacheRows = null;
+        _cacheKey = "";
+      });
     }
   }
 
   function patchGo() {
-    if (typeof window.go !== "function" || window.go._codigoPerfV4) return;
+    if (typeof window.go !== "function") return;
+    if (window.go._codigoPerfV5) return;
     var _go = window.go;
     window.go = function (page) {
+      /* Al ir a código: mostrar página YA, tabla después */
+      if (page === "codigo") showPlaceholder();
       var r = _go.apply(this, arguments);
       if (page === "codigo") {
+        installRender();
         requestAnimationFrame(function () {
           try { window.renderCodigoTable(); } catch (e) {}
         });
       }
       return r;
     };
-    window.go._codigoPerfV4 = true;
+    window.go._codigoPerfV5 = true;
   }
 
   function boot() {
@@ -211,7 +255,17 @@
   }
 
   boot();
+  setTimeout(boot, 100);
   setTimeout(boot, 400);
-  setTimeout(boot, 1500);
-  setTimeout(boot, 3500);
+  setTimeout(boot, 1200);
+  setTimeout(boot, 3000);
+
+  /* Precarga ligera del listado cuando el maestro ya está en memoria (sin pintar inputs) */
+  setTimeout(function () {
+    try {
+      if (window.estado && estado.maestroCodigo && estado.maestroCodigo.size) {
+        getFilteredRows();
+      }
+    } catch (e) {}
+  }, 2000);
 })();
