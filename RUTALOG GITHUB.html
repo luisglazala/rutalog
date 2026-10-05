@@ -1,25 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="stylesheet" href="./boot.css?v=3">
-<script src="./boot.js?v=3"></script>
+<link rel="stylesheet" href="./boot.css?v=4">
+<script src="./boot.js?v=4"></script>
 <style id="rutalog-boot-css">
 html,body{background:#0a0a0a!important;height:100%;margin:0;color:#f5f5f5}
-html.rutalog-booting .app,
-html.rutalog-booting .sidebar,
-html.rutalog-booting .main,
-html.rutalog-booting .topbar,
-html:not(.rutalog-ready):not(.rutalog-need-login) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
-html.rutalog-booting body{background:#0a0a0a!important}
-html.rutalog-need-login .sidebar,html.rutalog-need-login .main,html.rutalog-need-login .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
-html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
-.leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}
-.leaflet-div-icon .marcador{border-radius:50%!important}
+html.rutalog-booting .app,html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-session-pending #loginOverlay{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-need-login:not(.rutalog-session-pending) .sidebar,
+html.rutalog-need-login:not(.rutalog-session-pending) .main,
+html.rutalog-need-login:not(.rutalog-session-pending) .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
+html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{display:flex!important;visibility:visible!important;opacity:1!important}
+.leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}
 .app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
 </style>
-<script>
-(function(){try{document.documentElement.classList.add("rutalog-booting");var hasSession=false;try{var raw=localStorage.getItem("rutalog_session");if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}if(hasSession){document.documentElement.classList.add("rutalog-session-pending");document.documentElement.classList.remove("rutalog-need-login")}else{document.documentElement.classList.add("rutalog-need-login");document.documentElement.classList.remove("rutalog-session-pending")}}catch(e){document.documentElement.classList.add("rutalog-booting");document.documentElement.classList.add("rutalog-need-login")}})();
-</script>
+<script>(function(){try{var d=document.documentElement;d.classList.add("rutalog-booting");var ok=false;try{var r=localStorage.getItem("rutalog_session");if(r){var u=JSON.parse(r);if(u&&u.id&&u.username)ok=true}}catch(e){}if(ok){d.classList.add("rutalog-session-pending");d.classList.remove("rutalog-need-login")}else{d.classList.add("rutalog-need-login");d.classList.remove("rutalog-session-pending")}}catch(e){document.documentElement.classList.add("rutalog-booting","rutalog-need-login")}})();</script>
 <meta charset="UTF-8">
 <meta name="color-scheme" content="dark">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
@@ -84,7 +80,7 @@ html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:
       else document.documentElement.classList.add('rutalog-need-login');
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=noflicker1';
+    s.src='./app.js?v=session8';
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
     document.body.appendChild(s);
   }).catch(function(err){
