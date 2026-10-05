@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-citas v15 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
+/* RUTALOG mejoras-citas v16 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
    Pegar tabla  ZONA · CITA · CLIENTE · ORDEN DE VENTA · NOTA  →  vista previa  →  Procesar y agregar.
    - Reporte de citas INDIVIDUAL (una fila por OV), con la NOTA.
    - El ID del cliente NO se muestra: se busca solo (por OV del programa o por nombre en el maestro)
@@ -10,8 +10,8 @@
    Reemplaza a mejoras-citas v7/v9, mejoras-citas-futura y mejoras-citas-tabla (se desactivan por bandera). */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV15) return;
-  window.__rutalogCitasV15 = true;
+  if (window.__rutalogCitasV16) return;
+  window.__rutalogCitasV16 = true;
   ["__rutalogCitasV13", "__rutalogCitasV12", "__rutalogCitasV11", "__rutalogCitasV10", "__rutalogCitasV9", "__rutalogCitasV8", "__rutalogCitasV7",
    "__rutalogCitasFuturaV1", "__rutalogCitasTablaV1", "__rutalogCitasTablaV2"
   ].forEach(function (f) { window[f] = true; });
@@ -1069,12 +1069,20 @@
   };
 
   if (typeof document !== "undefined") {
-    setTimeout(tick, 200);
-    setTimeout(tick, 600);
+    setTimeout(tick, 300);
     setTimeout(tick, 1200);
-    setTimeout(tick, 2500);
-    setTimeout(tick, 5000);
-    setInterval(tick, 2000);
+    setTimeout(tick, 3000);
+    /* Menos agresivo: cada 8s, y más frecuente solo en página citas */
+    setInterval(function () {
+      try {
+        var onCitas = window.estado && estado.page === "citas";
+        if (onCitas) tick();
+        else if (typeof tick === "function") {
+          /* fuera de citas: solo hooks ligeros cada 8s vía tick completo pero más espaciado */
+          tick();
+        }
+      } catch (e) {}
+    }, 8000);
     try { console.info("[RUTALOG] citas v10 — pegar tabla + alertas (planificación / auditoría / mapa)"); } catch (e) {}
   }
 })();
