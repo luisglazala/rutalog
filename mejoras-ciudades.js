@@ -1,34 +1,35 @@
-/* RUTALOG ciudades v2 — syntax fixed */
+/* RUTALOG ciudades v3 — solo campo ciudad (no localidad/provincia) */
 (function () {
   "use strict";
-  if (window.__rutalogCiudadesV2) return;
+  if (window.__rutalogCiudadesV3) return;
+  window.__rutalogCiudadesV3 = true;
   window.__rutalogCiudadesV2 = true;
   window.__rutalogCiudadesV1 = true;
+
+  function soloCiudad(c) {
+    if (!c) return "";
+    try {
+      if (estado.maestro) {
+        var m = estado.maestro.get(c.idCliente);
+        if (!m && c.idCliente) {
+          var bare = String(c.idCliente).replace(/^0+/, "") || "0";
+          m = estado.maestro.get(bare.padStart(9, "0")) || estado.maestro.get(bare);
+        }
+        if (m && m.ciudad) return String(m.ciudad).trim();
+      }
+    } catch (e) {}
+    if (c.ciudad && c.ciudad !== c.localidad) return String(c.ciudad).trim();
+    return "";
+  }
 
   function rebuildCiudadesList() {
     try {
       if (!window.estado) return 0;
       var set = new Set();
       (estado.clientesHoy || []).forEach(function (c) {
-        if (c.ciudad) set.add(String(c.ciudad).trim());
-        if (c.localidad) set.add(String(c.localidad).trim());
-        if (c.provincia) set.add(String(c.provincia).trim());
+        var city = soloCiudad(c);
+        if (city) set.add(city);
       });
-      if (estado.maestro && estado.maestro.forEach) {
-        (estado.clientesHoy || []).forEach(function (c) {
-          try {
-            var m = estado.maestro.get(c.idCliente);
-            if (!m && c.idCliente) {
-              var bare = String(c.idCliente).replace(/^0+/, "") || "0";
-              m = estado.maestro.get(bare.padStart(9, "0")) || estado.maestro.get(bare);
-            }
-            if (m) {
-              if (m.ciudad) set.add(String(m.ciudad).trim());
-              if (m.localidad) set.add(String(m.localidad).trim());
-            }
-          } catch (e) {}
-        });
-      }
       var ciudades = Array.from(set).filter(Boolean).sort(function (a, b) {
         return a.localeCompare(b, "es");
       });
@@ -61,7 +62,7 @@
       if (chkTodas) chkTodas.checked = !keep.length;
       if (typeof bindCiudadChecks === "function") bindCiudadChecks();
       if (typeof actualizarLabelCiudad === "function") actualizarLabelCiudad();
-      console.info("[RUTALOG] ciudades filtro:", ciudades.length, ciudades.slice(0, 8).join(", "));
+      console.info("[RUTALOG] ciudades v3:", ciudades.length, ciudades.slice(0, 12).join(", "));
       return ciudades.length;
     } catch (e) {
       console.warn("[ciudades]", e);
@@ -73,7 +74,7 @@
 
   function afterHoy() {
     if (typeof window.construirHoy !== "function") return;
-    if (window.construirHoy._ciudadesHook) return;
+    if (window.construirHoy._ciudadesHookV3) return;
     var orig = window.construirHoy;
     window.construirHoy = function (filas) {
       var r = orig.apply(this, arguments);
@@ -82,33 +83,14 @@
       setTimeout(rebuildCiudadesList, 800);
       return r;
     };
-    window.construirHoy._ciudadesHook = true;
+    window.construirHoy._ciudadesHookV3 = true;
   }
 
-  function afterLimpiar() {
-    var btn = document.getElementById("btnLimpiarDia");
-    if (!btn || btn._ciudadesHook) return;
-    btn._ciudadesHook = true;
-    btn.addEventListener(
-      "click",
-      function () {
-        setTimeout(rebuildCiudadesList, 400);
-        setTimeout(rebuildCiudadesList, 1000);
-      },
-      true
-    );
-  }
-
-  function tick() {
-    afterHoy();
-    afterLimpiar();
-  }
+  function tick() { afterHoy(); }
   tick();
   setTimeout(tick, 500);
   setTimeout(tick, 2000);
-  setTimeout(function () {
-    rebuildCiudadesList();
-  }, 1500);
+  setTimeout(rebuildCiudadesList, 1500);
   setInterval(tick, 4000);
-  console.info("[RUTALOG] ciudades v2");
+  console.info("[RUTALOG] ciudades v3 — solo ciudades");
 })();
