@@ -51,16 +51,22 @@
           if (u && u.id && u.username) hasSession = true;
         }
       } catch (e) {}
-      document.documentElement.classList.remove("rutalog-booting");
-      if (hasSession) {
-        document.documentElement.classList.remove("rutalog-need-login");
-        document.documentElement.classList.add("rutalog-ready");
-      } else {
-        document.documentElement.classList.add("rutalog-need-login");
-        document.documentElement.classList.remove("rutalog-ready");
-      }
-    } catch (e) {}
-    forcePageVisibility();
+      /* Un solo cambio de clase en el siguiente frame = menos parpadeo */
+      requestAnimationFrame(function () {
+        try {
+          if (hasSession) {
+            document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting");
+            document.documentElement.classList.add("rutalog-ready");
+          } else {
+            document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
+            document.documentElement.classList.add("rutalog-need-login");
+          }
+        } catch (e2) {}
+        forcePageVisibility();
+      });
+    } catch (e) {
+      forcePageVisibility();
+    }
   }
 
   function forceLeafletIcons() {
@@ -148,7 +154,7 @@
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
-  var APP = "./core-app.js?v=capa1";
+  var APP = "./core-app.js?v=noflicker1";
   loadScript(APP).then(function () {
     forceLeafletIcons();
     onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
