@@ -1,7 +1,8 @@
-/* RUTALOG mejoras-mapa v1 — unifica marcadores + map-icons (pines circulares) */
+/* RUTALOG mejoras-mapa v2 — pines circulares (syntax fixed) */
 (function () {
   "use strict";
-  if (window.__rutalogMapaV1) return;
+  if (window.__rutalogMapaV2) return;
+  window.__rutalogMapaV2 = true;
   window.__rutalogMapaV1 = true;
   window.__rutalogMarcadoresV2 = true;
   window.__rutalogMapIconsV1 = true;
@@ -85,11 +86,11 @@
       var t = seleccionado ? 36 : 28;
       var color = (a && a.color) || "#64748b";
       var html =
-        '<div style="width:' + t + "px;height:" + t +
-        "px;border-radius:50%;background:" + color +
-        ";border:3px solid " + (seleccionado ? "#f59e0b" : "#fff") +
+        '<div style="width:' + t + 'px;height:' + t +
+        'px;border-radius:50%;background:' + color +
+        ';border:3px solid ' + (seleccionado ? '#f59e0b' : '#fff') +
         ';box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;' +
-        "font-size:10px;font-weight:700;color:#fff;">CI</div>";
+        'font-size:10px;font-weight:700;color:#fff;">CI</div>';
       return L.divIcon({
         className: "rutalog-marker",
         html: html,
@@ -110,48 +111,26 @@
         if (el.classList && el.classList.contains("leaflet-div-icon")) {
           el.style.background = "transparent";
           el.style.border = "none";
-          el.style.boxShadow = "none";
         }
       });
     } catch (e) {}
-  }
-
-  function cleanMaps() {
-    try {
-      if (window.estado) {
-        stripSquareLayers(estado.mapPanel);
-        stripSquareLayers(estado.mapRutas);
-        stripSquareLayers(estado.mapCruzados);
-      }
-    } catch (e) {}
-  }
-
-  function hookRenderMapas() {
-    if (typeof window.renderMapas !== "function" || window.renderMapas._mapaHook) return;
-    var orig = window.renderMapas;
-    window.renderMapas = function () {
-      injectCSS();
-      applyIcono();
-      hookIconoAlmacen();
-      var r = orig.apply(this, arguments);
-      setTimeout(cleanMaps, 0);
-      setTimeout(cleanMaps, 80);
-      return r;
-    };
-    window.renderMapas._mapaHook = true;
   }
 
   function tick() {
     injectCSS();
     applyIcono();
     hookIconoAlmacen();
-    hookRenderMapas();
-    cleanMaps();
+    try {
+      if (window.estado) {
+        if (estado.mapPanel) stripSquareLayers(estado.mapPanel);
+        if (estado.mapRutas) stripSquareLayers(estado.mapRutas);
+      }
+    } catch (e) {}
   }
 
   tick();
-  setTimeout(tick, 400);
+  setTimeout(tick, 300);
   setTimeout(tick, 1200);
   setInterval(tick, 5000);
-  console.info("[RUTALOG] mapa unificado v1 (marcadores+icons)");
+  console.info("[RUTALOG] mapa v2 — pines OK");
 })();

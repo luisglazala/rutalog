@@ -1,7 +1,8 @@
-/* RUTALOG ciudades v1 — rellena lista de filtro tras Excel / limpiar */
+/* RUTALOG ciudades v2 — syntax fixed */
 (function () {
   "use strict";
-  if (window.__rutalogCiudadesV1) return;
+  if (window.__rutalogCiudadesV2) return;
+  window.__rutalogCiudadesV2 = true;
   window.__rutalogCiudadesV1 = true;
 
   function rebuildCiudadesList() {
@@ -51,7 +52,7 @@
           safe +
           '" ' +
           ck +
-          "> ' +
+          '">' +
           safe +
           "</label>"
         );
@@ -109,5 +110,5 @@
     rebuildCiudadesList();
   }, 1500);
   setInterval(tick, 4000);
-  console.info("[RUTALOG] ciudades v1");
+  console.info("[RUTALOG] ciudades v2");
 })();
