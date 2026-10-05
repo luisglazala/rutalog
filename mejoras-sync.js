@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.1 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
+/* RUTALOG mejoras-sync v3.2 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
 (function () {
   "use strict";
   if (window.__rutalogSyncV3) return;
@@ -6,8 +6,8 @@
   window.__rutalogSyncV2 = true;
   window.__rutalogSyncV1 = true;
 
-  var PULL_MS_FOCUS = 10000;
-  var PULL_MS_DIRTY = 7000;
+  var PULL_MS_FOCUS = 30000;
+  var PULL_MS_DIRTY = 15000;
   var _pullTimer = null;
   var _lastOkAt = null;
   var _lastErr = null;
@@ -268,8 +268,8 @@
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onFocus);
     window.addEventListener("online", onOnline);
-    setInterval(refreshBadge, 8000);
-    setInterval(wireManualControls, 5000);
+    setInterval(refreshBadge, 20000);
+    setInterval(wireManualControls, 15000);
     window.rutalogSync = {
       pull: function () {
         return pullOnce(false);
