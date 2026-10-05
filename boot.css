@@ -1,4 +1,4 @@
-/* Boot: fondo fijo y sin flash del chrome */
+/* Boot anti-flash + login estricto */
 html, body {
   background: #0a0a0a !important;
   color: #f5f5f5;
@@ -13,14 +13,22 @@ html.rutalog-booting .topbar {
   opacity: 0 !important;
   pointer-events: none !important;
 }
-html:not(.rutalog-ready) .app {
+/* Sin sesión: NUNCA mostrar chrome de la app (solo login) */
+html.rutalog-need-login .sidebar,
+html.rutalog-need-login .main,
+html.rutalog-need-login .topbar,
+html.rutalog-need-login .app > :not(#loginOverlay) {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
+html:not(.rutalog-ready) .app {
+  /* el overlay de login puede vivir fuera o dentro; el chrome sigue oculto vía need-login */
+}
 html.rutalog-need-login #loginOverlay {
   display: flex !important;
   visibility: visible !important;
+  opacity: 1 !important;
   pointer-events: auto !important;
   position: fixed !important;
   inset: 0 !important;
@@ -33,9 +41,5 @@ html.rutalog-need-login #loginOverlay {
 html.rutalog-need-login #loginOverlay[hidden] {
   display: flex !important;
   visibility: visible !important;
-}
-/* Durante boot, login también oculto hasta que exista el DOM del overlay */
-html.rutalog-booting.rutalog-need-login #loginOverlay {
-  /* se muestra solo cuando el body ya inyectó el overlay */
   opacity: 1 !important;
 }
