@@ -1,65 +1,61 @@
-/** Cloudflare Pages Function: proxy seguro a GitHub API (token solo en el servidor) */
+/** Cloudflare Pages Function — proxy GitHub con lista blanca de repos */
+const ALLOWED_REPOS = ["luisglazala/rutalog-datos", "luisglazala/rutalog"];
+
 export async function onRequest(context) {
   const { request, env } = context;
-  const corsHeaders = {
+  const cors = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, X-GitHub-Api-Version",
   };
-
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response(null, { status: 204, headers: cors });
   }
-
   try {
     const url = new URL(request.url);
-    // /api/repos/... -> /repos/...
-    let githubPath = url.pathname.replace(/^\/api/, "");
+    let githubPath = url.pathname.replace(/^\/api/, "") || "/";
     if (!githubPath.startsWith("/")) githubPath = "/" + githubPath;
-    const githubUrl = "https://api.github.com" + githubPath + url.search;
-
-    const GITHUB_TOKEN = env.GITHUB_SECRET_TOKEN;
-    if (!GITHUB_TOKEN) {
-      return new Response(JSON.stringify({ error: "GITHUB_SECRET_TOKEN no configurado en Cloudflare" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (githubPath === "/") {
+      return new Response(JSON.stringify({ ok: true, repos: ALLOWED_REPOS }), {
+        status: 200,
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
-
-    const modifiedHeaders = new Headers();
-    modifiedHeaders.set("Authorization", "Bearer " + GITHUB_TOKEN);
-    modifiedHeaders.set("User-Agent", "RUTALOG-Cloudflare-Proxy");
-    const accept = request.headers.get("Accept");
-    if (accept) modifiedHeaders.set("Accept", accept);
-    else modifiedHeaders.set("Accept", "application/vnd.github+json");
-    const apiVer = request.headers.get("X-GitHub-Api-Version");
-    if (apiVer) modifiedHeaders.set("X-GitHub-Api-Version", apiVer);
-    else modifiedHeaders.set("X-GitHub-Api-Version", "2022-11-28");
+    const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)/);
+    if (!m || ALLOWED_REPOS.indexOf(m[1] + "/" + m[2]) === -1) {
+      if (githubPath !== "/rate_limit") {
+        return new Response(JSON.stringify({ error: "Ruta no permitida", path: githubPath }), {
+          status: 403,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+    }
+    const token = env.GITHUB_SECRET_TOKEN;
+    if (!token) {
+      return new Response(JSON.stringify({ error: "GITHUB_SECRET_TOKEN missing" }), {
+        status: 500,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    const headers = new Headers();
+    headers.set("Authorization", "Bearer " + token);
+    headers.set("User-Agent", "RUTALOG-Cloudflare-Proxy");
+    headers.set("Accept", request.headers.get("Accept") || "application/vnd.github+json");
+    headers.set("X-GitHub-Api-Version", request.headers.get("X-GitHub-Api-Version") || "2022-11-28");
     const ct = request.headers.get("Content-Type");
-    if (ct) modifiedHeaders.set("Content-Type", ct);
-
-    const init = {
-      method: request.method,
-      headers: modifiedHeaders,
-    };
+    if (ct) headers.set("Content-Type", ct);
+    const init = { method: request.method, headers };
     if (request.method !== "GET" && request.method !== "HEAD") {
       init.body = request.body;
-      init.duplex = "half";
     }
-
-    const githubResponse = await fetch(githubUrl, init);
-    const responseHeaders = new Headers(githubResponse.headers);
-    Object.keys(corsHeaders).forEach((key) => responseHeaders.set(key, corsHeaders[key]));
-
-    return new Response(githubResponse.body, {
-      status: githubResponse.status,
-      statusText: githubResponse.statusText,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error && error.message ? error.message : String(error) }), {
+    const ghRes = await fetch("https://api.github.com" + githubPath + url.search, init);
+    const outHeaders = new Headers(ghRes.headers);
+    Object.keys(cors).forEach((k) => outHeaders.set(k, cors[k]));
+    return new Response(ghRes.body, { status: ghRes.status, statusText: ghRes.statusText, headers: outHeaders });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err && err.message || err) }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 }
