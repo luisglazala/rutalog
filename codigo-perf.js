@@ -1,8 +1,8 @@
-/* RUTALOG — Código SKU performance v2: paginación + entrada sin tirón */
+/* RUTALOG — Código SKU performance v3: paginación + entrada sin tirón */
 (function () {
   "use strict";
-  if (window.__rutalogCodigoPerfV2) return;
-  window.__rutalogCodigoPerfV2 = true;
+  if (window.__rutalogCodigoPerfV3) return;
+  window.__rutalogCodigoPerfV3 = true;
 
   var PAGE_SIZE = 50;
   var codigoPage = 0;
@@ -164,7 +164,7 @@
   }
 
   /** No bloquear el cambio de pestaña: pintar en el siguiente frame */
-  window.renderCodigoTable = function renderCodigoTable() {
+  function renderCodigoTableDeferred() {
     if (_renderTimer) cancelAnimationFrame(_renderTimer);
     _renderTimer = requestAnimationFrame(function () {
       _renderTimer = null;
@@ -205,3 +205,11 @@
   setTimeout(function () { wireFilters(); patchGo(); }, 400);
   setTimeout(function () { wireFilters(); patchGo(); }, 1500);
 })();
+
+/* rebind global name used by core go() */
+try {
+  if (typeof window.renderCodigoTable === "function") {
+    var _rc = window.renderCodigoTable;
+    window.renderCodigoTable = function () { return _rc.apply(this, arguments); };
+  }
+} catch (e) {}
