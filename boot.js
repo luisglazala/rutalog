@@ -1,6 +1,7 @@
-/* Gate síncrono: decide login antes del primer paint significativo */
+/* Gate síncrono: no pintar app hasta que el loader termine (evita parpadeo) */
 (function () {
   try {
+    document.documentElement.classList.add("rutalog-booting");
     var hasSession = false;
     try {
       var raw = localStorage.getItem("rutalog_session");
@@ -9,22 +10,12 @@
         if (u && u.id && u.username) hasSession = true;
       }
     } catch (e) {}
-    var needLogin = false;
-    try {
-      var usersRaw = localStorage.getItem("rutalog_usuarios_v2");
-      var users = usersRaw ? JSON.parse(usersRaw) : [];
-      if (Array.isArray(users) && users.some(function (x) { return x && x.activo !== false; })) {
-        needLogin = !hasSession;
-      }
-    } catch (e) {}
-    if (needLogin) {
+    if (!hasSession) {
       document.documentElement.classList.add("rutalog-need-login");
-    } else if (hasSession) {
-      document.documentElement.classList.add("rutalog-ready");
-    } else {
-      document.documentElement.classList.add("rutalog-booting");
     }
+    /* Nunca agregar rutalog-ready aquí — lo hace app.js al final */
   } catch (e) {
     document.documentElement.classList.add("rutalog-booting");
+    document.documentElement.classList.add("rutalog-need-login");
   }
 })();
