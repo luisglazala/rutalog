@@ -58,8 +58,16 @@
             document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting");
             document.documentElement.classList.add("rutalog-ready");
           } else {
+            /* Sin sesión: NUNCA ready — evita topbar con Sesión: — y botones viejos */
             document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
             document.documentElement.classList.add("rutalog-need-login");
+            var ov = document.getElementById("loginOverlay");
+            if (ov) {
+              ov.hidden = false;
+              ov.removeAttribute("hidden");
+              ov.style.display = "flex";
+              ov.style.visibility = "visible";
+            }
           }
         } catch (e2) {}
         forcePageVisibility();
@@ -136,10 +144,10 @@
       }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=6");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=7");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
-      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=1");
+      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=2");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=33");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
       onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=17");
