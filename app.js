@@ -125,7 +125,7 @@
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
-      onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=4");
+      onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=4b");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
