@@ -1,102 +1,88 @@
 /**
- * RUTALOG Cloudflare Worker
- * - /api/* → GitHub proxy
- * - /app-core-runtime.js → core pin e638c98 (mismo origen)
+ * RUTALOG Cloudflare Worker (capa5)
+ * - /api/* → GitHub proxy (solo repos permitidos)
+ * - resto → ASSETS (Pages)
  */
-const CORE_PIN =
-  "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
+const ALLOWED_REPOS = [
+  "luisglazala/rutalog-datos",
+  "luisglazala/rutalog",
+];
+const ALLOWED_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "POST", "OPTIONS"]);
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api")) {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
       return handleGitHubProxy(request, env, url);
     }
 
-    if (
-      url.pathname === "/app-core-runtime.js" ||
-      url.pathname.endsWith("/app-core-runtime.js")
-    ) {
-      return handleCoreRuntime(request, ctx);
-    }
-
     if (env.ASSETS && typeof env.ASSETS.fetch === "function") {
       return env.ASSETS.fetch(request);
     }
 
-    return new Response("RUTALOG Worker OK · /api · /app-core-runtime.js", {
+    return new Response("RUTALOG Worker OK · /api", {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   },
 };
 
-function corsHeaders() {
+function corsHeaders(request) {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, OPTIONS",
     "Access-Control-Allow-Headers":
       "Content-Type, Authorization, Accept, X-GitHub-Api-Version",
   };
 }
 
-async function handleCoreRuntime(request, ctx) {
-  try {
-    const cache = caches.default;
-    const cacheKey = new Request(CORE_PIN, { method: "GET" });
-    let res = await cache.match(cacheKey);
-    if (!res) {
-      const upstream = await fetch(CORE_PIN, {
-        cf: { cacheTtl: 86400, cacheEverything: true },
-      });
-      if (!upstream.ok) {
-        return new Response("// core pin fetch failed: " + upstream.status, {
-          status: 502,
-          headers: { "Content-Type": "application/javascript; charset=utf-8" },
-        });
-      }
-      const body = await upstream.text();
-      res = new Response(body, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/javascript; charset=utf-8",
-          "Cache-Control": "public, max-age=86400",
-          "X-Rutalog-Core": "e638c980",
-        },
-      });
-      if (ctx && typeof ctx.waitUntil === "function") {
-        ctx.waitUntil(cache.put(cacheKey, res.clone()));
-      }
-    }
-    const out = new Response(res.body, res);
-    out.headers.set("Content-Type", "application/javascript; charset=utf-8");
-    out.headers.set("X-Rutalog-Core", "e638c980");
-    return out;
-  } catch (err) {
-    return new Response(
-      "// core error: " + (err && err.message ? err.message : String(err)),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/javascript; charset=utf-8" },
-      }
-    );
+function pathAllowed(githubPath) {
+  // /repos/{owner}/{repo}/...
+  const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/|$)/);
+  if (!m) {
+    // allow /rate_limit for diagnostics
+    if (githubPath === "/rate_limit") return true;
+    return false;
   }
+  const full = m[1] + "/" + m[2];
+  return ALLOWED_REPOS.indexOf(full) !== -1;
 }
 
 async function handleGitHubProxy(request, env, url) {
-  const cors = corsHeaders();
+  const cors = corsHeaders(request);
   try {
+    if (!ALLOWED_METHODS.has(request.method)) {
+      return json({ error: "Método no permitido" }, 405, cors);
+    }
+
     let githubPath = url.pathname.replace(/^\/api/, "");
     if (!githubPath.startsWith("/")) githubPath = "/" + githubPath;
     if (githubPath === "/") {
       return json(
-        { ok: true, service: "RUTALOG GitHub proxy", hint: "/api/repos/..." },
+        {
+          ok: true,
+          service: "RUTALOG GitHub proxy",
+          repos: ALLOWED_REPOS,
+          hint: "/api/repos/luisglazala/rutalog-datos/contents/...",
+        },
         200,
+        cors
+      );
+    }
+
+    if (!pathAllowed(githubPath)) {
+      return json(
+        {
+          error: "Ruta no permitida en el proxy",
+          path: githubPath,
+          allowed: ALLOWED_REPOS,
+        },
+        403,
         cors
       );
     }
@@ -152,6 +138,6 @@ async function handleGitHubProxy(request, env, url) {
 function json(obj, status, cors) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: Object.assign({}, cors, { "Content-Type": "application/json" }),
   });
 }
