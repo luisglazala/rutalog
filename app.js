@@ -121,7 +121,7 @@
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=5");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=31");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
-      onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=15");
+      onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=15b");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
