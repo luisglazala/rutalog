@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado + capa1 same-origin core/shell */
+/* RUTALOG loader + UI polish */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -121,14 +121,22 @@
       lLayout.rel = "stylesheet";
       lLayout.href = "./mejoras-layout.css?v=3";
       document.head.appendChild(lLayout);
+      if (!document.getElementById("rutalog-ui-polish-css")) {
+        var lUi = document.createElement("link");
+        lUi.id = "rutalog-ui-polish-css";
+        lUi.rel = "stylesheet";
+        lUi.href = "./mejoras-ui-polish.css?v=1";
+        document.head.appendChild(lUi);
+      }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=5");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
+      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=1");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=33");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
-      onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=16");
+      onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=17");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
