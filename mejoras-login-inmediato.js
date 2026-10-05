@@ -1,6 +1,19 @@
 /* RUTALOG login v8 — sin flash sesión: si hay localStorage, no mostrar login */
 (function () {
   "use strict";
+  try {
+    var _raw = localStorage.getItem("rutalog_session");
+    if (_raw) {
+      var _u = JSON.parse(_raw);
+      if (_u && _u.id && _u.username) {
+        document.documentElement.classList.add("rutalog-session-pending", "rutalog-booting");
+        document.documentElement.classList.remove("rutalog-need-login");
+        var _ov = document.getElementById("loginOverlay");
+        if (_ov) { _ov.hidden = true; _ov.style.display = "none"; _ov.style.visibility = "hidden"; }
+      }
+    }
+  } catch (_e) {}
+
   if (window.__rutalogLoginInmediatoV8) return;
   window.__rutalogLoginInmediatoV8 = true;
 
