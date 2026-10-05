@@ -128,6 +128,11 @@
         lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=1";
         document.head.appendChild(lR);
       }
+      if (!document.getElementById("rutalog-despachos-layout-css")) {
+        var lD = document.createElement("link");
+        lD.id = "rutalog-despachos-layout-css"; lD.rel = "stylesheet"; lD.href = "./mejoras-despachos-layout.css?v=1";
+        document.head.appendChild(lD);
+      }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=9");
