@@ -58,15 +58,33 @@
             document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting");
             document.documentElement.classList.add("rutalog-ready");
           } else {
-            /* Sin sesión: NUNCA ready — evita topbar con Sesión: — y botones viejos */
-            document.documentElement.classList.remove("rutalog-ready", "rutalog-booting");
-            document.documentElement.classList.add("rutalog-need-login");
-            var ov = document.getElementById("loginOverlay");
-            if (ov) {
-              ov.hidden = false;
-              ov.removeAttribute("hidden");
-              ov.style.display = "flex";
-              ov.style.visibility = "visible";
+            /* Si hay sesión en localStorage, mantener booting (negro) — no flash de login */
+            var lsOk = false;
+            try {
+              var raw2 = localStorage.getItem("rutalog_session");
+              if (raw2) {
+                var s2 = JSON.parse(raw2);
+                lsOk = !!(s2 && s2.id && s2.username);
+              }
+            } catch (e3) {}
+            if (lsOk) {
+              document.documentElement.classList.add("rutalog-booting", "rutalog-session-pending");
+              document.documentElement.classList.remove("rutalog-need-login", "rutalog-ready");
+              var ov2 = document.getElementById("loginOverlay");
+              if (ov2) {
+                ov2.hidden = true;
+                ov2.style.display = "none";
+              }
+            } else {
+              document.documentElement.classList.remove("rutalog-ready", "rutalog-booting", "rutalog-session-pending");
+              document.documentElement.classList.add("rutalog-need-login");
+              var ov = document.getElementById("loginOverlay");
+              if (ov) {
+                ov.hidden = false;
+                ov.removeAttribute("hidden");
+                ov.style.display = "flex";
+                ov.style.visibility = "visible";
+              }
             }
           }
         } catch (e2) {}
@@ -144,7 +162,7 @@
       }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=7");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=8");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
       onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=2");
