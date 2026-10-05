@@ -161,6 +161,8 @@
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
       onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
       onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
+      onceScript("__rutalogMapaCiuRuta", "./mejoras-mapa-ciudades-ruta.js?v=1");
+      onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -181,6 +183,8 @@
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
     onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
     onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
+    onceScript("__rutalogMapaCiuRuta", "./mejoras-mapa-ciudades-ruta.js?v=1");
+    onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
