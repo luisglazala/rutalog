@@ -160,6 +160,7 @@
       onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=3");
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
       onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
+      onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -171,7 +172,7 @@
     forceLeafletIcons();
     onceScript("__rutalogMapa", "./mejoras-mapa.js?v=2");
     afterAppReady();
-    return loadScript("./app-core-construirHoy.js?v=8");
+    return loadScript("./app-core-construirHoy.js?v=7");
   }).then(function () {
     return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
@@ -179,6 +180,7 @@
     onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=3");
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
     onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
+    onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
