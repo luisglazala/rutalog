@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-citas v14 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
+/* RUTALOG mejoras-citas v15 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
    Pegar tabla  ZONA · CITA · CLIENTE · ORDEN DE VENTA · NOTA  →  vista previa  →  Procesar y agregar.
    - Reporte de citas INDIVIDUAL (una fila por OV), con la NOTA.
    - El ID del cliente NO se muestra: se busca solo (por OV del programa o por nombre en el maestro)
@@ -10,8 +10,8 @@
    Reemplaza a mejoras-citas v7/v9, mejoras-citas-futura y mejoras-citas-tabla (se desactivan por bandera). */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV14) return;
-  window.__rutalogCitasV14 = true;
+  if (window.__rutalogCitasV15) return;
+  window.__rutalogCitasV15 = true;
   ["__rutalogCitasV13", "__rutalogCitasV12", "__rutalogCitasV11", "__rutalogCitasV10", "__rutalogCitasV9", "__rutalogCitasV8", "__rutalogCitasV7",
    "__rutalogCitasFuturaV1", "__rutalogCitasTablaV1", "__rutalogCitasTablaV2"
   ].forEach(function (f) { window[f] = true; });
@@ -783,10 +783,11 @@
       ".c10-pin.c10-futura .rutalog-pin-dot{box-shadow:0 0 0 3px #f97316,0 0 0 6px rgba(249,115,22,.35),0 2px 8px rgba(0,0,0,.4)}",
       ".c10-pin.c10-mixta .rutalog-pin-dot{box-shadow:0 0 0 3px #facc15,0 0 0 6px rgba(249,115,22,.35),0 2px 8px rgba(0,0,0,.4)}",
       ".c10-pin.c10-vencida .rutalog-pin-dot{box-shadow:0 0 0 3px #ef4444,0 0 0 6px rgba(239,68,68,.3),0 2px 8px rgba(0,0,0,.4)}",
-      "/* ocultar alta manual de citas */
+      "/* ocultar alta manual de citas */",
       "#citaOV,#citaCliente,#citaFecha,#btnAddCita{display:none!important}",
       "label[for=citaOV],label[for=citaCliente],label[for=citaFecha]{display:none!important}",
-      /* auditoría */",
+      "#page-citas .form-row:has(#citaOV),#page-citas .form-row:has(#btnAddCita){display:none!important}",
+      "/* auditoría */",
       "td.audit-td-cita.c10-futura{color:#fdba74!important;font-weight:800;background:rgba(249,115,22,.16)!important}",
       "td.audit-td-cita.c10-vencida{color:#fca5a5!important;font-weight:800;background:rgba(239,68,68,.16)!important}",
       "td.audit-td-cita.c10-hoy{color:#86efac!important;font-weight:700}",
