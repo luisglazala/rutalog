@@ -1,16 +1,12 @@
-/* RUTALOG mapa-fix v4 — REEMPLAZA renderMapas */
+/* RUTALOG mapa-fix v5 — REEMPLAZA renderMapas */
 (function () {
   "use strict";
-  if (window.__rutalogMapaFixV4) return;
+  if (window.__rutalogMapaFixV5) return;
+  window.__rutalogMapaFixV5 = true;
   window.__rutalogMapaFixV4 = true;
   window.__rutalogMapaFixV3 = true;
-  window.__rutalogMapaFixV2 = true;
-  window.__rutalogMapaFixV1 = true;
   window.__rutalogMapRefreshV3 = true;
-  window.__rutalogMapRefreshV31 = true;
-  window.__rutalogMapRefreshV2 = true;
   window.__rutalogMapDespachadosV1 = true;
-  window.__rutalogMapaViajeV1 = true;
 
   var OSRM = "https://router.project-osrm.org/route/v1/driving/";
   var osrmLayer = null;
@@ -67,35 +63,10 @@
 
   function rebuildCiudades(force) {
     try {
-      var lista = document.getElementById("listaCiudades");
-      if (!lista) return;
-      if (!force && lista.querySelectorAll(".chk-ciudad").length > 0) return;
-      var set = new Set();
-      (estado.clientesHoy || []).forEach(function (c) {
-        if (c.ciudad) set.add(String(c.ciudad).trim());
-        if (c.localidad) set.add(String(c.localidad).trim());
-      });
-      try {
-        if (estado.maestro) {
-          (estado.clientesHoy || []).forEach(function (c) {
-            var m = estado.maestro.get(c.idCliente);
-            if (m) {
-              if (m.ciudad) set.add(String(m.ciudad).trim());
-              if (m.localidad) set.add(String(m.localidad).trim());
-            }
-          });
-        }
-      } catch (e) {}
-      var ciudades = Array.from(set).filter(Boolean).sort(function (a, b) { return a.localeCompare(b, "es"); });
-      if (!ciudades.length) return;
-      lista.innerHTML = ciudades.map(function (c) {
-        var safe = String(c).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-        return '<label class="ciu-chip"><input type="checkbox" class="chk-ciudad" value="' + safe + '"> ' + safe + "</label>";
-      }).join("");
-      var chk = document.getElementById("chkTodasCiudades");
-      if (chk) chk.checked = true;
-      if (typeof bindCiudadChecks === "function") bindCiudadChecks();
-      if (typeof actualizarLabelCiudad === "function") actualizarLabelCiudad();
+      if (typeof window.rutalogRebuildCiudades === "function") {
+        window.rutalogRebuildCiudades();
+        return;
+      }
     } catch (e) {}
   }
 
@@ -220,7 +191,7 @@
         try { estado.mapRutas.invalidateSize(true); } catch (e) {}
       }
       updateBadges();
-    } catch (e) { console.warn("[mapa-fix v4]", e); }
+    } catch (e) { console.warn("[mapa-fix v5]", e); }
   }
 
   window.rutalogMapaFix = renderMapasFixed;
@@ -228,9 +199,9 @@
   function install() {
     if (typeof window.renderMapas !== "function") return false;
     window.renderMapas = function () { renderMapasFixed(); };
-    window.renderMapas._mapaFixV4 = true;
+    window.renderMapas._mapaFixV5 = true;
 
-    if (typeof window.refrescarRutaUI === "function" && !window.refrescarRutaUI._mf4) {
+    if (typeof window.refrescarRutaUI === "function" && !window.refrescarRutaUI._mf5) {
       var origR = window.refrescarRutaUI;
       window.refrescarRutaUI = function () {
         var r = origR.apply(this, arguments);
@@ -238,9 +209,9 @@
         setTimeout(renderMapasFixed, 200);
         return r;
       };
-      window.refrescarRutaUI._mf4 = true;
+      window.refrescarRutaUI._mf5 = true;
     }
-    if (typeof window.agregarParada === "function" && !window.agregarParada._mf4) {
+    if (typeof window.agregarParada === "function" && !window.agregarParada._mf5) {
       var origA = window.agregarParada;
       window.agregarParada = function () {
         var r = origA.apply(this, arguments);
@@ -248,9 +219,9 @@
         setTimeout(renderMapasFixed, 150);
         return r;
       };
-      window.agregarParada._mf4 = true;
+      window.agregarParada._mf5 = true;
     }
-    if (typeof window.confirmarAuditoriaYDespachar === "function" && !window.confirmarAuditoriaYDespachar._mf4) {
+    if (typeof window.confirmarAuditoriaYDespachar === "function" && !window.confirmarAuditoriaYDespachar._mf5) {
       var origC = window.confirmarAuditoriaYDespachar;
       window.confirmarAuditoriaYDespachar = async function () {
         var r = await origC.apply(this, arguments);
@@ -260,9 +231,9 @@
         setTimeout(renderMapasFixed, 1200);
         return r;
       };
-      window.confirmarAuditoriaYDespachar._mf4 = true;
+      window.confirmarAuditoriaYDespachar._mf5 = true;
     }
-    if (typeof window.construirHoy === "function" && !window.construirHoy._mf4) {
+    if (typeof window.construirHoy === "function" && !window.construirHoy._mf5) {
       var origH = window.construirHoy;
       window.construirHoy = function () {
         var r = origH.apply(this, arguments);
@@ -271,7 +242,7 @@
         setTimeout(renderMapasFixed, 400);
         return r;
       };
-      window.construirHoy._mf4 = true;
+      window.construirHoy._mf5 = true;
     }
     return true;
   }
@@ -293,5 +264,5 @@
   setTimeout(function () { rebuildCiudades(true); renderMapasFixed(); }, 1500);
   setInterval(tick, 3000);
 
-  console.info("[RUTALOG] mapa-fix v4 — renderMapas REEMPLAZADO");
+  console.info("[RUTALOG] mapa-fix v5 — renderMapas REEMPLAZADO");
 })();
