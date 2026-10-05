@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-citas v16 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
+/* RUTALOG mejoras-citas v17 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
    Pegar tabla  ZONA · CITA · CLIENTE · ORDEN DE VENTA · NOTA  →  vista previa  →  Procesar y agregar.
    - Reporte de citas INDIVIDUAL (una fila por OV), con la NOTA.
    - El ID del cliente NO se muestra: se busca solo (por OV del programa o por nombre en el maestro)
@@ -10,8 +10,8 @@
    Reemplaza a mejoras-citas v7/v9, mejoras-citas-futura y mejoras-citas-tabla (se desactivan por bandera). */
 (function () {
   "use strict";
-  if (window.__rutalogCitasV16) return;
-  window.__rutalogCitasV16 = true;
+  if (window.__rutalogCitasV17) return;
+  window.__rutalogCitasV17 = true;
   ["__rutalogCitasV13", "__rutalogCitasV12", "__rutalogCitasV11", "__rutalogCitasV10", "__rutalogCitasV9", "__rutalogCitasV8", "__rutalogCitasV7",
    "__rutalogCitasFuturaV1", "__rutalogCitasTablaV1", "__rutalogCitasTablaV2"
   ].forEach(function (f) { window[f] = true; });
@@ -747,11 +747,11 @@
       "#citasV10Status{font-size:12.5px;color:#a3a3a3}",
       ".c10-wrap{margin-top:12px;border:1px solid #232323;border-radius:10px;overflow:auto;max-height:min(46vh,420px);background:#0c0c0c}",
       "table.c10-tabla{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}",
-      "table.c10-tabla thead th{position:sticky;top:0;z-index:2;background:#ffff00;color:#000;text-align:center;padding:8px 10px;font-weight:800;font-size:12px;letter-spacing:.03em;border:1px solid #111}",
-      "table.c10-tabla thead th.c10-th-al{background:#262626;color:#d4d4d4}",
+      "table.c10-tabla thead th{position:sticky;top:0;z-index:2;background:#1a1a1a;color:#a3a3a3;text-align:center;padding:8px 10px;font-weight:700;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;border:1px solid #2a2a2a;border-bottom:1px solid #333}",
+      "table.c10-tabla thead th.c10-th-al{background:#1a1a1a;color:#fbbf24}",
       "table.c10-tabla tbody td{padding:8px 10px;border-bottom:1px solid #1f1f1f;border-right:1px solid #1a1a1a;color:#e5e5e5;vertical-align:middle}",
       "table.c10-tabla td.c10-zona{font-family:ui-monospace,monospace;color:#a3a3a3;text-align:center;width:54px}",
-      "table.c10-tabla td.c10-cita{font-weight:700;white-space:nowrap}",
+      "table.c10-tabla td.c10-cita{font-weight:700;white-space:nowrap;color:#fbbf24}",
       "table.c10-tabla td.c10-cita small{display:block;font-weight:500;color:#a3a3a3;font-size:11px}",
       "table.c10-tabla td.c10-cli{font-weight:600;color:#fafafa}",
       "table.c10-tabla td.c10-ov{font-family:ui-monospace,monospace;color:#93c5fd;white-space:nowrap}",
