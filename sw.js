@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v7-block1-sync";
+const CACHE = "rutalog-v8-capa1";
 const ASSETS = [
   "./",
   "./index.html",
