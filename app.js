@@ -149,6 +149,8 @@
       onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
       onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
       onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
+      onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
+      onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo(); forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
@@ -169,6 +171,8 @@
     onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
     onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
     onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
+    onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
+    onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
