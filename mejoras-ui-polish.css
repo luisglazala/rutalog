@@ -1,0 +1,283 @@
+/* RUTALOG UI polish — tokens + jerarquía visual */
+:root {
+  --ui-bg: #0a0a0a;
+  --ui-surface: #121212;
+  --ui-elevated: #1a1a1a;
+  --ui-border: #2a2a2a;
+  --ui-border-soft: #1f1f1f;
+  --ui-text: #f5f5f5;
+  --ui-muted: #a3a3a3;
+  --ui-accent: #38bdf8;
+  --ui-accent-dim: rgba(56, 189, 248, 0.14);
+  --ui-success: #22c55e;
+  --ui-warn: #f59e0b;
+  --ui-danger: #ef4444;
+  --ui-radius: 12px;
+  --ui-radius-sm: 8px;
+  --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ui-mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+/* ——— Topbar ——— */
+.topbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--ui-border-soft) !important;
+  background: rgba(10, 10, 10, 0.92) !important;
+  backdrop-filter: blur(8px);
+  min-height: 52px;
+}
+.topbar h1#pageTitle {
+  font-size: 1.05rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+  margin: 0 !important;
+  color: var(--ui-text) !important;
+}
+.topbar .date {
+  font-size: 12.5px !important;
+  color: var(--ui-muted) !important;
+  font-weight: 500;
+}
+.topbar .spacer { flex: 1; min-width: 8px; }
+
+/* Acciones secundarias agrupadas */
+.topbar .ui-actions-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.topbar .ui-actions-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Chips de contexto (centro / sync) */
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-elevated);
+  color: var(--ui-muted);
+  white-space: nowrap;
+}
+.ui-chip strong { color: var(--ui-text); font-weight: 650; }
+.ui-chip.accent {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: var(--ui-accent-dim);
+  color: #7dd3fc;
+}
+
+/* Usuario */
+.user-chip-bar {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 6px 4px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-elevated) !important;
+  font-size: 12.5px !important;
+  color: var(--ui-muted) !important;
+}
+.user-chip-bar strong {
+  color: var(--ui-text) !important;
+  font-weight: 650 !important;
+}
+.user-chip-bar #btnLogout {
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+}
+
+/* Ocultar export/import de sesión en topbar */
+#btnExportSesion,
+#btnImportSesion,
+#fileImportSesion {
+  display: none !important;
+}
+
+/* Botones: jerarquía */
+.btn {
+  font-family: var(--ui-font) !important;
+  border-radius: var(--ui-radius-sm) !important;
+  font-weight: 600 !important;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--ui-accent) !important;
+  outline-offset: 2px !important;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #f5f5f5, #e5e5e5) !important;
+  color: #0a0a0a !important;
+  border: 1px solid #d4d4d4 !important;
+}
+.btn-primary:hover {
+  background: #fff !important;
+}
+.btn-secondary {
+  background: transparent !important;
+  border: 1px solid var(--ui-border) !important;
+  color: var(--ui-text) !important;
+}
+.btn-secondary:hover {
+  background: var(--ui-elevated) !important;
+  border-color: #3f3f3f !important;
+}
+.btn-warn {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+}
+.btn-danger, .btn-dang {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Menú "Día" en topbar */
+.ui-day-menu {
+  position: relative;
+  display: inline-flex;
+}
+.ui-day-menu > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.ui-day-menu > summary::-webkit-details-marker { display: none; }
+.ui-day-menu[open] > summary {
+  background: var(--ui-elevated) !important;
+}
+.ui-day-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 200px;
+  padding: 6px;
+  border-radius: var(--ui-radius-sm);
+  border: 1px solid var(--ui-border);
+  background: #141414;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ui-day-dropdown .btn {
+  width: 100%;
+  justify-content: flex-start !important;
+  text-align: left;
+}
+
+/* Cards */
+.card, .page .card {
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border-soft) !important;
+  border-radius: var(--ui-radius) !important;
+  box-shadow: none !important;
+}
+.card h3 {
+  font-size: 0.95rem !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+  color: var(--ui-text) !important;
+}
+
+/* Tablas genéricas */
+table.data, .table, #codigoTable, #maestroTable, .c10-tabla {
+  border-collapse: collapse;
+}
+table.data th, .table th,
+#codigoTbody input.ed-cell {
+  font-size: 12.5px;
+}
+table thead th {
+  background: #161616 !important;
+  color: var(--ui-muted) !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--ui-border) !important;
+}
+
+/* Badges unificados */
+.badge, .c10-chip {
+  border-radius: 999px !important;
+  font-weight: 650 !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+}
+
+/* Sidebar */
+.sidebar .nav button {
+  border-radius: var(--ui-radius-sm) !important;
+  font-weight: 550 !important;
+}
+.sidebar .nav button.active {
+  background: var(--ui-accent-dim) !important;
+  color: #e0f2fe !important;
+  border-color: transparent !important;
+}
+.sidebar .nav button:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 1px;
+}
+
+/* Mapas: altura más moderada */
+#mapPanel, #mapRutas, .map-wrap, .leaflet-container {
+  border-radius: var(--ui-radius-sm);
+}
+@media (min-width: 961px) {
+  #page-panel .map-box,
+  #page-rutas .map-box {
+    min-height: min(52vh, 560px) !important;
+  }
+}
+
+/* Citas: caja pegar más limpia */
+#citasV10Box {
+  border-style: solid !important;
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface) !important;
+  border-radius: var(--ui-radius) !important;
+}
+#citasV10Box .c10-title {
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Inputs focus */
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.55) !important;
+  outline-offset: 1px;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+/* Toast más sobrio si existe */
+.toast, .c10-aviso {
+  border-radius: var(--ui-radius) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    gap: 8px !important;
+    padding: 8px 10px !important;
+  }
+  .topbar h1#pageTitle {
+    font-size: 0.95rem !important;
+  }
+  .ui-chip { display: none; }
+}
