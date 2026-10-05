@@ -4,7 +4,7 @@
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
-    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html:not(.rutalog-ready) .sidebar,html:not(.rutalog-ready) .main,html:not(.rutalog-ready) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
+    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html.rutalog-booting .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar,html.rutalog-session-pending .app,html:not(.rutalog-ready):not(.rutalog-need-login) .sidebar,html:not(.rutalog-ready):not(.rutalog-need-login) .main,html:not(.rutalog-ready):not(.rutalog-need-login) .topbar,html:not(.rutalog-ready):not(.rutalog-need-login) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
     "html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
@@ -41,6 +41,20 @@
     window.go.__rutalogPatched = true;
   }
 
+  function hydrateSessionChip() {
+    try {
+      var raw = localStorage.getItem("rutalog_session");
+      if (!raw) return false;
+      var u = JSON.parse(raw);
+      if (!u || !u.id || !u.username) return false;
+      var name = document.getElementById("userChipName");
+      if (name) name.textContent = u.nombre || u.name || u.username || "—";
+      var chip = document.getElementById("userChipBar");
+      if (chip) chip.hidden = false;
+      return true;
+    } catch (e) { return false; }
+  }
+
   function revealApp() {
     try {
       var hasSession = false;
@@ -51,20 +65,19 @@
           if (u && u.id && u.username) hasSession = true;
         }
       } catch (e) {}
-      /* Un solo cambio de clase en el siguiente frame = menos parpadeo */
       requestAnimationFrame(function () {
         try {
           if (hasSession) {
-            document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting");
+            hydrateSessionChip();
+            document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting", "rutalog-session-pending");
             document.documentElement.classList.add("rutalog-ready");
           } else {
-            /* Si hay sesión en localStorage, mantener booting (negro) — no flash de login */
-            var lsOk = false;
             try {
+              var lsOk = false;
               var raw2 = localStorage.getItem("rutalog_session");
               if (raw2) {
-                var s2 = JSON.parse(raw2);
-                lsOk = !!(s2 && s2.id && s2.username);
+                var u2 = JSON.parse(raw2);
+                if (u2 && u2.id && u2.username) lsOk = true;
               }
             } catch (e3) {}
             if (lsOk) {
@@ -106,15 +119,10 @@
 
   function onceScript(flag, src) {
     if (window[flag]) return;
-    /* No marcar flag hasta onload: si falla el JS, se puede reintentar */
+    window[flag] = true;
     var s = document.createElement("script");
     s.src = src;
     s.async = false;
-    s.onload = function () { window[flag] = true; };
-    s.onerror = function () {
-      console.error("[RUTALOG] falló carga", src);
-      try { delete window[flag]; } catch (e) { window[flag] = false; }
-    };
     document.head.appendChild(s);
   }
 
@@ -162,7 +170,7 @@
       }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=8");
+      onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=9");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
       onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=2");
@@ -172,7 +180,7 @@
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
-            onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
+      onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
