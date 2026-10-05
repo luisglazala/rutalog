@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="stylesheet" href="./boot.css">
-<script src="./boot.js"></script>
+<link rel="stylesheet" href="./boot.css?v=2">
+<script src="./boot.js?v=2"></script>
 <style id="rutalog-boot-css">
 html,body{background:#0a0a0a!important;height:100%;margin:0;color:#f5f5f5}
 html.rutalog-booting .app,
@@ -11,7 +11,7 @@ html.rutalog-booting .main,
 html.rutalog-booting .topbar,
 html:not(.rutalog-ready):not(.rutalog-need-login) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-booting body{background:#0a0a0a!important}
-html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
+html.rutalog-need-login .sidebar,html.rutalog-need-login .main,html.rutalog-need-login .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
 html.rutalog-need-login #loginOverlay[hidden]{display:flex!important;visibility:visible!important}
 .leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important;box-shadow:none!important}
 .leaflet-div-icon .marcador{border-radius:50%!important}
