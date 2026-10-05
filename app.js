@@ -182,7 +182,7 @@
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
-      onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=3");
+      onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=31");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -194,11 +194,11 @@
     forceLeafletIcons();
     onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
     afterAppReady();
-    return loadScript("./app-core-construirHoy.js?v=6");
+    return loadScript("./app-core-construirHoy.js?v=7");
   }).then(function () {
     return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
-    onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=3");
+    onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=31");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
