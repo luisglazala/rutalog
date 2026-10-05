@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>RUTALOG — Consolidador Territorial · Lazala</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fafafa%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23a3a3a3%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%23111%22/%3E%3Cpath%20d%3D%22M8%2022%20L16%207%20L24%2022%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2220%22%20r%3D%222.2%22%20fill%3D%22%23fafafa%22/%3E%3Cpath%20d%3D%22M16%2020%20V14%22%20stroke%3D%22%23fafafa%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.5%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- pdf.js se carga bajo demanda (mejora-5) -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0a0a0a">
+</head>
+<body>
+<div class="app">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="rlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fafafa"/><stop offset="100%" stop-color="#a3a3a3"/></linearGradient></defs><path d="M8 22 L16 7 L24 22" fill="none" stroke="url(#rlg)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="20" r="2.2" fill="#fafafa"/><path d="M16 20 V14" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round" opacity=".45"/></svg></div>
+        <div class="brand-text">RUTALOG<small>Consolidador territorial</small></div>
+      </div>
+      <button type="button" class="btn-collapse-sb" id="btnCollapseSidebar" title="Contraer / expandir menú" aria-label="Contraer menú">
+        <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+      </button>
+    </div>
+    <nav class="nav">
+      <button class="active" data-page="panel"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span> <span class="nav-label">Panel</span></button>
+      <button data-page="rutas"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></span> <span class="nav-label">Mapa de rutas</span></button>
+      <button data-page="despachos"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span> <span class="nav-label">Despachos</span></button>
+      <button data-page="maestro"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span class="nav-label">Maestro</span></button>
+      <button data-page="citas"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <span class="nav-label">Citas</span></button>
+      <button data-page="topes"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg></span> <span class="nav-label">Topes SKU</span></button>
+      <button data-page="codigo"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span> <span class="nav-label">Código SKU</span></button>
+            <button data-page="reserva"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg></span> <span class="nav-label">% Reserva OV</span></button>
+<button data-page="cruzados"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></span> <span class="nav-label">Viajes cruzados</span></button>
+      <button data-page="config"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span class="nav-label">Configuración</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="foot-stats" id="footStats">Maestro listo</div>
+      <div class="foot-credit">Diseño · <strong>Luis Gerardo Lazala Ortiz</strong></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button type="button" class="sidebar-toggle" id="btnSidebarToggle" aria-label="Abrir menú" title="Menú"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <h1 id="pageTitle">Panel de despachos</h1>
+      <span class="date" id="fechaHoy"></span>
+      <div class="spacer"></div>
+      <div class="user-chip-bar" id="userChipBar" hidden>
+        <span>Sesión: <strong id="userChipName">—</strong></span>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnLogout" title="Cerrar sesión">Salir</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="btnExportSesion" title="Descargar sesión del día (JSON)">Exportar día</button>
+      <button class="btn btn-secondary btn-sm" id="btnImportSesion" title="Restaurar sesión del día desde JSON">Importar día</button>
+      <input type="file" id="fileImportSesion" accept=".json,application/json" hidden>
+      <button class="btn btn-warn btn-sm" id="btnLimpiarDia" title="Limpiar pedidos del día">Limpiar día</button>
+      <button class="btn btn-danger btn-sm" id="btnBorrarViajesTop" title="Borrar todos los viajes guardados"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Viajes</button>
+      <button class="btn btn-success btn-sm" id="btnDescargar" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar viajes</button>
+    </div>
+
+    <div class="content">
+      <!-- PANEL -->
+      <div class="page active" id="page-panel">
+        <div class="drop" id="dropDiario">
+          <div class="t">Excel crudo de Dynamics (.xlsx)</div>
+          <div class="s">Arrastra o toca el archivo del día para activar el mapa y armar rutas · Solo en este equipo/usuario (no se sincroniza)</div>
+          <div class="s" style="margin-top:8px;opacity:.85">Si aún no tienes el Excel, puedes explorar el maestro en <strong>Mapa de rutas</strong>.</div>
+          <input type="file" id="fileDiario" accept=".xlsx,.xls,.csv">
+        </div>
+        <div class="stats" id="statsPanel">
+          <div class="stat"><div class="v mono" id="sOV">0</div><div class="l">Órdenes únicas</div></div>
+          <div class="stat"><div class="v mono" id="sPeso">0.00 kg</div><div class="l">Peso acumulado</div></div>
+          <div class="stat"><div class="v mono" id="sConf">0</div><div class="l">En confirmación</div></div>
+          <div class="stat"><div class="v mono" id="sFact">0</div><div class="l">En factura</div></div>
+          <div class="stat"><div class="v mono" id="sMapa">0</div><div class="l">Con punto en mapa</div></div>
+        </div>
+        <div class="map-box" style="min-height:380px;">
+          <div class="map-head">
+            <span>Mapa operativo del día</span>
+            <span class="badge" id="badgeMapaPanel">0 puntos</span>
+            <div class="spacer"></div>
+            <button class="btn btn-primary btn-sm" id="btnIrRutas">Abrir planificador de rutas</button>
+          </div>
+          <div id="mapPanel"></div>
+        </div>
+      </div>
+
+      <!-- RUTAS -->
+      <div class="page" id="page-rutas">
+        <div class="filters">
+          <input type="text" id="qRutas" placeholder="OV, cliente, ciudad, dirección…">
+          <select id="filEstado"><option value="">Todos los estados</option><option>Confirmación</option><option>Factura</option><option>Ninguno</option></select>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnCiudad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Ciudades ▾</button>
+        </div>
+        <div class="ciudades-panel" id="panelCiudad" hidden>
+          <div class="ciudades-panel-head">
+            <strong>Filtrar por ciudades</strong>
+            <span style="font-size:12px;color:var(--muted);" id="lblCiudadCount">Todas</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCerrarCiudades" style="margin-left:auto;">Cerrar</button>
+          </div>
+          <label class="ciu-chip all"><input type="checkbox" id="chkTodasCiudades" checked> Todas las ciudades</label>
+          <div class="ciudades-grid" id="listaCiudades"></div>
+        </div>
+        <div class="map-layout">
+          <div class="map-box">
+            <div class="map-head">
+              <span>Mapa de rutas</span>
+              <span class="badge" id="badgeActivos">0 puntos activos</span>
+              <label style="margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:6px;">
+                <input type="checkbox" id="chkMaestroCompleto"> Mostrar maestro completo
+              </label>
+            </div>
+            <div id="mapRutas"></div>
+          </div>
+          <div class="side-panel">
+            <h3>Ruta en construcción — Viaje <span id="numViaje">1</span></h3>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCambiarCentro" style="align-self:flex-start;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg> Cambiar centro</button>
+            <div style="display:flex;gap:8px;">
+              <span class="badge" id="badgeParadas">0 paradas</span>
+              <span class="badge" id="badgePesoViaje">0.00 kg</span>
+            </div>
+            <ul class="lista-paradas" id="listaViajeActual">
+              <li class="vacio">Clic en los puntos del mapa para armar la ruta.</li>
+            </ul>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary btn-sm" id="btnDeshacer" disabled style="flex:1;"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Deshacer</button>
+              <button class="btn btn-danger btn-sm" id="btnReiniciar" disabled style="flex:1;">Reiniciar</button>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnOptimizarRuta" disabled style="width:100%;margin-bottom:8px;" title="Reordena paradas por cercanía (vecino más cercano)">Optimizar orden de paradas</button>
+            <button class="btn btn-primary" id="btnGuardarViaje" disabled style="width:100%;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar viaje</button>
+            <hr style="border:none;border-top:1px solid var(--border);">
+            <h3>Viajes guardados</h3>
+            <div id="listaViajesGuardados"><div class="vacio">Ningún viaje aún.<br><span style="opacity:.8;font-size:12px">Clic en puntos del mapa → Guardar viaje.</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESPACHOS -->
+      <div class="page" id="page-despachos">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;">Despachos del día</h3>
+            <button class="btn btn-secondary btn-sm" id="btnDescargar2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar Excel</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">Una fila por OV de cada viaje. Si la OV está partida (parcial) se muestra el badge <strong>Parcial</strong>. Color de banda = viaje.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Viaje</th><th>Parada</th><th>Cliente</th><th>Nombre</th><th>OV</th>
+                  <th>Peso OV</th><th>Condición</th><th>Localidad</th><th>Ciudad</th><th>Cita</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDespachos">
+                <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:24px;">Aún no hay despachos.<br><span style="font-size:12px;opacity:.85">Arma un viaje en Mapa de rutas y guárdalo para verlo aquí.</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAESTRO -->
+      <div class="page" id="page-maestro">
+        <div class="drop" id="dropMaestro" style="margin-bottom:12px;">
+          <div class="t">Cargar / reemplazar maestro de clientes (.xlsx)</div>
+          <div class="s">Arrastra o haz clic · El último maestro cargado se guarda en este navegador y se usa al reabrir.</div>
+          <input type="file" id="fileMaestro" accept=".xlsx,.xls,.csv">
+        </div>
+        <div id="maestroFuente" style="font-size:12.5px;color:var(--muted);margin:-4px 0 12px 2px;">
+          Fuente actual: <strong id="maestroNombreArchivo">—</strong>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;">Maestro de clientes (editable)</h3>
+            <span class="badge" id="badgeMaestro">0</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">
+            Haz clic en una celda para editar. Los cambios se guardan automáticamente en el navegador.
+          </p>
+          <div class="filters">
+            <input type="text" id="qMaestro" placeholder="Buscar id, nombre, ciudad, localidad…">
+            <select id="filProv"><option value="">Todas las provincias</option></select>
+          </div>
+          <div class="table-wrap" style="max-height:560px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Nombre</th><th>Zona</th><th>Ciudad</th><th>Provincia</th>
+                  <th>Localidad</th><th>Lat</th><th>Lon</th><th>Condición</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyMaestro"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CITAS -->
+      <div class="page" id="page-citas">
+        <div class="card">
+          <h3>Pinta de alertas — fechas de cita</h3>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">
+            Las citas se guardan en este navegador (localStorage). No se borran al limpiar el día.
+          </p>
+          <div class="form-row">
+            <input type="text" id="citaOV" placeholder="Orden de venta (opcional)">
+            <input type="text" id="citaCliente" placeholder="ID Cliente (9 dígitos)">
+            <input type="date" id="citaFecha">
+            <button class="btn btn-primary btn-sm" id="btnAddCita"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
+          </div>
+          <div id="listaCitas"><div class="vacio">Sin fechas de cita todavía.</div></div>
+        </div>
+      </div>
+
+      <!-- TOPES SKU -->
+      <div class="page" id="page-topes">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;">Topes de carga por SKU (alerta de camión)</h3>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnRellenarNombresTopes" title="Catálogo SKU embebido + Excel del día"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Rellenar nombres</button>
+              <span class="badge" id="badgeTopes">0 SKU</span>
+            </div>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">
+            Reglas de alerta por SKU: si en la auditoría la suma de cajas seleccionadas alcanza el tope de la plantilla (G o P), se avisa para planificar ese producto en otro camión.
+            El peso máximo del vehículo es independiente: <strong>Camión G = 12 000 kg</strong>, <strong>Camión P = 3 000 kg</strong>.
+          </p>
+          <div class="form-row">
+            <input type="text" id="topeSku" placeholder="SKU" class="mono" style="max-width:120px;">
+            <input type="text" id="topeNombre" placeholder="Nombre producto (opcional)" style="flex:2;">
+            <input type="number" id="topeCantidad" placeholder="Tope Camión G" min="1" step="1" style="max-width:130px;" title="Tope en cajas para Camión G">
+            <input type="number" id="topeCantidadP" placeholder="Tope Camión P" min="1" step="1" style="max-width:130px;" title="Tope en cajas para Camión P">
+            <input type="text" id="topeTransporte" placeholder="Transporte" value="CAMION G" style="max-width:120px;display:none;">
+            <button class="btn btn-primary btn-sm" id="btnAddTope"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar / Actualizar</button>
+          </div>
+          <div class="table-wrap" style="max-height:520px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Nombre producto</th>
+                  <th>Tope G (cajas)</th>
+                  <th>Tope P (cajas)</th>
+                  <th style="width:90px;"></th>
+                </tr>
+              </thead>
+              <tbody id="tbodyTopes">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">Sin topes definidos. Agrega SKUs con tope G y/o P arriba.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- MAESTRO DE CÓDIGO (conversión unidades → cajas) -->
+      <div class="page" id="page-codigo">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <h3 style="margin:0;">Maestro de Código — Unidades por caja</h3>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="badge" id="badgeCodigo">0 SKU</span>
+              <button type="button" class="btn btn-primary btn-sm" id="btnImportCodigo" title="Importar Excel (fusionar o reemplazar)">Importar Excel</button>
+              <input type="file" id="fileImportCodigo" accept=".xlsx,.xls,.csv" style="display:none">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnExportCodigo" title="Descargar Excel">Exportar</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnResetCodigo" title="Restaurar catálogo base">Restaurar</button>
+            </div>
+          </div>
+          <div class="filters" style="margin-bottom:10px;">
+            <input type="text" id="qCodigo" placeholder="Filtrar por SKU o producto…" style="flex:1;min-width:200px;">
+            <select id="filCodigoUnd">
+              <option value="">Todas las und/caja</option>
+              <option value="1">Solo und/caja = 1</option>
+              <option value="gt1">und/caja &gt; 1</option>
+              <option value="blank">Sin und/caja</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <input type="text" id="codSku" placeholder="SKU" class="mono" style="max-width:110px;">
+            <input type="text" id="codProducto" placeholder="Producto" style="flex:2;">
+            <input type="number" id="codUndCaja" placeholder="Und/caja" min="0" step="1" style="max-width:100px;">
+            <input type="number" id="codCajaPaleta" placeholder="Caja/paleta" min="0" step="1" style="max-width:110px;">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddCodigo">Agregar / Actualizar</button>
+          </div>
+          <div class="table-wrap" style="max-height:520px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Producto</th>
+                  <th>Und. por caja</th>
+                  <th>Caja por paleta</th>
+                  <th>Und. por paleta</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="codigoTbody"></tbody>
+            </table>
+          </div>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:8px;" id="codigoFuenteInfo"></p>
+        </div>
+      </div>
+
+      <!-- VIAJES CRUZADOS -->
+      <div class="page" id="page-cruzados">
+        <div class="drop" id="dropCruzados" style="margin-bottom:12px;">
+          <div class="t">Cargar PDF de carga / “Cargando lista”</div>
+          <div class="s">Arrastra o haz clic · Lee nombres y direcciones del PDF, los cruza con el maestro y dibuja la ruta en el mapa (planificación a la inversa)</div>
+          <input type="file" id="fileCruzados" accept=".pdf">
+        </div>
+        <div id="cruzadosInfo" style="font-size:12.5px;color:var(--muted);margin:-4px 0 12px 2px;">
+          Sin PDF cargado
+        </div>
+        <div class="stats" id="statsCruzados" style="margin-bottom:12px;">
+          <div class="stat"><div class="v mono" id="cxTotal">0</div><div class="l">Paradas en PDF</div></div>
+          <div class="stat"><div class="v mono" id="cxMatch">0</div><div class="l">Coincidencias</div></div>
+          <div class="stat"><div class="v mono" id="cxNoMatch">0</div><div class="l">Sin match</div></div>
+          <div class="stat"><div class="v mono" id="cxMapa">0</div><div class="l">En mapa</div></div>
+        </div>
+        <div class="map-layout">
+          <div class="map-box">
+            <div class="map-head">
+              <span>Mapa — Viajes cruzados</span>
+              <span class="badge" id="badgeCruzados">0 puntos</span>
+            </div>
+            <div id="mapCruzados" style="flex:1;min-height:360px;"></div>
+          </div>
+          <div class="side-panel">
+            <h3>Paradas extraídas</h3>
+            <div id="listaCruzados" style="overflow:auto;max-height:520px;">
+              <div class="vacio">Carga un PDF de “Cargando lista” para ver las paradas.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="page-reserva">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h3 style="margin:0;">% Reserva física por OV</h3>
+            </div>
+            <span class="badge" id="badgeReserva">Sin archivo</span>
+          </div>
+          <div class="drop" id="dropReserva">
+            <div class="t">Toca o arrastra el Excel de Dynamics</div>
+            <div class="s">.xlsx / .xls · columnas: Orden de venta, Código de artículo, Cantidad, Cantidad reservada, Estado de la liberación, Monto neto</div>
+            <input type="file" id="fileReserva" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-top:8px;" id="statusReserva">Esperando archivo…</p>
+          <div id="errReserva" style="display:none;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;"></div>
+        </div>
+
+        <div class="stats" id="statsReserva" style="display:none;">
+          <div class="stat"><div class="v mono" id="rsOVs">0</div><div class="l">OVs</div></div>
+          <div class="stat"><div class="v mono" id="rsFull" style="color:var(--success);">0</div><div class="l">Casi/total</div></div>
+          <div class="stat"><div class="v mono" id="rsPart" style="color:var(--warn);">0</div><div class="l">Parcial</div></div>
+          <div class="stat"><div class="v mono" id="rsZero">0</div><div class="l">Sin física</div></div>
+          <div class="stat"><div class="v mono" id="rsVis">0</div><div class="l">Visibles</div></div>
+        </div>
+
+        <div class="card" id="cardReservaTable" style="display:none;">
+          <div class="filters">
+            <select id="filtroClasReserva">
+              <option value="todas">Todas las clasificaciones</option>
+              <option value="Casi/total reservada">Casi/total reservada</option>
+              <option value="Parcial">Parcial</option>
+              <option value="Sin reserva física">Sin reserva física</option>
+            </select>
+            <input type="search" id="filtroOVReserva" placeholder="Buscar OV…" enterkeyhint="search">
+            <button type="button" class="btn btn-success btn-sm" id="btnDescargarReserva">Descargar Excel</button>
+          </div>
+          <div class="table-wrap" style="max-height:min(60vh,520px);">
+            <table>
+              <thead>
+                <tr>
+                  <th>OV</th>
+                  <th>% Reserva</th>
+                  <th>UN Física</th>
+                  <th>UN Pedido</th>
+                  <th>Monto neto OV</th>
+                  <th>Monto reserv. approx.</th>
+                  <th>SKUs</th>
+                  <th>Lín. Fís.</th>
+                  <th>Clasificación</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyReserva"></tbody>
+            </table>
+          </div>
+          <p class="vacio" id="emptyReserva" style="display:none;">Ninguna OV con ese filtro.</p>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN / USUARIOS -->
+      <div class="page" id="page-config">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h3 style="margin:0;">Usuarios y accesos</h3>
+              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Solo administradores. Crea usuarios, rol <strong>Administrador</strong> u <strong>Operador</strong> y módulos. Se sincronizan por GitHub. El trabajo del día (Panel, Mapa, Viajes, Reserva OV, Cruzados) es <strong>local de cada usuario/equipo</strong> y no se comparte.</p>
+            </div>
+            <span class="badge" id="badgeUsuarios">0 usuarios</span>
+          </div>
+          <div class="form-row" style="align-items:flex-end;">
+            <div style="flex:1;min-width:120px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Usuario</label>
+              <input type="text" id="cfgUser" placeholder="usuario" autocomplete="off">
+            </div>
+            <div style="flex:1.4;min-width:140px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Nombre completo</label>
+              <input type="text" id="cfgNombre" placeholder="Nombre a mostrar">
+            </div>
+            <div style="flex:1;min-width:120px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Contraseña</label>
+              <input type="password" id="cfgPass" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <div style="min-width:130px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Rol</label>
+              <select id="cfgRol" style="padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-family:inherit;font-size:13px;width:100%;">
+                <option value="operador">Operador</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddUsuario">Guardar usuario</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCancelEditUsuario" hidden>Cancelar edición</button>
+          </div>
+          <div style="margin:10px 0 6px;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Módulos permitidos</div>
+            <div class="perm-grid" id="cfgPermGrid"></div>
+            <p style="font-size:11.5px;color:var(--muted);margin-top:8px;">Los administradores tienen acceso total (incluyendo Configuración). Para operadores, marca solo los módulos que necesiten.</p>
+          </div>
+          <input type="hidden" id="cfgEditId" value="">
+          <div class="table-wrap" style="max-height:420px;margin-top:12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Accesos</th>
+                  <th>Estado</th>
+                  <th style="width:140px;"></th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUsuarios">
+                <tr><td colspan="6" class="vacio" style="text-align:center;padding:24px;">Sin usuarios. Mientras no haya usuarios, la app es de acceso libre.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h3 style="margin:0;">Sincronización entre PCs (GitHub)</h3>
+              <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">
+                Comparte maestro de clientes, citas, topes SKU y código SKU entre varias computadoras.
+                Repo: <code style="font-size:11px;">luisglazala/rutalog-datos</code>
+              </p>
+            </div>
+            <span class="badge" id="badgeSync">sin configurar</span>
+          </div>
+          <div class="form-row" style="align-items:flex-end;">
+            <div style="flex:2;min-width:200px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px;">Token de GitHub (PAT) <span style="font-weight:400;opacity:.75;">· solo admin puede verlo</span></label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="password" id="syncToken" placeholder="ghp_…" autocomplete="off" style="flex:1;min-width:0;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnToggleToken" title="Mostrar u ocultar el token (solo administrador)">Ver</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnSaveToken">Guardar token</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnClearToken">Quitar</button>
+          </div>
+          <p style="font-size:11.5px;color:var(--muted);margin:6px 0 12px;">
+            Crea un token en GitHub → Settings → Developer settings → Personal access tokens
+            (permiso <strong>repo</strong> o solo este repositorio). Se guarda solo en este navegador.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center;">
+            <button type="button" class="btn btn-primary btn-sm" id="btnSyncActualizar">Actualizar ahora</button>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none;">
+              <input type="checkbox" id="syncAuto" style="accent-color:#34d399;" checked> Auto tras editar + cada 60 s (usuarios y datos)
+            </label>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:0;" id="syncStatus">Última sync: —</p>
+          <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0;">
+            <strong>Guardado automático en GitHub (catálogos)</strong> (con token): cualquier cambio de
+            <strong>usuarios</strong>, <strong>maestro de clientes</strong>, <strong>citas</strong>,
+            <strong>topes SKU</strong> o <strong>código SKU</strong> (edición o importación Excel)
+            se sube solo ~1–2 segundos después. También hay respaldo automática tras editar y cada minuto.
+            En otra PC: mismo token → Actualizar → mismos datos y login.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- SELECTOR DE CENTRO / ORIGEN -->
+<div class="centro-overlay" id="centroOverlay" hidden>
+  <div class="centro-modal" role="dialog" aria-modal="true" aria-labelledby="centroTitle">
+    <div class="body">
+      <h2 id="centroTitle">Seleccionar centro de trabajo</h2>
+      <p class="sub">Elige el almacén César Iglesias desde el que saldrán los viajes de este día. No se muestra en el mapa; solo define el origen de las rutas.</p>
+      <div class="centro-opciones" id="centroOpciones"></div>
+    </div>
+    <div class="foot">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnCentroCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUDITORÍA DE CARGA -->
+<div class="audit-overlay" id="auditOverlay" hidden>
+  <div class="audit-modal" role="dialog" aria-modal="true" aria-labelledby="auditTitle">
+    <div class="audit-head">
+      <div style="flex:1;">
+        <h2 id="auditTitle">Auditoría de carga — Viaje <span id="auditNumViaje">1</span></h2>
+        <p>Selecciona las líneas de OV que salen en este viaje. El restante permanece en el mapa para re-planificar.</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAuditVolver"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Volver al mapa</button>
+    </div>
+    <div class="audit-filters" id="auditFilters" style="display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0;background:var(--surface-2);">
+      <input type="search" id="auditFilCliente" placeholder="Cliente…" style="width:110px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-size:12.5px;font-family:inherit;">
+      <input type="search" id="auditFilNombre" placeholder="Nombre…" style="flex:1;min-width:140px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-size:12.5px;font-family:inherit;">
+      <input type="search" id="auditFilCiudad" placeholder="Ciudad…" style="width:130px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-size:12.5px;font-family:inherit;">
+      <input type="search" id="auditFilSku" placeholder="SKU…" style="width:100px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-size:12.5px;font-family:inherit;font-family:'JetBrains Mono',monospace;">
+      <input type="search" id="auditFilOV" placeholder="OV…" style="width:110px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--input-bg);color:var(--text);font-size:12.5px;font-family:inherit;">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAuditFiltrarSel" title="Seleccionar solo las filas visibles">Sel. visibles</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAuditFiltrarDesel" title="Deseleccionar solo las filas visibles">Desel. visibles</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAuditLimpiarFiltro" title="Limpiar filtros">Limpiar</button>
+      <span style="font-size:11.5px;color:var(--muted);" id="auditFilCount"></span>
+    </div>
+    <div class="audit-body">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th style="width:36px;"><input type="checkbox" id="auditChkAll" checked title="Seleccionar todas (visibles)"></th>
+            <th>OV</th>
+            <th>Cliente</th>
+            <th>Nombre</th>
+            <th>Ciudad</th>
+            <th>Código (SKU)</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Unidad</th>
+            <th>Und/caja</th>
+            <th>Cajas</th>
+            <th>A despachar</th>
+            <th>Peso línea (kg)</th>
+            <th>Alma</th>
+          </tr>
+        </thead>
+        <tbody id="auditTbody"></tbody>
+      </table>
+    </div>
+    <div class="audit-tope-alert" id="auditTopeAlert" role="alert"></div>
+    <div class="audit-foot">
+      <div class="stat-line" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>Plantilla:</span>
+        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="radio" name="auditPlantilla" value="G" id="auditPlantillaG" checked> Camión G</label>
+        <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;"><input type="radio" name="auditPlantilla" value="P" id="auditPlantillaP"> Camión P</label>
+        <span class="badge" id="auditCapacidad" title="Ocupación vs plantilla">—</span>
+      </div>
+      <div class="stat-line">Líneas sel: <strong id="auditLineasSel">0</strong> · <strong id="auditEmp">0</strong> emp. · <strong id="auditCajas">0</strong> cajas</div>
+      <div class="stat-line">Peso seleccionado: <strong id="auditPesoSel">0.00</strong> kg</div>
+      <div class="stat-line">Peso remanente: <strong id="auditPesoRem">0.00</strong> kg</div>
+      <div class="spacer"></div>
+      <button type="button" class="btn btn-secondary" id="btnAuditCancelar">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btnAuditConfirmar"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Confirmar y Despachar Viaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay" hidden>
+  <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="logo-row">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="rlg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fafafa"/><stop offset="100%" stop-color="#a3a3a3"/></linearGradient></defs><path d="M8 22 L16 7 L24 22" fill="none" stroke="url(#rlg2)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="20" r="2.2" fill="#fafafa"/><path d="M16 20 V14" stroke="#fafafa" stroke-width="1.5" stroke-linecap="round" opacity=".45"/></svg>
+      </div>
+      <div>
+        <h2 id="loginTitle">RUTALOG</h2>
+        <p class="sub" style="margin:0;">Consolidador territorial · Iniciar sesión</p>
+      </div>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="field">
+      <label for="loginUser">Usuario</label>
+      <input type="text" id="loginUser" autocomplete="username" autofocus>
+    </div>
+    <div class="field">
+      <label for="loginPass">Contraseña</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+    </div>
+    <button type="button" class="btn btn-primary" id="btnLogin">Entrar</button>
+    <p class="credit">Luis Gerardo Lazala Ortiz</p>
+  </div>
+</div>
+
+
+<script src="./app.js" defer></script>
+
+
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirmOverlay" hidden>
+  <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="body">
+      <h2 id="confirmTitle">Confirmar</h2>
+      <p class="msg" id="confirmMsg"></p>
+    </div>
+    <div class="foot">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnConfirmCancel">Cancelar</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+</body>
+</html>
