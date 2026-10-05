@@ -1,11 +1,30 @@
-/* RUTALOG despachos-layout v1 — más filas visibles a la vez */
+/* RUTALOG despachos-layout v2 — tabla casi a pantalla completa */
+html, body {
+  height: 100% !important;
+}
+
+.app, .main, .content, main {
+  min-height: 0 !important;
+}
+
+.main, .content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+
 #page-despachos.active {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  flex: 1 1 auto !important;
+  gap: 6px !important;
   height: 100% !important;
+  max-height: 100% !important;
   min-height: 0 !important;
   overflow: hidden !important;
+  padding-bottom: 4px !important;
 }
 
 #page-despachos.active > .card {
@@ -13,29 +32,32 @@
   display: flex !important;
   flex-direction: column !important;
   min-height: 0 !important;
+  height: 100% !important;
   margin: 0 !important;
-  padding: 12px 14px 10px !important;
+  padding: 10px 12px 6px !important;
   overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
-#page-despachos.active > .card > h3,
-#page-despachos.active > .card > div:first-child {
-  flex: 0 0 auto;
+#page-despachos.active > .card > div:first-child,
+#page-despachos.active > .card > p {
+  flex: 0 0 auto !important;
 }
 
 #page-despachos.active > .card > p {
-  flex: 0 0 auto;
-  margin-bottom: 8px !important;
-  font-size: 12px !important;
+  margin: 0 0 6px !important;
+  font-size: 11.5px !important;
+  line-height: 1.3 !important;
 }
 
 #page-despachos.active .table-wrap {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  height: auto !important;
+  height: 100% !important;
   overflow: auto !important;
   border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.06);
 }
 
 #page-despachos.active .table-wrap table {
@@ -47,16 +69,16 @@
 #page-despachos.active .table-wrap thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   background: #141414;
-  padding: 8px 10px !important;
-  font-size: 11px !important;
+  padding: 7px 8px !important;
+  font-size: 10.5px !important;
   white-space: nowrap;
 }
 
 #page-despachos.active .table-wrap tbody td {
-  padding: 6px 10px !important;
-  line-height: 1.25 !important;
+  padding: 5px 8px !important;
+  line-height: 1.2 !important;
   vertical-align: middle !important;
 }
 
@@ -64,8 +86,26 @@
   height: auto !important;
 }
 
-@media (min-height: 800px) {
-  #page-despachos.active .table-wrap tbody td {
-    padding: 5px 10px !important;
-  }
+#page-despachos.active .btn-del-viaje-desp {
+  background: transparent;
+  border: 1px solid rgba(225, 29, 72, .35);
+  color: #fb7185;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+#page-despachos.active .btn-del-viaje-desp:hover {
+  background: rgba(225, 29, 72, .15);
+  border-color: #e11d48;
+  color: #fecdd3;
+}
+
+#page-despachos.active th.col-acciones,
+#page-despachos.active td.col-acciones {
+  width: 72px;
+  text-align: center;
+  white-space: nowrap;
 }
