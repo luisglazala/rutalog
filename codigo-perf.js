@@ -1,8 +1,8 @@
-/* RUTALOG — Código SKU performance v3: paginación + entrada sin tirón */
+/* RUTALOG — Código SKU performance v4: paginación + entrada sin tirón */
 (function () {
   "use strict";
-  if (window.__rutalogCodigoPerfV3) return;
-  window.__rutalogCodigoPerfV3 = true;
+  if (window.__rutalogCodigoPerfV4) return;
+  window.__rutalogCodigoPerfV4 = true;
 
   var PAGE_SIZE = 50;
   var codigoPage = 0;
@@ -164,7 +164,7 @@
   }
 
   /** No bloquear el cambio de pestaña: pintar en el siguiente frame */
-  function renderCodigoTableDeferred() {
+  window.renderCodigoTable = function renderCodigoTable() {
     if (_renderTimer) cancelAnimationFrame(_renderTimer);
     _renderTimer = requestAnimationFrame(function () {
       _renderTimer = null;
@@ -206,10 +206,19 @@
   setTimeout(function () { wireFilters(); patchGo(); }, 1500);
 })();
 
-/* rebind global name used by core go() */
-try {
-  if (typeof window.renderCodigoTable === "function") {
-    var _rc = window.renderCodigoTable;
-    window.renderCodigoTable = function () { return _rc.apply(this, arguments); };
+  /* Reafirmar override tras cargar el core (por si go/render se reasignan) */
+  function forceOverride() {
+    window.renderCodigoTable = function renderCodigoTable() {
+      if (_renderTimer) cancelAnimationFrame(_renderTimer);
+      _renderTimer = requestAnimationFrame(function () {
+        _renderTimer = null;
+        try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
+      });
+    };
+    patchGo();
   }
-} catch (e) {}
+  forceOverride();
+  setTimeout(forceOverride, 500);
+  setTimeout(forceOverride, 2000);
+  setTimeout(forceOverride, 4000);
+})();
