@@ -158,6 +158,7 @@
       onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
       onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
       onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
+      onceScript("__rutalogRutasPanelUi", "./mejoras-rutas-panel-ui.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo(); forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
@@ -182,6 +183,7 @@
     onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
     onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
     onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
+    onceScript("__rutalogRutasPanelUi", "./mejoras-rutas-panel-ui.js?v=1");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
