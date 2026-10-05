@@ -12,14 +12,12 @@
     ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}"
   ].join("\n");
   document.head.appendChild(css);
-
   function removeDiaBtns() {
     ["btnExportSesion","btnImportSesion","fileImportSesion"].forEach(function(id) {
       var el = document.getElementById(id); if (el) el.remove();
     });
   }
   removeDiaBtns();
-
   function forcePageVisibility() {
     try {
       document.querySelectorAll(".page").forEach(function (p) {
@@ -28,7 +26,6 @@
       });
     } catch (e) {}
   }
-
   function patchGo() {
     if (typeof window.go !== "function" || window.go.__rutalogPatched) return;
     var _go = window.go;
@@ -44,7 +41,6 @@
     };
     window.go.__rutalogPatched = true;
   }
-
   function hydrateSessionChip() {
     try {
       var raw = localStorage.getItem("rutalog_session");
@@ -58,7 +54,6 @@
       return true;
     } catch (e) { return false; }
   }
-
   function revealApp() {
     try {
       var hasSession = false;
@@ -83,7 +78,6 @@
       });
     } catch (e) { forcePageVisibility(); }
   }
-
   function forceLeafletIcons() {
     if (document.getElementById("rutalog-leaflet-no-square")) return;
     var st = document.createElement("style");
@@ -92,16 +86,13 @@
     (document.head || document.documentElement).appendChild(st);
   }
   forceLeafletIcons();
-
   function onceScript(flag, src) {
     if (window[flag]) return;
     window[flag] = true;
     var s = document.createElement("script");
-    s.src = src;
-    s.async = false;
+    s.src = src; s.async = false;
     document.head.appendChild(s);
   }
-
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
@@ -111,16 +102,11 @@
       document.head.appendChild(s);
     });
   }
-
   function afterAppReady() {
-    removeDiaBtns();
-    patchGo();
-    setTimeout(patchGo, 500);
-    setTimeout(patchGo, 1500);
-    forcePageVisibility();
-    revealApp();
+    removeDiaBtns(); patchGo();
+    setTimeout(patchGo, 500); setTimeout(patchGo, 1500);
+    forcePageVisibility(); revealApp();
   }
-
   function loadExtras() {
     try {
       if (!document.getElementById("rutalog-mejoras-v2-css")) {
@@ -161,14 +147,12 @@
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
       onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
       onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
-      onceScript("__rutalogMapaCiuRuta", "./mejoras-mapa-ciudades-ruta.js?v=1");
+      onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
       onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
-      patchGo();
-      forcePageVisibility();
+      patchGo(); forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
-
   var APP = "./core-app.js?v=noflicker1";
   loadScript(APP).then(function () {
     forceLeafletIcons();
@@ -183,7 +167,7 @@
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
     onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
     onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
-    onceScript("__rutalogMapaCiuRuta", "./mejoras-mapa-ciudades-ruta.js?v=1");
+    onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
     onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
     loadExtras();
   }).catch(function (e) {
