@@ -1,18 +1,1079 @@
-/* RUTALOG mejoras-citas v13 gzip — oculta alta manual */
+/* RUTALOG mejoras-citas v14 — parse columnas ZONA/CITA/CLIENTE/OV/NOTA
+   Pegar tabla  ZONA · CITA · CLIENTE · ORDEN DE VENTA · NOTA  →  vista previa  →  Procesar y agregar.
+   - Reporte de citas INDIVIDUAL (una fila por OV), con la NOTA.
+   - El ID del cliente NO se muestra: se busca solo (por OV del programa o por nombre en el maestro)
+     para que las alertas del core / auditoría / mapa encuentren al cliente.
+   - Alertas contra la FECHA DEL PROGRAMA (por defecto la fecha del equipo; editable en el panel):
+       · Planificación: aviso al agregar la parada + detalle en el popup del punto.
+       · Auditoría de carga: columna Cita con color por línea (por OV) + resumen.
+       · Mapa: anillo naranja + etiqueta con la fecha en clientes con cita posterior.
+   Reemplaza a mejoras-citas v7/v9, mejoras-citas-futura y mejoras-citas-tabla (se desactivan por bandera). */
 (function () {
-  if (window.__rutalogCitasV13Boot) return;
-  window.__rutalogCitasV13Boot = true;
-  var B64 = "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";
-  async function run() {
-    try {
-      var bin = atob(B64);
-      var bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      var ds = new DecompressionStream("gzip");
-      var stream = new Blob([bytes]).stream().pipeThrough(ds);
-      var ab = await new Response(stream).arrayBuffer();
-      (0, eval)(new TextDecoder().decode(ab));
-    } catch (e) { console.error("[RUTALOG] citas v13", e); }
+  "use strict";
+  if (window.__rutalogCitasV14) return;
+  window.__rutalogCitasV14 = true;
+  ["__rutalogCitasV13", "__rutalogCitasV12", "__rutalogCitasV11", "__rutalogCitasV10", "__rutalogCitasV9", "__rutalogCitasV8", "__rutalogCitasV7",
+   "__rutalogCitasFuturaV1", "__rutalogCitasTablaV1", "__rutalogCitasTablaV2"
+  ].forEach(function (f) { window[f] = true; });
+
+  /* CSS inmediato: oculta alta manual aunque ensureUI tarde */
+  (function () {
+    if (document.getElementById("rutalog-citas-hide-manual")) return;
+    var st = document.createElement("style");
+    st.id = "rutalog-citas-hide-manual";
+    st.textContent = [
+      "#citaOV,#citaCliente,#citaFecha,#btnAddCita{display:none!important}",
+      "#page-citas .form-row:has(#citaOV),#page-citas .form-row:has(#citaCliente),#page-citas .form-row:has(#btnAddCita){display:none!important}",
+      "#page-citas .card > .form-row{display:none!important}"
+    ].join("");
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
+
+  var LS_PROG = "rutalog_citas_prog";
+  var DIAS = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+  var DIAS_C = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  var MESES = { ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6, JULIO: 7, AGOSTO: 8,
+    SEPTIEMBRE: 9, SETIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12 };
+
+  /* ───────────── utilidades ───────────── */
+  function E() {
+    try { return typeof estado !== "undefined" ? estado : (window.estado || null); } catch (e) { return null; }
   }
-  run();
+  function el(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function stripAcc(s) { return String(s == null ? "" : s).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+  function norm(s) { return stripAcc(s).toUpperCase().replace(/[^A-Z0-9]+/g, " ").replace(/\s+/g, " ").trim(); }
+  function p2(n) { return String(n).padStart(2, "0"); }
+  function iso(d) { return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()); }
+  function parseISO(s) {
+    var m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : null;
+  }
+  function fmt(s) { var d = parseISO(s); return d ? p2(d.getDate()) + "/" + p2(d.getMonth() + 1) : String(s || "—"); }
+  function fmtFull(s) {
+    var d = parseISO(s);
+    return d ? p2(d.getDate()) + "/" + p2(d.getMonth() + 1) + "/" + d.getFullYear() : String(s || "—");
+  }
+  function diffDias(a, b) { return Math.round((parseISO(a) - parseISO(b)) / 86400000); }
+  function id9(x) {
+    var s = String(x == null ? "" : x).replace(/\D/g, "");
+    if (!s) return "";
+    while (s.length < 9) s = "0" + s;
+    return s.slice(-9);
+  }
+  function normOV(s) { var d = String(s || "").replace(/\D/g, ""); return d ? "OV-" + d : ""; }
+  function ovDigits(s) { return String(s || "").replace(/\D/g, "").replace(/^0+/, ""); }
+  function yearFix(y) { y = +y; return y < 100 ? 2000 + y : y; }
+
+  function progISO() {
+    try {
+      var v = localStorage.getItem(LS_PROG);
+      if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    } catch (e) {}
+    return iso(new Date());
+  }
+
+  var avisoTimer = null;
+  function avisar(msg, tipo) {
+    try {
+      var d = el("citasV10Aviso");
+      if (!d) { d = document.createElement("div"); d.id = "citasV10Aviso"; document.body.appendChild(d); }
+      d.className = "c10-aviso " + (tipo || "warn");
+      d.textContent = msg;
+      d.hidden = false;
+      d.onclick = function () { d.hidden = true; };
+      clearTimeout(avisoTimer);
+      avisoTimer = setTimeout(function () { d.hidden = true; }, 9000);
+    } catch (e) {}
+  }
+  function toastSafe(msg) {
+    try { if (typeof toast === "function") { toast(msg); return; } } catch (e) {}
+    avisar(msg, "ok");
+  }
+
+  /* ───────────── fechas ───────────── */
+  function fechaDeNota(nota, ref) {
+    var n = stripAcc(String(nota || "")).toUpperCase();
+    var m = n.match(/ENTREGA(?:R|RSE)?[^0-9]{0,60}?(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})/);
+    var d, mon;
+    if (m) { mon = +m[2]; d = new Date(yearFix(m[3]), mon - 1, +m[1], 12); }
+    else {
+      m = n.match(/ENTREGA(?:R|RSE)?[^0-9]{0,60}?(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s+(\d{1,2})\s*[\/\-]\s*(\d{1,2})\b/);
+      if (!m) return null;
+      mon = +m[2]; d = new Date(ref.getFullYear(), mon - 1, +m[1], 12);
+    }
+    return d.getMonth() === mon - 1 ? iso(d) : null;
+  }
+
+  function fechaDeCita(cita, ref) {
+    var c = norm(cita);
+    if (!c) return { fecha: null };
+    if (/INMEDIATA|URGENTE|\bHOY\b/.test(c)) return { fecha: iso(ref), inmediata: true };
+    var wd = -1, i, k;
+    for (i = 0; i < 7; i++) if (new RegExp("\\b" + DIAS[i] + "\\b").test(c)) { wd = i; break; }
+    var raw = stripAcc(String(cita)).toUpperCase();
+    var dm = raw.match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})(?:\s*[\/\-]\s*(\d{2,4}))?/);
+    var cand, res;
+    if (dm) {
+      var day = +dm[1], mon = +dm[2];
+      if (dm[3]) cand = new Date(yearFix(dm[3]), mon - 1, day, 12);
+      else {
+        cand = null;
+        var tries = [0, 1, -1];
+        for (k = 0; k < tries.length; k++) {
+          var t = new Date(ref.getFullYear() + tries[k], mon - 1, day, 12);
+          if (wd < 0 || t.getDay() === wd) { cand = t; break; }
+        }
+        if (!cand) cand = new Date(ref.getFullYear(), mon - 1, day, 12);
+      }
+      if (cand.getMonth() !== mon - 1) return { fecha: null };
+      res = { fecha: iso(cand) };
+      if (wd >= 0 && cand.getDay() !== wd) {
+        res.aviso = "«" + String(cita).trim() + "»: " + DIAS_C[wd] + " no cae el " + fmtFull(res.fecha);
+      }
+      return res;
+    }
+    if (wd >= 0) {
+      var dn = c.match(new RegExp("\\b" + DIAS[wd] + "\\s+(\\d{1,2})\\b"));
+      if (dn) {
+        var best = null, bd = 1e15;
+        for (k = -1; k <= 1; k++) {
+          var t2 = new Date(ref.getFullYear(), ref.getMonth() + k, +dn[1], 12);
+          if (t2.getDate() !== +dn[1] || t2.getDay() !== wd) continue;
+          var df = Math.abs(t2 - ref);
+          if (df < bd) { bd = df; best = t2; }
+        }
+        if (best) return { fecha: iso(best) };
+        return {
+          fecha: iso(new Date(ref.getFullYear(), ref.getMonth(), +dn[1], 12)),
+          aviso: "«" + String(cita).trim() + "»: el día no coincide con ese día de la semana"
+        };
+      }
+      var add = (wd - ref.getDay() + 7) % 7;
+      return { fecha: iso(new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + add, 12)) };
+    }
+    return { fecha: null };
+  }
+
+  function resolverFecha(cita, nota, refISO) {
+    var ref = parseISO(refISO) || new Date();
+    var fc = fechaDeCita(cita, ref), fn = fechaDeNota(nota, ref);
+    var out = { fecha: null, inmediata: !!fc.inmediata, aviso: fc.aviso || "" };
+    if (fn) {
+      out.fecha = fn;
+      if (fc.fecha && fc.fecha !== fn && !out.aviso) {
+        out.aviso = "La cita (" + fmt(fc.fecha) + ") no coincide con la nota (" + fmt(fn) + ")";
+      }
+    } else if (fc.fecha) out.fecha = fc.fecha;
+    return out;
+  }
+
+  /* ───────────── nota y alertas ───────────── */
+  function analizarNota(nota, refISO) {
+    var n = stripAcc(String(nota || "")).toUpperCase();
+    var out = {
+      camionGrande: /CAMION(ES)?\s+GRANDE/.test(n),
+      noParcial: /NO\s+PARCIAL/.test(n),
+      completo: /\bCOMPLETO\b/.test(n) && !/NO\s+COMPLETO/.test(n),
+      facturarLimite: null
+    };
+    var fm = n.match(/FACTURAR\s+(?:EN\s+)?ESTE\s+MES(?:\s*\(\s*([A-Z]+)\s+(\d{4})\s*\))?/);
+    if (fm) {
+      var ref = parseISO(refISO) || new Date();
+      var mes = fm[1] && MESES[fm[1]] ? MESES[fm[1]] : ref.getMonth() + 1;
+      var anio = fm[2] ? +fm[2] : ref.getFullYear();
+      out.facturarLimite = iso(new Date(anio, mes, 0, 12)); // último día de ese mes
+    }
+    return out;
+  }
+
+  function evaluar(row, refISO) {
+    var al = [], est, dias = 0;
+    if (!row.fecha) est = "sinfecha";
+    else if (row.fecha > refISO) est = "futura";
+    else if (row.fecha === refISO) est = "hoy";
+    else est = "vencida";
+    if (row.fecha) dias = diffDias(row.fecha, refISO);
+    if (est === "futura") al.push({ k: "futura", t: "Cita posterior: " + fmt(row.fecha) + " (+" + dias + " d)" });
+    else if (est === "hoy") al.push({ k: "hoy", t: row.inmediata ? "Entrega inmediata" : "Entregar HOY" });
+    else if (est === "vencida") al.push({ k: "vencida", t: "Cita vencida: " + fmt(row.fecha) });
+    else al.push({ k: "sinfecha", t: "Sin fecha de cita" });
+    var nt = analizarNota(row.nota, refISO);
+    if (nt.facturarLimite) {
+      if (nt.facturarLimite < refISO) al.push({ k: "vencida", t: "Plazo de facturar vencido (" + fmt(nt.facturarLimite) + ")" });
+      else if (nt.facturarLimite === refISO) al.push({ k: "factura", t: "Facturar HOY (último día del mes)" });
+      else al.push({ k: "factura", t: "Facturar antes del " + fmt(nt.facturarLimite) });
+    }
+    if (nt.camionGrande) al.push({ k: "info", t: "Camión grande" });
+    if (nt.noParcial) al.push({ k: "info", t: "No parcial" });
+    else if (nt.completo) al.push({ k: "info", t: "Completo" });
+    if (row.aviso) al.push({ k: "aviso", t: row.aviso });
+    return { estado: est, dias: dias, alertas: al };
+  }
+
+  /* ───────────── lectura de la tabla pegada ───────────── */
+  var OV_RE = /\bOV[-\s]?\d{5,}\b/i;
+  var CITA_ONLY_RE = /^(ENTREGA\s+INMEDIATA|(?:LUNES|MARTES|MI[EÉ]RCOLES|JUEVES|VIERNES|S[AÁ]BADO|DOMINGO)(?:\s+\d{1,2}(?:\s*[\/\-]\s*\d{1,2}(?:\s*[\/\-]\s*\d{2,4})?)?)?|\d{1,2}\s*[\/\-]\s*\d{1,2}(?:\s*[\/\-]\s*\d{2,4})?)$/i;
+  var CITA_HEAD_RE = /^(ENTREGA\s+INMEDIATA|(?:LUNES|MARTES|MI[EÉ]RCOLES|JUEVES|VIERNES|S[AÁ]BADO|DOMINGO)(?:\s+\d{1,2}(?:\s*[\/\-]\s*\d{1,2}(?:\s*[\/\-]\s*\d{2,4})?)?)?|\d{1,2}\s*[\/\-]\s*\d{1,2}(?:\s*[\/\-]\s*\d{2,4})?)\s+(.+)$/i;
+  var NOTA_HINT = /ENTREGA|COMPLETO|PARCIAL|FACTURA|PRODUCTO|LLEGAR|INMEDIATA|NO\s+PARCIAL|REALIZAR/i;
+
+  function limpiarCliente(s) {
+    return String(s || "").replace(/\s+Z\s*\/\s*\d+\s*$/i, "").replace(/\s{2,}/g, " ").trim();
+  }
+  function esOV(s) { return /^OV[-\s]?\d{5,}$/i.test(String(s || "").trim()); }
+  function esZona(s) { return /^\d{1,4}$/.test(String(s || "").trim()); }
+  function esCitaCelda(s) {
+    var t = String(s || "").replace(/\s+/g, " ").trim();
+    return !!(t && CITA_ONLY_RE.test(t));
+  }
+  function extraerOVDeCelda(s) {
+    var m = String(s || "").match(OV_RE);
+    return m ? normOV(m[0]) : "";
+  }
+  function esEncabezado(line) {
+    var up = norm(line);
+    return /^ZONA\b/.test(up) && /CITA/.test(up) && /(CLIENTE|ORDEN)/.test(up);
+  }
+  function filaFromParts(zona, cita, cliente, ov, nota, refISO) {
+    cliente = limpiarCliente(cliente);
+    if (cliente && (esOV(cliente) || /^\d{1,2}$/.test(cliente))) cliente = "";
+    if (!ov && !cita && !cliente) return null;
+    var fx = resolverFecha(cita, nota, refISO);
+    return {
+      zona: zona || "", citaRaw: cita || "", nombre: cliente || "", ov: ov || "", nota: nota || "",
+      fecha: fx.fecha || "", inmediata: !!fx.inmediata, aviso: fx.aviso || ""
+    };
+  }
+
+  function parseLine(line, refISO) {
+    line = String(line || "").replace(/\u00a0/g, " ").replace(/\s+$/, "");
+    if (!line.trim() || esEncabezado(line)) return null;
+    var zona = "", cita = "", cliente = "", ov = "", nota = "", i;
+
+    var cols = null;
+    if (line.indexOf("\t") >= 0) {
+      cols = line.split("\t").map(function (x) { return x.trim(); });
+    } else if (/\s{2,}/.test(line)) {
+      cols = line.split(/\s{2,}/).map(function (x) { return x.trim(); }).filter(Boolean);
+    }
+    if (cols) {
+      while (cols.length && !cols[cols.length - 1]) cols.pop();
+      var k = -1;
+      for (i = 0; i < cols.length; i++) {
+        if (esOV(cols[i]) || extraerOVDeCelda(cols[i])) { k = i; break; }
+      }
+      if (k >= 0) {
+        ov = esOV(cols[k]) ? normOV(cols[k]) : extraerOVDeCelda(cols[k]);
+        nota = cols.slice(k + 1).join(" ").trim();
+        var left = cols.slice(0, k).filter(function (c) { return c !== ""; });
+        if (left.length >= 3) {
+          if (esZona(left[0])) { zona = left[0]; cita = left[1]; cliente = left.slice(2).join(" "); }
+          else { cita = left[0]; cliente = left.slice(1).join(" "); }
+        } else if (left.length === 2) {
+          if (esZona(left[0]) && esCitaCelda(left[1])) { zona = left[0]; cita = left[1]; }
+          else if (esZona(left[0])) { zona = left[0]; cliente = left[1]; }
+          else if (esCitaCelda(left[0])) { cita = left[0]; cliente = left[1]; }
+          else { cliente = left.join(" "); }
+        } else if (left.length === 1) {
+          if (esCitaCelda(left[0])) cita = left[0];
+          else if (esZona(left[0])) zona = left[0];
+          else cliente = left[0];
+        }
+        return filaFromParts(zona, cita, cliente, ov, nota, refISO);
+      }
+      if (cols.length >= 5) {
+        return filaFromParts(cols[0], cols[1], cols[2], extraerOVDeCelda(cols[3]) || normOV(cols[3]), cols.slice(4).join(" "), refISO);
+      }
+    }
+
+    var m = line.match(OV_RE), before = line, after = "";
+    if (m) {
+      ov = normOV(m[0]);
+      before = line.slice(0, m.index).trim();
+      after = line.slice(m.index + m[0].length).trim();
+    }
+    nota = after;
+    if (before) {
+      var zm = before.match(/^(\d{1,4})\s+(.*)$/);
+      if (zm) { zona = zm[1]; before = zm[2].trim(); }
+      var cm = before.match(CITA_HEAD_RE);
+      if (cm) {
+        cita = cm[1].replace(/\s+/g, " ").trim();
+        cliente = cm[2].trim();
+      } else if (CITA_ONLY_RE.test(before)) {
+        cita = before.replace(/\s+/g, " ").trim();
+      } else {
+        cliente = before;
+      }
+    }
+    return filaFromParts(zona, cita, cliente, ov, nota, refISO);
+  }
+
+  /** Pegado Excel con una celda por línea: ZONA / CITA / CLIENTE / OV / NOTA */
+  function parseMultilineCells(lines, refISO) {
+    var out = [], i = 0;
+    while (i < lines.length) {
+      if (esEncabezado(lines[i])) { i++; continue; }
+      var zona = "", cita = "", cliente = "", ov = "", nota = "";
+
+      if (esZona(lines[i])) { zona = lines[i]; i++; }
+      if (i < lines.length && esCitaCelda(lines[i])) { cita = lines[i].replace(/\s+/g, " ").trim(); i++; }
+
+      /* Cliente: líneas hasta el OV (suele ser 1) */
+      while (i < lines.length && !esOV(lines[i]) && !extraerOVDeCelda(lines[i])) {
+        if (esZona(lines[i]) && (cliente || cita || zona)) break;
+        if (esCitaCelda(lines[i]) && cliente) break;
+        if (NOTA_HINT.test(lines[i]) && cliente) break;
+        cliente = cliente ? (cliente + " " + lines[i]) : lines[i];
+        i++;
+        if (cliente) break;
+      }
+
+      if (i < lines.length && (esOV(lines[i]) || extraerOVDeCelda(lines[i]))) {
+        ov = esOV(lines[i]) ? normOV(lines[i]) : extraerOVDeCelda(lines[i]);
+        i++;
+      }
+
+      /* Nota: hasta el próximo inicio de registro */
+      while (i < lines.length) {
+        if (esZona(lines[i])) break;
+        if (esOV(lines[i])) break;
+        if (esCitaCelda(lines[i]) && nota) break;
+        if (esCitaCelda(lines[i]) && !nota && !NOTA_HINT.test(lines[i])) break;
+        nota = nota ? (nota + " " + lines[i]) : lines[i];
+        i++;
+        if (nota && i < lines.length && esZona(lines[i])) break;
+        if (nota && !NOTA_HINT.test(nota) && i < lines.length && !NOTA_HINT.test(lines[i])) {
+          /* nombre suelto sin pinta de nota → dejar para el siguiente registro */
+          if (!esZona(lines[i]) && !esOV(lines[i]) && !esCitaCelda(lines[i])) break;
+        }
+      }
+
+      var row = filaFromParts(zona, cita, cliente, ov, nota, refISO);
+      if (row) out.push(row);
+      else i++;
+    }
+    return out;
+  }
+
+  function parseTable(text, refISO) {
+    refISO = refISO || progISO();
+    var rawLines = String(text || "").split(/\r\n|\n|\r/);
+    var lines = [];
+    for (var i = 0; i < rawLines.length; i++) {
+      var ln = String(rawLines[i] || "").replace(/\u00a0/g, " ").replace(/\s+$/, "").trim();
+      if (ln) lines.push(ln);
+    }
+    if (!lines.length) return [];
+
+    var hasTab = lines.some(function (l) { return l.indexOf("\t") >= 0; });
+    var ovLines = lines.filter(function (l) { return esOV(l) || /^OV[-\s]?\d{5,}/i.test(l); }).length;
+    /* Si hay varios OV y casi ninguna línea con tab → celdas apiladas en vertical */
+    if (!hasTab && ovLines >= 1 && lines.length > ovLines) {
+      var multi = parseMultilineCells(lines, refISO);
+      if (multi.length) return multi;
+    }
+
+    var out = [];
+    lines.forEach(function (ln) {
+      var r = parseLine(ln, refISO);
+      if (r) out.push(r);
+    });
+    return out;
+  }
+
+  /* ───────────── almacenamiento (estado.citas = fuente única, sincroniza con GitHub) ───────────── */
+  function getMap() {
+    var e = E();
+    if (!e) return null;
+    if (!(e.citas instanceof Map)) {
+      var map = new Map();
+      try {
+        var raw = localStorage.getItem("rutalog_citas");
+        if (raw) { var o = JSON.parse(raw); Object.keys(o || {}).forEach(function (k) { map.set(k, o[k]); }); }
+      } catch (er) {}
+      e.citas = map;
+    }
+    return e.citas;
+  }
+  function persist() {
+    try { if (typeof saveCitas === "function") { saveCitas(); return; } } catch (e) {}
+    try {
+      var o = {};
+      getMap().forEach(function (v, k) { o[k] = v; });
+      localStorage.setItem("rutalog_citas", JSON.stringify(o));
+    } catch (e2) {}
+  }
+  function clientes() { var e = E(); return (e && e.clientesHoy) || []; }
+  function nombreDe(id) {
+    var e = E(), i, c, list = clientes();
+    id = id9(id);
+    if (!id) return "";
+    for (i = 0; i < list.length; i++) if (id9(list[i].idCliente) === id) return list[i].nombre || "";
+    try {
+      if (e && e.maestro && e.maestro.get) {
+        c = e.maestro.get(id) || e.maestro.get(String(+id));
+        if (c && c.nombre) return c.nombre;
+      }
+    } catch (er) {}
+    return "";
+  }
+  function claveFila(r) {
+    var d = ovDigits(r.ov);
+    return d ? "ov" + d : "n" + norm(r.nombre) + "|" + (r.fecha || "");
+  }
+
+  // Busca el ID del cliente: 1) por OV en el programa de hoy  2) por nombre (hoy y maestro)
+  function resolverId(row) {
+    var e = E();
+    if (!e) return null;
+    var dg = ovDigits(row.ov), list = clientes(), i, j;
+    if (dg) {
+      for (i = 0; i < list.length; i++) {
+        var ovs = list[i].ovs || [];
+        for (j = 0; j < ovs.length; j++) if (ovDigits(ovs[j].ov) === dg) return id9(list[i].idCliente);
+      }
+    }
+    var q = norm(row.nombre);
+    if (q.length < 4) return null;
+    var best = null, sc = 0, tie = false;
+    function consider(id, nombre, bonus) {
+      var n = norm(nombre), s = 0;
+      if (!n || !id9(id)) return;
+      if (n === q) s = 100;
+      else if (Math.min(n.length, q.length) >= 8 && (n.indexOf(q) >= 0 || q.indexOf(n) >= 0)) s = 80;
+      if (!s) return;
+      s += bonus;
+      if (s > sc) { sc = s; best = id9(id); tie = false; }
+      else if (s === sc && id9(id) !== best) tie = true;
+    }
+    list.forEach(function (c) { consider(c.idCliente, c.nombre, 5); });
+    try {
+      if (sc < 100 && e.maestro && e.maestro.forEach) {
+        e.maestro.forEach(function (c) { consider(c.id || c.idCliente, c.nombre, 0); });
+      }
+    } catch (er) {}
+    return sc >= 80 && !tie ? best : null;
+  }
+
+  function todasLasFilas() {
+    var map = getMap(), out = [];
+    if (!map) return out;
+    map.forEach(function (v, key) {
+      if (!v) return;
+      var lista = Array.isArray(v.ovs) && v.ovs.length ? v.ovs
+        : [{ ov: v.ov, fecha: v.fecha, nota: v.nota, zona: v.zona, citaRaw: v.citaRaw, nombre: v.nombre }];
+      lista.forEach(function (o) {
+        out.push({
+          key: String(key), ov: o.ov || "", fecha: o.fecha || "", nota: o.nota || "", zona: o.zona || "",
+          citaRaw: o.citaRaw || "", inmediata: !!o.inmediata, aviso: o.aviso || "",
+          nombre: o.nombre || v.nombre || nombreDe(key) || String(key)
+        });
+      });
+    });
+    return out;
+  }
+
+  function registro(ovs, nombre) {
+    ovs.sort(function (a, b) {
+      return String(a.fecha || "9999").localeCompare(String(b.fecha || "9999")) || String(a.ov).localeCompare(String(b.ov));
+    });
+    var a = ovs[0];
+    return { fecha: a.fecha || "", ov: a.ov || null, nota: a.nota || "", zona: a.zona || "",
+      citaRaw: a.citaRaw || "", nombre: nombre || a.nombre || "", ovs: ovs, fuente: "pegar-tabla" };
+  }
+  function filasDeRegistro(v) {
+    if (Array.isArray(v.ovs) && v.ovs.length) return v.ovs.slice();
+    return [{ ov: v.ov || "", fecha: v.fecha || "", nota: v.nota || "", zona: v.zona || "",
+      citaRaw: v.citaRaw || "", nombre: v.nombre || "" }];
+  }
+
+  // quita de todo el mapa las filas que cumplan pred(fila, clave)
+  function quitarFilas(map, pred) {
+    var cambios = [];
+    map.forEach(function (v, key) {
+      if (!v) return;
+      var filas = filasDeRegistro(v), keep = filas.filter(function (o) {
+        return !pred({ ov: o.ov, nombre: o.nombre || v.nombre, fecha: o.fecha }, String(key));
+      });
+      if (keep.length !== filas.length) cambios.push([key, keep, v.nombre]);
+    });
+    cambios.forEach(function (c) {
+      if (!c[1].length) map.delete(c[0]); else map.set(c[0], registro(c[1], c[2]));
+    });
+  }
+
+  function aplicar(rows, reemplazar, idForzado) {
+    var map = getMap();
+    if (!map) return 0;
+    if (reemplazar) map.clear();
+    rows.forEach(function (r) {
+      var ck = claveFila(r);
+      quitarFilas(map, function (o) { return claveFila(o) === ck; }); // evita duplicados
+      var id = idForzado || resolverId(r);
+      var key = id || (ovDigits(r.ov) ? "OV:" + normOV(r.ov) : "N:" + norm(r.nombre).replace(/ /g, "_").slice(0, 40));
+      var prev = map.get(key);
+      var ovs = prev ? filasDeRegistro(prev) : [];
+      ovs.push({ ov: r.ov || "", fecha: r.fecha || "", nota: r.nota || "", zona: r.zona || "",
+        citaRaw: r.citaRaw || "", nombre: r.nombre || "", inmediata: !!r.inmediata, aviso: r.aviso || "" });
+      map.set(key, registro(ovs, (prev && prev.nombre) || r.nombre));
+    });
+    persist();
+    return rows.length;
+  }
+
+  // Si el programa del día se cargó después de pegar las citas, liga las que quedaron sin ID
+  function reindexar() {
+    var map = getMap();
+    if (!map || !clientes().length) return false;
+    var pend = [];
+    map.forEach(function (v, key) { if (!/^\d{9}$/.test(String(key))) pend.push(key); });
+    var movidas = [];
+    pend.forEach(function (key) {
+      var v = map.get(key);
+      if (!v) return;
+      filasDeRegistro(v).forEach(function (o) {
+        var row = { ov: o.ov, nombre: o.nombre || v.nombre, fecha: o.fecha, nota: o.nota, zona: o.zona,
+          citaRaw: o.citaRaw, inmediata: o.inmediata, aviso: o.aviso };
+        var id = resolverId(row);
+        if (id) movidas.push({ row: row, id: id });
+      });
+    });
+    if (!movidas.length) return false;
+    movidas.forEach(function (mv) {
+      var ck = claveFila(mv.row);
+      quitarFilas(map, function (o) { return claveFila(o) === ck; });
+      var prev = map.get(mv.id), ovs = prev ? filasDeRegistro(prev) : [];
+      ovs.push({ ov: mv.row.ov || "", fecha: mv.row.fecha || "", nota: mv.row.nota || "", zona: mv.row.zona || "",
+        citaRaw: mv.row.citaRaw || "", nombre: mv.row.nombre || "", inmediata: !!mv.row.inmediata, aviso: mv.row.aviso || "" });
+      map.set(mv.id, registro(ovs, (prev && prev.nombre) || mv.row.nombre));
+    });
+    persist();
+    return true;
+  }
+
+  function borrarFila(ck) {
+    var map = getMap();
+    if (!map) return;
+    quitarFilas(map, function (o) { return claveFila(o) === ck; });
+    persist();
+  }
+
+  /* ───────────── consulta por cliente / línea ───────────── */
+  function indice() {
+    var rows = todasLasFilas(), porId = {}, porOV = {};
+    rows.forEach(function (r) {
+      if (/^\d{9}$/.test(r.key)) (porId[r.key] = porId[r.key] || []).push(r);
+      var d = ovDigits(r.ov);
+      if (d) (porOV[d] = porOV[d] || []).push(r);
+    });
+    return { rows: rows, porId: porId, porOV: porOV };
+  }
+
+  function infoCliente(idx, cli, ref) {
+    var seen = {}, rows = [];
+    function add(list) {
+      (list || []).forEach(function (r) {
+        var k = claveFila(r);
+        if (!seen[k]) { seen[k] = 1; rows.push(r); }
+      });
+    }
+    add(idx.porId[id9(cli.idCliente)]);
+    var ovs = cli.ovs || [];
+    ovs.forEach(function (o) { add(idx.porOV[ovDigits(o.ov)]); });
+    if (!rows.length) return null;
+    var evs = rows.map(function (r) { return { row: r, ev: evaluar(r, ref) }; });
+    var nF = 0, nH = 0, nV = 0, minF = "";
+    evs.forEach(function (x) {
+      if (x.ev.estado === "futura") { nF++; if (!minF || x.row.fecha < minF) minF = x.row.fecha; }
+      else if (x.ev.estado === "hoy") nH++;
+      else if (x.ev.estado === "vencida") nV++;
+    });
+    var sinCita = ovs.filter(function (o) {
+      var d = ovDigits(o.ov);
+      return d && !rows.some(function (r) { return ovDigits(r.ov) === d; });
+    }).length;
+    var est;
+    if (nF && nF === evs.length && !sinCita) est = "futura";
+    else if (nF) est = "mixta";
+    else if (nV) est = "vencida";
+    else if (nH) est = "hoy";
+    else est = "sinfecha";
+    return { estado: est, items: evs, minFutura: minF, sinCita: sinCita };
+  }
+
+  /* ───────────── MAPA ───────────── */
+  function marcarMapa() {
+    var e = E();
+    if (!e || typeof L === "undefined" || !clientes().length) return;
+    var idx = indice();
+    if (!idx.rows.length) return;
+    var ref = progISO(), porId = {};
+    clientes().forEach(function (c) { porId[String(c.idCliente)] = c; });
+    [e.markersPanel, e.markersRutas].forEach(function (mm) {
+      if (!mm || typeof mm.forEach !== "function") return;
+      mm.forEach(function (marker, id) {
+        var cli = porId[String(id)];
+        if (!cli || !marker || typeof marker.setIcon !== "function") return;
+        var info = infoCliente(idx, cli, ref);
+        if (!info || (info.estado !== "futura" && info.estado !== "mixta" && info.estado !== "vencida")) return;
+        var st = { color: "#64748b", texto: "", sz: 24 };
+        try { if (typeof estiloCli === "function") st = estiloCli(cli) || st; } catch (er) {}
+        var color = st.color;
+        if (color === "#64748b") color = info.estado === "vencida" ? "#dc2626" : "#ea580c";
+        var t = Math.max(st.sz || 22, 26) + 4;
+        var badge = info.estado === "vencida" ? "VENC." : (info.estado === "mixta" ? "⚠ " : "") + (info.estado === "vencida" ? "" : fmt(info.minFutura));
+        var hasNum = st.texto != null && String(st.texto).length > 0;
+        var html = '<div class="rutalog-pin-wrap c10-pin c10-' + info.estado + '" style="--pin-bg:' + color + '">' +
+          '<div class="rutalog-pin-dot' + (hasNum ? " is-num" : "") + '">' + (hasNum ? esc(st.texto) : "") + "</div>" +
+          '<span class="c10-pin-badge">' + esc(badge) + "</span></div>";
+        marker.setIcon(L.divIcon({ className: "rutalog-pin", html: html, iconSize: [t, t],
+          iconAnchor: [t / 2, t / 2], popupAnchor: [0, -t / 2] }));
+      });
+    });
+  }
+
+  function popupConCita(h, cli) {
+    var idx = indice();
+    if (!idx.rows.length) return h;
+    var info = infoCliente(idx, cli, progISO());
+    if (!info) return h;
+    var col = { futura: "#ea580c", mixta: "#ea580c", vencida: "#dc2626", hoy: "#15803d", sinfecha: "#737373" };
+    var b = '<div class="popup-l" style="margin-top:4px"><b>Citas</b> · programa ' + esc(fmt(progISO())) + "</div>" +
+      info.items.map(function (x) {
+        var c = col[x.ev.estado] || "#737373";
+        return '<div class="popup-l" style="color:' + c + ';font-weight:600">📅 ' + esc(x.row.fecha ? fmt(x.row.fecha) : "s/f") +
+          (x.row.ov ? " · " + esc(x.row.ov) : "") + " · " + esc(x.ev.alertas.map(function (a) { return a.t; }).join(" · ")) + "</div>" +
+          (x.row.nota ? '<div class="popup-l" style="font-size:11px;opacity:.85">' + esc(x.row.nota) + "</div>" : "");
+      }).join("") +
+      (info.sinCita ? '<div class="popup-l" style="font-size:11px">+' + info.sinCita + " OV sin cita</div>" : "");
+    var re = /<div class="popup-l">Cita:[\s\S]*?<\/div>/;
+    if (re.test(h)) return h.replace(re, function () { return b; });
+    var i = h.lastIndexOf('<div class="popup-a">');
+    return i >= 0 ? h.slice(0, i) + b + h.slice(i) : h + b;
+  }
+
+  /* ───────────── PLANIFICACIÓN: aviso al agregar parada ───────────── */
+  function alertaPlanificacion(cli) {
+    var e = E();
+    if (!cli || !e) return;
+    if ((e.viajeActual || []).some(function (p) { return p.idCliente === cli.idCliente; })) return;
+    var idx = indice();
+    if (!idx.rows.length) return;
+    var ref = progISO(), info = infoCliente(idx, cli, ref);
+    if (!info) return;
+    var rel = info.items.filter(function (x) {
+      var k = x.ev.estado;
+      return k === "futura" || k === "vencida" ||
+        x.ev.alertas.some(function (a) { return a.k === "factura" || (a.k === "info" && /Camión/.test(a.t)); });
+    });
+    if (!rel.length) return;
+    var msg = "⚠ " + (cli.nombre || "Cliente") + " — " + rel.map(function (x) {
+      return (x.row.ov ? x.row.ov + ": " : "") + x.ev.alertas.map(function (a) { return a.t; }).join(", ");
+    }).join(" | ");
+    if (info.estado === "mixta") msg += " (hay OV para hoy y OV posteriores)";
+    avisar(msg.length > 260 ? msg.slice(0, 257) + "…" : msg, info.estado === "futura" || info.estado === "mixta" ? "warn" : "info");
+  }
+
+  /* ───────────── AUDITORÍA DE CARGA ───────────── */
+  var ICONO = { futura: "⏳", hoy: "✔", vencida: "⚠", sinfecha: "—" };
+  function decorarAuditoria() {
+    var tb = el("auditTbody"), e = E();
+    if (!tb || !e || !Array.isArray(e.auditLineas)) return;
+    var ov = el("auditOverlay");
+    if (ov && ov.hidden) return;
+    var idx = indice();
+    if (!idx.rows.length) { quitarBannerAudit(); return; }
+    var ref = progISO(), nF = 0, nV = 0, nL = 0;
+    tb.querySelectorAll("tr[data-idx]").forEach(function (tr) {
+      var ln = e.auditLineas[Number(tr.dataset.idx)];
+      var td = tr.querySelector("td.audit-td-cita");
+      if (!ln || !td) return;
+      var rows = idx.porOV[ovDigits(ln.ov)], otra = false;
+      if (!rows || !rows.length) { rows = idx.porId[id9(ln.idCliente)]; otra = true; }
+      var sig = ref + "|" + (otra ? "o" : "d") + "|" + (rows ? rows.map(claveFila).join(",") : "") + "|" + (rows && rows[0] ? rows[0].fecha + rows[0].nota : "");
+      if (rows && rows.length) {
+        var evs = rows.map(function (r) { return { r: r, ev: evaluar(r, ref) }; });
+        var peor = evs.filter(function (x) { return x.ev.estado === "futura"; })[0] ||
+          evs.filter(function (x) { return x.ev.estado === "vencida"; })[0] || evs[0];
+        var est = peor.ev.estado;
+        if (tr.dataset.c10sig !== sig) {
+          tr.dataset.c10sig = sig;
+          // otra = esta OV no tiene cita propia; solo se avisa (tenue) que el cliente tiene cita en otra OV
+          td.textContent = otra ? "~ " + fmt(peor.r.fecha)
+            : ICONO[est] + " " + (est === "hoy" ? "HOY" : fmt(peor.r.fecha));
+          td.title = evs.map(function (x) {
+            return (x.r.ov || "") + " · " + x.ev.alertas.map(function (a) { return a.t; }).join(" · ") + (x.r.nota ? "\n" + x.r.nota : "");
+          }).join("\n") + (otra ? "\n(esta OV no tiene cita propia; la cita es de otra OV del mismo cliente)" : "");
+          td.className = "audit-td-cita mono c10-" + (otra ? "otra" : est);
+          tr.classList.remove("c10-row-futura", "c10-row-vencida", "c10-row-hoy");
+          if (!otra && (est === "futura" || est === "vencida" || est === "hoy")) tr.classList.add("c10-row-" + est);
+        }
+        if (!otra) {
+          nL++;
+          if (est === "futura") nF++;
+          else if (est === "vencida") nV++;
+        }
+      }
+    });
+    var table = tb.closest ? tb.closest("table") : null;
+    if (!table || !table.parentNode) return;
+    var b = el("citasAuditBanner");
+    if (!nF && !nV) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement("div"); b.id = "citasAuditBanner"; table.parentNode.insertBefore(b, table); }
+    b.textContent = "⚠ " + (nF ? nF + " línea(s) con cita POSTERIOR al programa del " + fmt(ref) : "") +
+      (nF && nV ? " · " : "") + (nV ? nV + " con cita vencida" : "") + " — no deberían cargarse hoy salvo que la nota lo indique.";
+  }
+  function quitarBannerAudit() { var b = el("citasAuditBanner"); if (b) b.remove(); }
+
+  /* ───────────── PANEL DE CITAS (UI) ───────────── */
+  function injectCSS() {
+    if (el("rutalog-citas-v10-css")) return;
+    var st = document.createElement("style");
+    st.id = "rutalog-citas-v10-css";
+    st.textContent = [
+      "#citasV10Box{margin:12px 0 14px;padding:14px 16px;border:1px dashed #333;border-radius:12px;background:#121212}",
+      "#citasV10Box .c10-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:6px}",
+      "#citasV10Box .c10-title{font-size:14px;font-weight:700;color:#fafafa}",
+      "#citasV10Box .c10-prog{font-size:12px;color:#a3a3a3;display:flex;gap:6px;align-items:center}",
+      "#citasV10Box .c10-prog input{background:#0f0f0f;border:1px solid #2a2a2a;color:#fafafa;border-radius:8px;padding:4px 8px;font-size:12px}",
+      "#citasV10Box .c10-hint{margin:0 0 8px;font-size:12.5px;color:#a3a3a3;line-height:1.45}",
+      "#citasV10Area{width:100%;box-sizing:border-box;min-height:92px;max-height:200px;padding:10px 12px;border-radius:10px;border:1px solid #2a2a2a;background:#0f0f0f;color:#fafafa;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.4;resize:vertical;white-space:pre}",
+      "#citasV10Box .c10-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}",
+      "#citasV10Status{font-size:12.5px;color:#a3a3a3}",
+      ".c10-wrap{margin-top:12px;border:1px solid #232323;border-radius:10px;overflow:auto;max-height:min(46vh,420px);background:#0c0c0c}",
+      "table.c10-tabla{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}",
+      "table.c10-tabla thead th{position:sticky;top:0;z-index:2;background:#ffff00;color:#000;text-align:center;padding:8px 10px;font-weight:800;font-size:12px;letter-spacing:.03em;border:1px solid #111}",
+      "table.c10-tabla thead th.c10-th-al{background:#262626;color:#d4d4d4}",
+      "table.c10-tabla tbody td{padding:8px 10px;border-bottom:1px solid #1f1f1f;border-right:1px solid #1a1a1a;color:#e5e5e5;vertical-align:middle}",
+      "table.c10-tabla td.c10-zona{font-family:ui-monospace,monospace;color:#a3a3a3;text-align:center;width:54px}",
+      "table.c10-tabla td.c10-cita{font-weight:700;white-space:nowrap}",
+      "table.c10-tabla td.c10-cita small{display:block;font-weight:500;color:#a3a3a3;font-size:11px}",
+      "table.c10-tabla td.c10-cli{font-weight:600;color:#fafafa}",
+      "table.c10-tabla td.c10-ov{font-family:ui-monospace,monospace;color:#93c5fd;white-space:nowrap}",
+      "table.c10-tabla td.c10-nota{font-weight:700;color:#fafafa;max-width:340px;word-break:break-word}",
+      "table.c10-tabla tr.c10-futura td:first-child{border-left:4px solid #f97316}",
+      "table.c10-tabla tr.c10-hoy td:first-child{border-left:4px solid #22c55e}",
+      "table.c10-tabla tr.c10-vencida td:first-child{border-left:4px solid #ef4444}",
+      "table.c10-tabla tr.c10-sinfecha td:first-child{border-left:4px solid #525252}",
+      "table.c10-tabla tr.c10-futura td.c10-cita{color:#fdba74;background:rgba(249,115,22,.08)}",
+      "table.c10-tabla tr.c10-vencida td.c10-cita{color:#fca5a5}",
+      "table.c10-tabla tr.c10-hoy td.c10-cita{color:#86efac}",
+      ".c10-chip{display:inline-block;margin:1px 4px 1px 0;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
+      ".c10-chip.futura{background:rgba(249,115,22,.18);color:#fdba74}",
+      ".c10-chip.hoy{background:rgba(34,197,94,.16);color:#86efac}",
+      ".c10-chip.vencida{background:rgba(239,68,68,.18);color:#fca5a5}",
+      ".c10-chip.factura{background:rgba(234,179,8,.18);color:#fde047}",
+      ".c10-chip.info{background:rgba(96,165,250,.16);color:#93c5fd}",
+      ".c10-chip.aviso,.c10-chip.sinfecha{background:rgba(163,163,163,.18);color:#d4d4d4}",
+      "button.c10-del{background:transparent;border:1px solid #333;color:#737373;border-radius:6px;width:26px;height:26px;cursor:pointer}",
+      "button.c10-del:hover{background:#3f1d1d;color:#f87171;border-color:#7f1d1d}",
+      "#citasV10Resumen{margin:10px 0 0;font-size:12.5px;color:#a3a3a3}",
+      "#citasV10Resumen b{color:#fafafa}",
+      ".c10-aviso{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,720px);padding:12px 18px;border-radius:12px;font-size:13.5px;font-weight:700;line-height:1.35;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer}",
+      ".c10-aviso[hidden]{display:none}",
+      ".c10-aviso.warn{background:#9a3412;color:#fff}.c10-aviso.info{background:#854d0e;color:#fff}.c10-aviso.ok{background:#166534;color:#fff}",
+      "/* mapa */",
+      ".c10-pin .c10-pin-badge{position:absolute;top:-12px;right:-16px;padding:1px 5px;border-radius:7px;font-size:9.5px;font-weight:800;line-height:1.3;color:#fff;background:#ea580c;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}",
+      ".c10-pin.c10-vencida .c10-pin-badge{background:#dc2626}",
+      ".c10-pin.c10-futura .rutalog-pin-dot{box-shadow:0 0 0 3px #f97316,0 0 0 6px rgba(249,115,22,.35),0 2px 8px rgba(0,0,0,.4)}",
+      ".c10-pin.c10-mixta .rutalog-pin-dot{box-shadow:0 0 0 3px #facc15,0 0 0 6px rgba(249,115,22,.35),0 2px 8px rgba(0,0,0,.4)}",
+      ".c10-pin.c10-vencida .rutalog-pin-dot{box-shadow:0 0 0 3px #ef4444,0 0 0 6px rgba(239,68,68,.3),0 2px 8px rgba(0,0,0,.4)}",
+      "/* ocultar alta manual de citas */
+      "#citaOV,#citaCliente,#citaFecha,#btnAddCita{display:none!important}",
+      "label[for=citaOV],label[for=citaCliente],label[for=citaFecha]{display:none!important}",
+      /* auditoría */",
+      "td.audit-td-cita.c10-futura{color:#fdba74!important;font-weight:800;background:rgba(249,115,22,.16)!important}",
+      "td.audit-td-cita.c10-vencida{color:#fca5a5!important;font-weight:800;background:rgba(239,68,68,.16)!important}",
+      "td.audit-td-cita.c10-hoy{color:#86efac!important;font-weight:700}",
+      "td.audit-td-cita.c10-otra{color:#a3a3a3!important;font-style:italic}",
+      "tr.c10-row-futura:not(.audit-row-tope) td{background:rgba(249,115,22,.10)}",
+      "tr.c10-row-vencida:not(.audit-row-tope) td{background:rgba(239,68,68,.10)}",
+      "#citasAuditBanner{margin:0 0 8px;padding:9px 12px;border-radius:8px;background:rgba(249,115,22,.16);color:#fdba74;font-size:12.5px;font-weight:700;border:1px solid rgba(249,115,22,.5)}"
+    ].join("\n");
+    document.head.appendChild(st);
+  }
+
+  function chipsHTML(ev, extra) {
+    var h = ev.alertas.map(function (a) { return '<span class="c10-chip ' + a.k + '">' + esc(a.t) + "</span>"; }).join("");
+    return h + (extra || "");
+  }
+  function enPrograma(row, idx) {
+    if (!clientes().length) return true; // sin programa cargado no se puede saber
+    var d = ovDigits(row.ov), i, list = clientes(), j;
+    if (/^\d{9}$/.test(row.key || "")) {
+      for (i = 0; i < list.length; i++) if (id9(list[i].idCliente) === row.key) return true;
+    }
+    if (d) {
+      for (i = 0; i < list.length; i++) {
+        var ovs = list[i].ovs || [];
+        for (j = 0; j < ovs.length; j++) if (ovDigits(ovs[j].ov) === d) return true;
+      }
+    }
+    return false;
+  }
+
+  function tablaHTML(items, conBorrar) {
+    return '<table class="c10-tabla"><thead><tr><th>ZONA</th><th>CITA</th><th>CLIENTE</th><th>ORDEN DE VENTA</th><th>NOTA</th>' +
+      '<th class="c10-th-al">ALERTA</th>' + (conBorrar ? '<th class="c10-th-al"></th>' : "") + "</tr></thead><tbody>" +
+      items.map(function (x) {
+        var r = x.row, ev = x.ev;
+        return '<tr class="c10-' + ev.estado + '">' +
+          '<td class="c10-zona">' + esc(r.zona || "—") + "</td>" +
+          '<td class="c10-cita">' + esc(r.citaRaw || (r.fecha ? fmtFull(r.fecha) : "—")) +
+          (r.fecha ? "<small>" + esc(fmtFull(r.fecha)) + "</small>" : "") + "</td>" +
+          '<td class="c10-cli">' + esc(r.nombre) + "</td>" +
+          '<td class="c10-ov">' + esc(r.ov || "—") + "</td>" +
+          '<td class="c10-nota">' + esc(r.nota || "—") + "</td>" +
+          "<td>" + chipsHTML(ev, x.extra) + "</td>" +
+          (conBorrar ? '<td><button type="button" class="c10-del" data-ck="' + esc(claveFila(r)) + '" title="Quitar esta cita">×</button></td>' : "") +
+          "</tr>";
+      }).join("") + "</tbody></table>";
+  }
+
+  function renderReporte() {
+    var cont = el("listaCitas");
+    if (!cont || !getMap()) return;
+    var ref = progISO(), idx = indice();
+    var items = idx.rows.map(function (r) {
+      var x = { row: r, ev: evaluar(r, ref), extra: "" };
+      if (!enPrograma(r, idx)) x.extra = '<span class="c10-chip aviso">Sin match en el programa cargado</span>';
+      return x;
+    });
+    items.sort(function (a, b) {
+      return String(a.row.fecha || "9999").localeCompare(String(b.row.fecha || "9999")) ||
+        String(a.row.nombre).localeCompare(String(b.row.nombre), "es");
+    });
+    var res = el("citasV10Resumen");
+    if (!items.length) {
+      cont.innerHTML = '<div class="vacio">Sin fechas de cita todavía. Pega la tabla arriba y pulsa «Procesar y agregar».</div>';
+      if (res) res.textContent = "";
+      return;
+    }
+    var cnt = { futura: 0, hoy: 0, vencida: 0, sinfecha: 0 };
+    items.forEach(function (x) { cnt[x.ev.estado]++; });
+    if (res) {
+      res.innerHTML = "<b>" + items.length + "</b> citas · programa del <b>" + esc(fmtFull(ref)) + "</b>: " +
+        '<span class="c10-chip hoy">' + cnt.hoy + " hoy</span>" +
+        '<span class="c10-chip futura">' + cnt.futura + " posteriores</span>" +
+        (cnt.vencida ? '<span class="c10-chip vencida">' + cnt.vencida + " vencidas</span>" : "") +
+        (cnt.sinfecha ? '<span class="c10-chip sinfecha">' + cnt.sinfecha + " sin fecha</span>" : "");
+    }
+    cont.innerHTML = '<div class="c10-wrap">' + tablaHTML(items, true) + "</div>";
+    cont.querySelectorAll("button.c10-del").forEach(function (b) {
+      b.onclick = function () {
+        borrarFila(b.getAttribute("data-ck"));
+        renderTodo();
+        redibujarMapas();
+      };
+    });
+  }
+
+  function redibujarMapas() { try { if (typeof window.renderMapas === "function") window.renderMapas(); } catch (e) {} }
+  function renderTodo() {
+    try { reindexar(); } catch (e) {}
+    try { renderReporte(); } catch (e2) {}
+    try { previewPegado(); } catch (e3) {}
+  }
+
+  function previewPegado() {
+    var ta = el("citasV10Area"), pv = el("citasV10Preview"), st = el("citasV10Status");
+    if (!ta || !pv) return;
+    var ref = progISO(), rows = parseTable(ta.value, ref);
+    if (!ta.value.trim()) { pv.hidden = true; pv.innerHTML = ""; if (st) st.textContent = ""; return; }
+    if (!rows.length) {
+      pv.hidden = true; pv.innerHTML = "";
+      if (st) st.textContent = "No se leyó ninguna fila — revisa que vengan ZONA · CITA · CLIENTE · OV · NOTA.";
+      return;
+    }
+    var items = rows.map(function (r) { return { row: r, ev: evaluar(r, ref), extra: "" }; });
+    if (st) st.textContent = rows.length + " fila(s) listas — pulsa «Procesar y agregar».";
+    pv.hidden = false;
+    pv.innerHTML = '<div class="c10-wrap">' + tablaHTML(items, false) + "</div>";
+  }
+
+  function procesar(reemplazar) {
+    var ta = el("citasV10Area");
+    if (!ta || !ta.value.trim()) { avisar("Pega primero la tabla en el cuadro.", "info"); return; }
+    var rows = parseTable(ta.value, progISO());
+    if (!rows.length) { avisar("No se pudo leer ninguna fila de cita.", "info"); return; }
+    if (reemplazar && !window.confirm("¿Reemplazar TODAS las citas guardadas por las del cuadro?")) return;
+    var n = aplicar(rows, !!reemplazar);
+    ta.value = "";
+    var st = el("citasV10Status");
+    if (st) st.textContent = n + " cita(s) " + (reemplazar ? "reemplazadas" : "agregadas") + ".";
+    renderTodo();
+    redibujarMapas();
+    var ref = progISO(), f = rows.filter(function (r) { return r.fecha && r.fecha > ref; }).length;
+    toastSafe(n + " cita(s) " + (reemplazar ? "reemplazadas" : "agregadas") + (f ? " · " + f + " posterior(es) al " + fmt(ref) : ""));
+  }
+
+  function agregarManual() {
+    var inOV = el("citaOV"), inCli = el("citaCliente"), inF = el("citaFecha");
+    if (!inF) return;
+    var ov = inOV ? inOV.value.trim() : "", q = inCli ? inCli.value.trim() : "", f = inF.value;
+    if (!f) { avisar("La fecha de la cita es obligatoria.", "info"); return; }
+    if (!q && !ov) { avisar("Escribe el cliente (nombre o ID) o la orden de venta.", "info"); return; }
+    var id = null, nombre = q;
+    if (/^\d{5,9}$/.test(q)) { id = id9(q); nombre = nombreDe(id) || q; }
+    if (!nombre && ov) {
+      var d = ovDigits(ov);
+      clientes().forEach(function (c) { if (!nombre && (c.ovs || []).some(function (o) { return ovDigits(o.ov) === d; })) nombre = c.nombre; });
+    }
+    aplicar([{ ov: normOV(ov), fecha: f, nota: "", zona: "", citaRaw: "", nombre: nombre || normOV(ov), inmediata: false, aviso: "" }], false, id);
+    if (inOV) inOV.value = "";
+    if (inCli) inCli.value = "";
+    inF.value = "";
+    renderTodo();
+    redibujarMapas();
+    toastSafe("Cita agregada");
+  }
+
+  function hideManualCitasForm() {
+    ["citaOV", "citaCliente", "citaFecha", "btnAddCita"].forEach(function (id) {
+      var n = el(id);
+      if (!n) return;
+      n.style.display = "none";
+      n.setAttribute("hidden", "");
+      var row = n.closest(".form-row");
+      if (row) { row.style.display = "none"; row.setAttribute("hidden", ""); }
+    });
+    try {
+      var page = el("page-citas");
+      if (page) {
+        page.querySelectorAll(".form-row").forEach(function (row) {
+          if (row.querySelector("#citaOV, #citaCliente, #citaFecha, #btnAddCita")) {
+            row.style.display = "none";
+            row.setAttribute("hidden", "");
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  function ensureUI() {
+    injectCSS();
+    hideManualCitasForm();
+    var lista = el("listaCitas");
+    if (!lista) return;
+    ["citaPasteBox", "citasPasteBox", "citasListEnhanced"].forEach(function (id) {
+      var o = el(id); if (o) o.remove();
+    });
+    var inCli = el("citaCliente");
+    if (inCli && !inCli._c10) {
+      inCli._c10 = true;
+      inCli.placeholder = "Cliente (nombre o ID)";
+      inCli.removeAttribute("maxlength");
+      inCli.setAttribute("inputmode", "text");
+    }
+    if (el("citasV10Box")) return;
+    var box = document.createElement("div");
+    box.id = "citasV10Box";
+    box.innerHTML =
+      '<div class="c10-head"><span class="c10-title">Pegar tabla de citas</span>' +
+      '<label class="c10-prog">Fecha del programa <input type="date" id="citasProg" title="Vacío = fecha de hoy del equipo"></label></div>' +
+      '<p class="c10-hint">Copia desde Excel <b>ZONA · CITA · CLIENTE · ORDEN DE VENTA · NOTA</b> y pega aquí. ' +
+      "Cada fila queda individual (una por OV); el ID se busca solo en el maestro.</p>" +
+      '<textarea id="citasV10Area" rows="4" spellcheck="false" placeholder="Pega aquí la tabla (Ctrl+V)…"></textarea>' +
+      '<div class="c10-actions">' +
+      '<button type="button" class="btn btn-primary btn-sm" id="citasV10Apply">Procesar y agregar</button>' +
+      '<button type="button" class="btn btn-secondary btn-sm" id="citasV10Replace">Reemplazar todas</button>' +
+      '<button type="button" class="btn btn-secondary btn-sm" id="citasV10Clear">Limpiar caja</button>' +
+      '<span id="citasV10Status"></span></div>' +
+      '<div id="citasV10Preview" hidden></div>';
+    lista.parentNode.insertBefore(box, lista);
+    var res = document.createElement("div");
+    res.id = "citasV10Resumen";
+    lista.parentNode.insertBefore(res, lista);
+    var ta = el("citasV10Area");
+    ta.addEventListener("input", previewPegado);
+    ta.addEventListener("paste", function () { setTimeout(previewPegado, 30); });
+    el("citasV10Apply").onclick = function (ev) { ev.preventDefault(); procesar(false); };
+    el("citasV10Replace").onclick = function (ev) { ev.preventDefault(); procesar(true); };
+    el("citasV10Clear").onclick = function (ev) {
+      ev.preventDefault(); ta.value = ""; previewPegado();
+    };
+    var pf = el("citasProg");
+    pf.value = progISO();
+    pf.onchange = function () {
+      try { if (pf.value) localStorage.setItem(LS_PROG, pf.value); else localStorage.removeItem(LS_PROG); } catch (e) {}
+      if (!pf.value) pf.value = progISO();
+      renderTodo();
+      redibujarMapas();
+    };
+    renderTodo();
+  }
+
+  /* ───────────── enganches al core (una sola vez cada uno) ───────────── */
+  var hooked = {};
+  function hookFn(name, factory) {
+    if (hooked[name] || typeof window[name] !== "function") return;
+    hooked[name] = true;
+    window[name] = factory(window[name]);
+  }
+  function installHooks() {
+    hookFn("renderMapas", function (orig) {
+      return function () {
+        var r = orig.apply(this, arguments);
+        try { reindexar(); marcarMapa(); } catch (e) {}
+        return r;
+      };
+    });
+    hookFn("popupHtml", function (orig) {
+      return function (cli) {
+        var h = orig.apply(this, arguments);
+        try { h = popupConCita(h, cli); } catch (e) {}
+        return h;
+      };
+    });
+    hookFn("agregarParada", function (orig) {
+      return function (cli) {
+        try { alertaPlanificacion(cli); } catch (e) {}
+        return orig.apply(this, arguments);
+      };
+    });
+    if (!hooked.renderCitas && typeof window.renderCitas === "function") {
+      hooked.renderCitas = true;
+      window.renderCitas = function () { renderTodo(); };
+    }
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", function (ev) {
+      var t = ev.target;
+      if (t && t.id === "btnAddCita") { ev.preventDefault(); ev.stopImmediatePropagation(); agregarManual(); }
+    }, true);
+  }
+
+  function tick() {
+    try {
+      var e = E();
+      if (e && window.estado !== e) window.estado = e; // el core usa const: lo exponemos para los módulos que miran window.estado
+    } catch (er) {}
+    try { ensureUI(); } catch (e1) {}
+    try { installHooks(); } catch (e2) {}
+    try { decorarAuditoria(); } catch (e3) {}
+  }
+
+  window.__citasV10Test = {
+    parseTable: parseTable, parseLine: parseLine, resolverFecha: resolverFecha, evaluar: evaluar,
+    aplicar: aplicar, indice: indice, infoCliente: infoCliente, marcarMapa: marcarMapa,
+    decorarAuditoria: decorarAuditoria, renderReporte: renderReporte, ensureUI: ensureUI,
+    popupConCita: popupConCita, alertaPlanificacion: alertaPlanificacion, installHooks: installHooks,
+    tick: tick, progISO: progISO, resolverId: resolverId, reindexar: reindexar
+  };
+
+  if (typeof document !== "undefined") {
+    setTimeout(tick, 200);
+    setTimeout(tick, 600);
+    setTimeout(tick, 1200);
+    setTimeout(tick, 2500);
+    setTimeout(tick, 5000);
+    setInterval(tick, 2000);
+    try { console.info("[RUTALOG] citas v10 — pegar tabla + alertas (planificación / auditoría / mapa)"); } catch (e) {}
+  }
 })();
