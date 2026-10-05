@@ -136,7 +136,7 @@
       }
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=5");
+      onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=6");
       onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
       onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
       onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=1");
