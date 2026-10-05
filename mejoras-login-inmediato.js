@@ -20,7 +20,13 @@
   var shownOnce = false;
   var unlocked = false;
 
-  function hasSessionLS() {
+  function hasSession() {
+    try {
+      if (typeof usuarioActual === "function") {
+        var u = usuarioActual();
+        if (u && u.id && u.username) return true;
+      }
+    } catch (e) {}
     try {
       var raw = localStorage.getItem("rutalog_session");
       if (!raw) return false;
@@ -31,38 +37,18 @@
     }
   }
 
-  function hasSession() {
-    try {
-      if (typeof usuarioActual === "function") {
-        var u = usuarioActual();
-        if (u && u.id && u.username) return true;
-      }
-    } catch (e) {}
-    return hasSessionLS();
-  }
-
   function isTypingInLogin() {
     var ae = document.activeElement;
     if (!ae) return false;
-    if (ae.id === "loginUser" || ae.id === "loginPass") return true;
-    var card = document.querySelector(".login-card");
-    return !!(card && card.contains(ae));
+    return ae.id === "loginUser" || ae.id === "loginPass";
   }
 
-  function loginHasTypedContent() {
+  function clearLoginFields() {
     try {
       var u = document.getElementById("loginUser");
       var p = document.getElementById("loginPass");
-      if (u && String(u.value || "").length) return true;
-      if (p && String(p.value || "").length) return true;
-    } catch (e) {}
-    return false;
-  }
-
-  function setBootingOnly() {
-    try {
-      document.documentElement.classList.add("rutalog-booting", "rutalog-session-pending");
-      document.documentElement.classList.remove("rutalog-need-login", "rutalog-ready");
+      if (u) { u.value = ""; u.defaultValue = ""; u.blur(); }
+      if (p) { p.value = ""; p.defaultValue = ""; p.blur(); }
     } catch (e) {}
   }
 
@@ -92,7 +78,6 @@
 
   function unlockApp() {
     if (!hasSession()) {
-      /* sesión local inválida */
       try { localStorage.removeItem("rutalog_session"); } catch (e) {}
       setNeedLogin();
       showOverlayOnly(null, true);
@@ -100,6 +85,18 @@
     }
     if (unlocked && document.documentElement.classList.contains("rutalog-ready")) return;
     unlocked = true;
+    try {
+      var _raw = localStorage.getItem("rutalog_session");
+      if (_raw) {
+        var _u = JSON.parse(_raw);
+        if (_u && _u.username) {
+          var _nm = document.getElementById("userChipName");
+          if (_nm) _nm.textContent = _u.nombre || _u.name || _u.username || "—";
+          var _ch = document.getElementById("userChipBar");
+          if (_ch) _ch.hidden = false;
+        }
+      }
+    } catch (_e) {}
     setReady();
     hideOverlay();
 
@@ -118,24 +115,19 @@
     }
   }
 
-  function showOverlayOnly(msg, forceFocus) {
-    /* Si hay sesión en LS, NUNCA mostrar login (evita flash) */
-    if (hasSessionLS() || hasSession()) {
-      setBootingOnly();
-      hideOverlay();
-      if (hasSession()) unlockApp();
+  function showOverlayOnly(msg, force) {
+    if (hasSession() && !force) {
+      unlockApp();
       return;
     }
     unlocked = false;
     setNeedLogin();
-
     var ov = document.getElementById("loginOverlay");
     if (ov) {
       ov.hidden = false;
       ov.removeAttribute("hidden");
       ov.style.display = "flex";
       ov.style.visibility = "visible";
-      ov.style.opacity = "1";
       ov.style.pointerEvents = "auto";
       ov.style.zIndex = "99999";
     }
@@ -144,116 +136,83 @@
       n.style.opacity = "0";
       n.style.pointerEvents = "none";
     });
+    document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
+      b.hidden = true;
+    });
     var chip = document.getElementById("userChipBar");
     if (chip) chip.hidden = true;
-
-    if (msg && !isTypingInLogin() && !loginHasTypedContent()) {
+    if (msg) {
       var err = document.getElementById("loginError");
-      if (err) {
+      if (err && !isTypingInLogin()) {
         err.textContent = msg;
         err.classList.add("visible");
       }
     }
-    if ((forceFocus || !shownOnce) && !isTypingInLogin() && !loginHasTypedContent()) {
+    if (!shownOnce && !isTypingInLogin()) {
       var u = document.getElementById("loginUser");
-      if (u) setTimeout(function () { try { if (!isTypingInLogin()) u.focus(); } catch (e) {} }, 50);
+      if (u) setTimeout(function () { try { u.focus(); } catch (e) {} }, 80);
     }
     shownOnce = true;
   }
 
-  function patchMostrarLogin() {
-    if (typeof window.mostrarLogin !== "function" || window.mostrarLogin._v8) return;
-    window.mostrarLogin = function (show) {
-      if (show) {
-        if (hasSessionLS() || hasSession()) {
-          hideOverlay();
-          if (hasSession()) unlockApp();
-          else setBootingOnly();
-          return;
-        }
-        if (isTypingInLogin() || loginHasTypedContent()) {
-          showOverlayOnly(null, false);
-          return;
-        }
-        showOverlayOnly(null, true);
-        return;
-      }
-      if (hasSession()) unlockApp();
-      else showOverlayOnly(null, false);
-    };
-    window.mostrarLogin._v8 = true;
-  }
-
-  function patchIntentarLogin() {
-    if (typeof window.intentarLogin !== "function" || window.intentarLogin._v8) return;
-    var _orig = window.intentarLogin;
-    window.intentarLogin = async function () {
-      var r = await _orig.apply(this, arguments);
-      if (hasSession()) unlockApp();
-      else showOverlayOnly("Usuario o contraseña incorrectos", false);
-      return r;
-    };
-    window.intentarLogin._v8 = true;
+  function lockToLogin(msg) {
+    unlocked = false;
+    shownOnce = false;
+    clearLoginFields();
+    showOverlayOnly(msg || "Introduce usuario y contraseña", true);
+    setTimeout(clearLoginFields, 50);
+    setTimeout(clearLoginFields, 300);
   }
 
   function patchCerrarSesion() {
-    if (typeof window.cerrarSesion !== "function" || window.cerrarSesion._v8) return;
-    var _orig = window.cerrarSesion;
+    if (typeof window.cerrarSesion !== "function" || window.cerrarSesion._stablePatch) return;
+    var _cerrar = window.cerrarSesion;
     window.cerrarSesion = function () {
+      clearLoginFields();
+      try { _cerrar.apply(this, arguments); } catch (e) { console.warn(e); }
       unlocked = false;
       shownOnce = false;
-      try { _orig.apply(this, arguments); } catch (e) {}
-      try { localStorage.removeItem("rutalog_session"); } catch (e2) {}
+      clearLoginFields();
       setTimeout(function () {
-        showOverlayOnly("Sesión cerrada. Introduce usuario y contraseña", true);
-      }, 40);
+        lockToLogin("Sesión cerrada. Introduce usuario y contraseña");
+        clearLoginFields();
+      }, 30);
     };
-    window.cerrarSesion._v8 = true;
+    window.cerrarSesion._stablePatch = true;
+  }
+
+  function patchIntentarLogin() {
+    if (typeof window.intentarLogin !== "function" || window.intentarLogin._stablePatch) return;
+    var _login = window.intentarLogin;
+    window.intentarLogin = function () {
+      var r = _login.apply(this, arguments);
+      setTimeout(function () { if (hasSession()) unlockApp(); }, 100);
+      setTimeout(function () { if (hasSession()) unlockApp(); }, 300);
+      return r;
+    };
+    window.intentarLogin._stablePatch = true;
   }
 
   function boot() {
-    patchMostrarLogin();
-    patchIntentarLogin();
     patchCerrarSesion();
-    window.requiereLogin = function () { return !hasSession(); };
-
-    if (hasSessionLS()) {
-      /* Sesión guardada: pantalla negra hasta confirmar, sin login */
-      setBootingOnly();
-      hideOverlay();
-      if (hasSession()) unlockApp();
-      else {
-        /* core aún no listo: reintentar */
-        setTimeout(function () {
-          if (hasSession()) unlockApp();
-          else if (hasSessionLS()) setBootingOnly();
-          else showOverlayOnly(null, true);
-        }, 400);
-        setTimeout(function () {
-          if (hasSession()) unlockApp();
-          else if (!hasSessionLS()) showOverlayOnly(null, true);
-          else unlockApp(); /* confiar en LS si core no expone usuarioActual */
-        }, 1200);
+    patchIntentarLogin();
+    if (hasSession()) unlockApp();
+    else showOverlayOnly(null, true);
+    setInterval(function () {
+      patchCerrarSesion();
+      if (hasSession()) {
+        if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
+      } else if (document.documentElement.classList.contains("rutalog-ready")) {
+        lockToLogin("Introduce usuario y contraseña");
       }
-    } else {
-      showOverlayOnly(null, !shownOnce);
-    }
+    }, 1500);
   }
 
-  setTimeout(boot, 80);
-  setTimeout(boot, 500);
-  setTimeout(boot, 1200);
-
-  setInterval(function () {
-    if (isTypingInLogin() || loginHasTypedContent()) return;
-    if (hasSessionLS() || hasSession()) {
-      if (!document.documentElement.classList.contains("rutalog-ready")) {
-        if (hasSession()) unlockApp();
-        else setBootingOnly();
-      }
-    } else if (document.documentElement.classList.contains("rutalog-ready")) {
-      unlocked = false;
-      showOverlayOnly(null, false);
-    }
-  }, 2500);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(boot, 200); });
+  } else {
+    setTimeout(boot, 200);
+  }
+  setTimeout(boot, 800);
+  setTimeout(boot, 2000);
 })();
