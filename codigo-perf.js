@@ -1,4 +1,4 @@
-/* RUTALOG — Código SKU performance v4: paginación + entrada sin tirón */
+/* RUTALOG — Código SKU performance v4: paginación 50 + override real de renderCodigoTable */
 (function () {
   "use strict";
   if (window.__rutalogCodigoPerfV4) return;
@@ -28,8 +28,10 @@
     var tb = document.getElementById("codigoTbody");
     if (!tb || !window.estado || !estado.maestroCodigo) return;
 
-    var q = (document.getElementById("qCodigo") && document.getElementById("qCodigo").value || "").trim().toLowerCase();
-    var fil = (document.getElementById("filCodigoUnd") && document.getElementById("filCodigoUnd").value) || "";
+    var qEl = document.getElementById("qCodigo");
+    var filEl = document.getElementById("filCodigoUnd");
+    var q = (qEl && qEl.value || "").trim().toLowerCase();
+    var fil = (filEl && filEl.value) || "";
     var esc = function (s) {
       return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
     };
@@ -78,7 +80,8 @@
         var r = pageRows[i];
         var key = typeof normSkuKey === "function" ? normSkuKey(r.sku) : String(r.sku);
         var upp = (r.undCaja != null && r.cajaPaleta != null && r.undCaja > 0 && r.cajaPaleta > 0)
-          ? (r.undCaja * r.cajaPaleta) : (r.undPaleta != null ? r.undPaleta : "");
+          ? (r.undCaja * r.cajaPaleta)
+          : (r.undPaleta != null ? r.undPaleta : "");
         html += '<tr data-key="' + esc(key) + '">' +
           '<td class="mono"><input class="ed-cell mono cod-sku" data-f="sku" value="' + esc(r.sku) + '"></td>' +
           '<td><input class="ed-cell cod-prod" data-f="producto" value="' + esc(r.producto) + '"></td>' +
@@ -163,14 +166,15 @@
     }
   }
 
-  /** No bloquear el cambio de pestaña: pintar en el siguiente frame */
-  window.renderCodigoTable = function renderCodigoTable() {
-    if (_renderTimer) cancelAnimationFrame(_renderTimer);
-    _renderTimer = requestAnimationFrame(function () {
-      _renderTimer = null;
-      try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
-    });
-  };
+  function installRender() {
+    window.renderCodigoTable = function renderCodigoTable() {
+      if (_renderTimer) cancelAnimationFrame(_renderTimer);
+      _renderTimer = requestAnimationFrame(function () {
+        _renderTimer = null;
+        try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
+      });
+    };
+  }
 
   function wireFilters() {
     var q = document.getElementById("qCodigo");
@@ -186,7 +190,7 @@
   }
 
   function patchGo() {
-    if (typeof window.go !== "function" || window.go._codigoPerf) return;
+    if (typeof window.go !== "function" || window.go._codigoPerfV4) return;
     var _go = window.go;
     window.go = function (page) {
       var r = _go.apply(this, arguments);
@@ -197,28 +201,17 @@
       }
       return r;
     };
-    window.go._codigoPerf = true;
+    window.go._codigoPerfV4 = true;
   }
 
-  wireFilters();
-  patchGo();
-  setTimeout(function () { wireFilters(); patchGo(); }, 400);
-  setTimeout(function () { wireFilters(); patchGo(); }, 1500);
-})();
-
-  /* Reafirmar override tras cargar el core (por si go/render se reasignan) */
-  function forceOverride() {
-    window.renderCodigoTable = function renderCodigoTable() {
-      if (_renderTimer) cancelAnimationFrame(_renderTimer);
-      _renderTimer = requestAnimationFrame(function () {
-        _renderTimer = null;
-        try { doRender(); } catch (e) { console.warn("[codigo-perf]", e); }
-      });
-    };
+  function boot() {
+    installRender();
+    wireFilters();
     patchGo();
   }
-  forceOverride();
-  setTimeout(forceOverride, 500);
-  setTimeout(forceOverride, 2000);
-  setTimeout(forceOverride, 4000);
+
+  boot();
+  setTimeout(boot, 400);
+  setTimeout(boot, 1500);
+  setTimeout(boot, 3500);
 })();
