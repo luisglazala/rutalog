@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="stylesheet" href="./boot.css?v=4">
+<link rel="stylesheet" href="./boot.css?v=5">
 <script src="./boot.js?v=4"></script>
 <style id="rutalog-boot-css">
 html,body{background:#0a0a0a!important;height:100%;margin:0;color:#f5f5f5}
-html.rutalog-booting .app,html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.rutalog-booting .app,html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html:not(.rutalog-ready):not(.rutalog-need-login) .app,html:not(.rutalog-ready):not(.rutalog-need-login) .sidebar,html:not(.rutalog-ready):not(.rutalog-need-login) .main,html:not(.rutalog-ready):not(.rutalog-need-login) .topbar,html.rutalog-session-pending .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-session-pending #loginOverlay{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-need-login:not(.rutalog-session-pending) .sidebar,
 html.rutalog-need-login:not(.rutalog-session-pending) .main,
@@ -28,7 +28,7 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
-<link rel="stylesheet" href="./styles.css?v=boot49">
+<link rel="stylesheet" href="./styles.css?v=boot52">
 <link rel="stylesheet" href="./mejoras-v2.css?v=11">
 <link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -37,7 +37,7 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
   window.RUTALOG_API_BASE = "https://rutalog.pages.dev/api";
 </script>
 <script src="./mejoras-gh-proxy.js?v=3"></script>
-<script src="./mejoras-login-inmediato.js?v=5"></script>
+<script src="./mejoras-login-inmediato.js?v=6"></script>
 <script src="./mejoras-storage.js?v=1"></script>
 </head>
 <body>
@@ -75,12 +75,19 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
     try{
       var hasSession=false;
       try{var raw=localStorage.getItem('rutalog_session');if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
-      document.documentElement.classList.remove('rutalog-ready','rutalog-need-login','rutalog-booting');
-      if(hasSession) document.documentElement.classList.add('rutalog-ready');
-      else document.documentElement.classList.add('rutalog-need-login');
+      var d=document.documentElement;
+      d.classList.remove('rutalog-ready');
+      d.classList.add('rutalog-booting');
+      if(hasSession){
+        d.classList.add('rutalog-session-pending');
+        d.classList.remove('rutalog-need-login');
+      }else{
+        d.classList.add('rutalog-need-login');
+        d.classList.remove('rutalog-session-pending');
+      }
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=session8';
+    s.src='./app.js?v=session9';
     s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
     document.body.appendChild(s);
   }).catch(function(err){
