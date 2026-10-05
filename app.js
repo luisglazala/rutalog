@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado + citas v15 */
+/* RUTALOG loader unificado + capa1 same-origin core/shell */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -74,10 +74,15 @@
 
   function onceScript(flag, src) {
     if (window[flag]) return;
-    window[flag] = true;
+    /* No marcar flag hasta onload: si falla el JS, se puede reintentar */
     var s = document.createElement("script");
     s.src = src;
     s.async = false;
+    s.onload = function () { window[flag] = true; };
+    s.onerror = function () {
+      console.error("[RUTALOG] falló carga", src);
+      try { delete window[flag]; } catch (e) { window[flag] = false; }
+    };
     document.head.appendChild(s);
   }
 
@@ -134,7 +139,7 @@
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
-  var APP = "https://cdn.jsdelivr.net/gh/luisglazala/rutalog@e638c98005f54256a4f856d7aba8cad9a54174f0/app.js";
+  var APP = "./core-app.js?v=capa1";
   loadScript(APP).then(function () {
     forceLeafletIcons();
     onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
