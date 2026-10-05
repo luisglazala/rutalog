@@ -1,4 +1,4 @@
-/* RUTALOG loader unificado + citas v13 */
+/* RUTALOG loader unificado + citas v14 */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -121,11 +121,11 @@
       onceScript("__rutalogLoginInmediato", "./mejoras-login-inmediato.js?v=5");
       onceScript("__rutalogSync", "./mejoras-sync.js?v=31");
       onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
-      onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=13");
+      onceScript("__rutalogMejorasCitas", "./mejoras-citas.js?v=14");
       onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
-      onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=2");
+      onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=3");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
       onceScript("__rutalogMapa", "./mejoras-mapa.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
