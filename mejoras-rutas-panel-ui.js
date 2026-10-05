@@ -1,12 +1,12 @@
-/* RUTALOG rutas-panel-ui v1
- * - Panel lateral misma altura que el mapa
- * - Oculta selector Camión duplicado (#rutalogPlanCamion)
- * - Quita chip Origen de la lista de paradas
- * - "Cambiar centro" muestra el centro activo
+/* RUTALOG rutas-panel-ui v2
+ * - Panel = altura mapa + responsive
+ * - Sin camión duplicado ni chip Origen
+ * - Centro activo en Cambiar centro
  */
 (function () {
   "use strict";
-  if (window.__rutalogRutasPanelUiV1) return;
+  if (window.__rutalogRutasPanelUiV2) return;
+  window.__rutalogRutasPanelUiV2 = true;
   window.__rutalogRutasPanelUiV1 = true;
 
   function ensureCss() {
@@ -15,22 +15,9 @@
     st.id = "rutalog-rutas-panel-ui-css";
     st.textContent = [
       "#rutalogPlanCamion{display:none!important;}",
-      "#page-rutas.active .map-box{",
-      "  display:flex!important;align-items:stretch!important;",
-      "  min-height:0!important;flex:1 1 auto!important;",
-      "}",
-      "#page-rutas.active .side-panel{",
-      "  display:flex!important;flex-direction:column!important;",
-      "  align-self:stretch!important;height:auto!important;",
-      "  max-height:none!important;min-height:0!important;",
-      "  overflow:auto!important;",
-      "}",
-      "#page-rutas.active #mapRutas{",
-      "  flex:1 1 auto!important;min-height:0!important;",
-      "}",
-      "#btnCambiarCentro{width:100%;justify-content:flex-start;}",
+      "#btnCambiarCentro{width:100%;display:inline-flex;align-items:center;gap:8px;justify-content:flex-start;}",
       "#btnCambiarCentro .centro-actual{",
-      "  margin-left:auto;font-weight:700;opacity:.95;",
+      "  margin-left:auto;font-weight:700;",
       "  padding:2px 8px;border-radius:999px;font-size:11px;",
       "  background:rgba(56,189,248,.15);color:#7dd3fc;",
       "}"
@@ -41,9 +28,6 @@
   function hideDupCamion() {
     var el = document.getElementById("rutalogPlanCamion");
     if (el) el.style.display = "none";
-    document.querySelectorAll("#rutalogPlanCamion, .rutalog-plan-camion").forEach(function (n) {
-      n.style.display = "none";
-    });
   }
 
   function labelCentro() {
@@ -80,16 +64,62 @@
     var ul = document.getElementById("listaViajeActual");
     if (!ul) return;
     ul.querySelectorAll("li").forEach(function (li) {
-      var t = (li.textContent || "").trim();
-      if (t.indexOf("Origen:") === 0 || (li.querySelector(".nombre-p") && /Origen:/.test(li.textContent))) {
-        li.remove();
-      }
+      if (/Origen:/.test(li.textContent || "")) li.remove();
     });
   }
 
+  function forcePanelStretch() {
+    try {
+      var page = document.getElementById("page-rutas");
+      if (!page || !page.classList.contains("active")) return;
+      var main = document.querySelector(".main") || document.querySelector(".content");
+      if (main) {
+        main.style.display = "flex";
+        main.style.flexDirection = "column";
+        main.style.minHeight = "0";
+        main.style.height = "100%";
+        main.style.overflow = "hidden";
+      }
+      page.style.flex = "1 1 auto";
+      page.style.minHeight = "0";
+      page.style.height = "100%";
+      page.style.display = "flex";
+      page.style.flexDirection = "column";
+      page.style.overflow = "hidden";
+      var box = page.querySelector(".map-box");
+      if (box) {
+        box.style.flex = "1 1 auto";
+        box.style.minHeight = "0";
+        box.style.display = "flex";
+        box.style.alignItems = "stretch";
+      }
+      var panel = page.querySelector(".side-panel");
+      if (panel) {
+        panel.style.alignSelf = "stretch";
+        panel.style.maxHeight = "none";
+        panel.style.height = "auto";
+        panel.style.minHeight = "0";
+        panel.style.overflow = "hidden";
+        panel.style.display = "flex";
+        panel.style.flexDirection = "column";
+      }
+      var lista = document.getElementById("listaViajeActual");
+      if (lista) {
+        lista.style.flex = "1 1 auto";
+        lista.style.minHeight = "0";
+        lista.style.maxHeight = "none";
+        lista.style.overflowY = "auto";
+      }
+      try {
+        if (estado.mapRutas && estado.mapRutas.invalidateSize) {
+          estado.mapRutas.invalidateSize(false);
+        }
+      } catch (e) {}
+    } catch (e) {}
+  }
+
   function installRefrescar() {
-    if (typeof window.refrescarRutaUI !== "function") return;
-    if (window.refrescarRutaUI._panelUi) return;
+    if (typeof window.refrescarRutaUI !== "function" || window.refrescarRutaUI._panelUiV2) return;
     var orig = window.refrescarRutaUI;
     window.refrescarRutaUI = function () {
       var r = orig.apply(this, arguments);
@@ -97,27 +127,24 @@
         stripOrigenFromLista();
         updateBtnCentro();
         hideDupCamion();
+        forcePanelStretch();
       }, 0);
-      setTimeout(function () {
-        stripOrigenFromLista();
-        updateBtnCentro();
-        hideDupCamion();
-      }, 80);
       return r;
     };
+    window.refrescarRutaUI._panelUiV2 = true;
     window.refrescarRutaUI._panelUi = true;
   }
 
-  function installSeleccionar() {
-    if (typeof window.seleccionarOrigen !== "function") return;
-    if (window.seleccionarOrigen._panelUi) return;
-    var so = window.seleccionarOrigen;
-    window.seleccionarOrigen = function () {
-      var r = so.apply(this, arguments);
-      setTimeout(updateBtnCentro, 20);
+  function installGo() {
+    if (typeof window.go !== "function" || window.go._rutasStretch) return;
+    var g = window.go;
+    window.go = function (page) {
+      var r = g.apply(this, arguments);
+      setTimeout(forcePanelStretch, 40);
+      setTimeout(forcePanelStretch, 250);
       return r;
     };
-    window.seleccionarOrigen._panelUi = true;
+    window.go._rutasStretch = true;
   }
 
   function tick() {
@@ -125,12 +152,15 @@
     hideDupCamion();
     updateBtnCentro();
     stripOrigenFromLista();
+    forcePanelStretch();
     installRefrescar();
-    installSeleccionar();
+    installGo();
   }
+
   tick();
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
-  setInterval(tick, 4000);
-  console.info("[RUTALOG] rutas-panel-ui v1 — centro en botón, sin origen ni camión dup");
+  setInterval(tick, 5000);
+  window.addEventListener("resize", forcePanelStretch);
+  console.info("[RUTALOG] rutas-panel-ui v2 — panel altura mapa + responsive");
 })();
