@@ -1,7 +1,8 @@
-/* RUTALOG mapa-fix v2 — puntos trabajados visibles + ruta actual + Inicio */
+/* RUTALOG mapa-fix v3 — al guardar, clientes despachados salen del mapa */
 (function () {
   "use strict";
-  if (window.__rutalogMapaFixV2) return;
+  if (window.__rutalogMapaFixV3) return;
+  window.__rutalogMapaFixV3 = true;
   window.__rutalogMapaFixV2 = true;
   window.__rutalogMapaFixV1 = true;
   window.__rutalogMapRefreshV3 = true;
@@ -15,15 +16,21 @@
   var osrmSeq = 0;
   var painting = false;
 
-  function enViajeIds() {
-    var s = new Set();
+  function isCompleto(id) {
     try {
-      (estado.viajeActual || []).forEach(function (p) { s.add(String(p.idCliente)); });
-      (estado.viajesGuardados || []).forEach(function (v) {
-        (v.paradas || []).forEach(function (p) { s.add(String(p.idCliente)); });
-      });
+      if (typeof clienteCompletamenteAsignado === "function") return !!clienteCompletamenteAsignado(id);
     } catch (e) {}
-    return s;
+    return false;
+  }
+
+  function inViajeActual(id) {
+    try {
+      return (estado.viajeActual || []).some(function (p) {
+        return String(p.idCliente) === String(id);
+      });
+    } catch (e) {
+      return false;
+    }
   }
 
   function resolvePos(p) {
@@ -47,13 +54,10 @@
 
   function updateBadges() {
     try {
-      var en = enViajeIds();
       var activos = (estado.clientesHoy || []).filter(function (c) {
         if (!c || c.lat == null) return false;
-        if (en.has(String(c.idCliente))) return false;
-        try {
-          if (typeof clienteCompletamenteAsignado === "function" && clienteCompletamenteAsignado(c.idCliente)) return false;
-        } catch (e) {}
+        if (inViajeActual(c.idCliente)) return false;
+        if (isCompleto(c.idCliente)) return false;
         return true;
       });
       var n = activos.length;
@@ -74,7 +78,7 @@
     try {
       var lista = document.getElementById("listaCiudades");
       if (!lista) return;
-      if (!force && lista.querySelectorAll(".ciu-chip").length > 0) return;
+      if (!force && lista.querySelectorAll(".chk-ciudad, .ciu-chip input").length > 0) return;
       var set = new Set();
       (estado.clientesHoy || []).forEach(function (c) {
         if (c.ciudad) set.add(String(c.ciudad).trim());
@@ -100,9 +104,7 @@
       if (chk) chk.checked = !keep.length;
       if (typeof bindCiudadChecks === "function") bindCiudadChecks();
       if (typeof actualizarLabelCiudad === "function") actualizarLabelCiudad();
-    } catch (e) {
-      console.warn("[mapa-fix] ciudades", e);
-    }
+    } catch (e) {}
   }
 
   function clearOsrm() {
@@ -113,7 +115,7 @@
   }
 
   function drawCurrentRoute() {
-    if (!estado.mapRutas) return;
+    if (!estado || !estado.mapRutas) return;
     var map = estado.mapRutas;
     var pts = [];
     if (estado.origenActual && estado.origenActual.lat != null) {
@@ -167,8 +169,8 @@
       .catch(function () {});
   }
 
-  function drawSavedRoutes() {
-    if (!estado.mapRutas) return;
+  function drawSavedRoutesFaint() {
+    if (!estado || !estado.mapRutas) return;
     if (!estado.polysGuardadas) estado.polysGuardadas = [];
     estado.polysGuardadas.forEach(function (pl) {
       try { estado.mapRutas.removeLayer(pl); } catch (e) {}
@@ -188,7 +190,7 @@
       if (line.length > 1) {
         try {
           var pl = L.polyline(line, {
-            color: v.color || "#64748b", weight: 3, opacity: 0.45
+            color: v.color || "#64748b", weight: 2, opacity: 0.35
           }).addTo(estado.mapRutas);
           estado.polysGuardadas.push(pl);
         } catch (e) {}
@@ -222,15 +224,14 @@
     return m;
   }
 
-  function paintCluster(cluster, markersMap, includeClick) {
-    if (!cluster) return markersMap;
+  function paintCluster(cluster, markersMap, allowClick) {
+    if (!cluster) return markersMap || new Map();
     if (!markersMap) markersMap = new Map();
     try {
       cluster.clearLayers();
       markersMap.clear();
     } catch (e) {}
 
-    var en = enViajeIds();
     var painted = new Set();
 
     function add(cli, st, click) {
@@ -246,11 +247,9 @@
     }
 
     (estado.clientesHoy || []).forEach(function (cli) {
-      if (en.has(String(cli.idCliente))) return;
-      try {
-        if (typeof clienteCompletamenteAsignado === "function" && clienteCompletamenteAsignado(cli.idCliente)) return;
-      } catch (e) {}
-      add(cli, { color: "#64748b", texto: "", sz: 22, z: 400 }, includeClick);
+      if (inViajeActual(cli.idCliente)) return;
+      if (isCompleto(cli.idCliente)) return;
+      add(cli, { color: "#64748b", texto: "", sz: 22, z: 400 }, allowClick);
     });
 
     (estado.viajeActual || []).forEach(function (p, i) {
@@ -260,30 +259,17 @@
       add(cli, { color: "#f59e0b", texto: String(i + 1), sz: 32, z: 3500 }, false);
     });
 
-    (estado.viajesGuardados || []).forEach(function (v) {
-      (v.paradas || []).forEach(function (p, i) {
-        var cli = Object.assign({}, p);
-        var pos = resolvePos(p);
-        if (pos) { cli.lat = pos[0]; cli.lon = pos[1]; }
-        add(cli, {
-          color: v.color || "#22c55e",
-          texto: String(i + 1),
-          sz: 28,
-          z: 2800
-        }, false);
-      });
-    });
-
     return markersMap;
   }
 
-  function paint() {
+  function paint(reason) {
     if (!window.estado || painting) return;
+    if (!estado.mapRutas && !estado.mapPanel) return;
     painting = true;
     try {
       if (estado.mapRutas && estado.clusterRutas) {
         estado.markersRutas = paintCluster(estado.clusterRutas, estado.markersRutas || new Map(), true);
-        drawSavedRoutes();
+        drawSavedRoutesFaint();
         drawCurrentRoute();
         try { estado.mapRutas.invalidateSize(true); } catch (e) {}
       }
@@ -292,38 +278,63 @@
         try { estado.mapPanel.invalidateSize(true); } catch (e) {}
       }
       updateBadges();
-      rebuildCiudades(false);
     } catch (e) {
-      console.warn("[mapa-fix] paint", e);
+      console.warn("[mapa-fix]", e);
     }
     painting = false;
+    if (reason) console.info("[RUTALOG] mapa-fix paint:", reason);
   }
 
   window.rutalogMapaFix = paint;
 
-  function after(fnName, forceCities) {
-    if (typeof window[fnName] !== "function") return false;
-    if (window[fnName]._mapaFixV2) return true;
-    var orig = window[fnName];
-    window[fnName] = function () {
+  function hook(name, forceCities) {
+    if (typeof window[name] !== "function") return false;
+    if (window[name]._mf3) return true;
+    var orig = window[name];
+    window[name] = function () {
       var r = orig.apply(this, arguments);
-      if (forceCities) setTimeout(function () { rebuildCiudades(true); }, 30);
-      setTimeout(paint, 30);
-      setTimeout(paint, 250);
+      if (forceCities) setTimeout(function () { rebuildCiudades(true); }, 40);
+      setTimeout(function () { paint(name); }, 20);
+      setTimeout(function () { paint(name + "-2"); }, 200);
+      setTimeout(function () { paint(name + "-3"); }, 500);
       return r;
     };
-    window[fnName]._mapaFixV2 = true;
+    window[name]._mf3 = true;
     return true;
   }
 
-  function wireButtons() {
-    ["btnGuardarViaje", "btnGuardar", "btnDeshacer", "btnReiniciar"].forEach(function (id) {
+  function wireConfirmAudit() {
+    var btn = document.getElementById("btnAuditConfirmar");
+    if (btn && !btn._mf3) {
+      btn._mf3 = true;
+      btn.addEventListener("click", function () {
+        setTimeout(function () { paint("audit-confirm"); }, 100);
+        setTimeout(function () { paint("audit-confirm-2"); }, 400);
+        setTimeout(function () { paint("audit-confirm-3"); }, 900);
+      }, true);
+    }
+    if (typeof window.confirmarAuditoriaYDespachar === "function" &&
+        !window.confirmarAuditoriaYDespachar._mf3) {
+      var orig = window.confirmarAuditoriaYDespachar;
+      window.confirmarAuditoriaYDespachar = async function () {
+        var r = await orig.apply(this, arguments);
+        setTimeout(function () { paint("confirmarAuditoria"); }, 50);
+        setTimeout(function () { paint("confirmarAuditoria-2"); }, 300);
+        setTimeout(function () { paint("confirmarAuditoria-3"); }, 800);
+        return r;
+      };
+      window.confirmarAuditoriaYDespachar._mf3 = true;
+    }
+  }
+
+  function wireBtns() {
+    ["btnGuardarViaje", "btnDeshacer", "btnReiniciar"].forEach(function (id) {
       var b = document.getElementById(id);
-      if (!b || b._mapaFixV2) return;
-      b._mapaFixV2 = true;
+      if (!b || b._mf3) return;
+      b._mf3 = true;
       b.addEventListener("click", function () {
-        setTimeout(paint, 80);
-        setTimeout(paint, 400);
+        setTimeout(function () { paint(id); }, 60);
+        setTimeout(function () { paint(id + "-2"); }, 350);
       }, true);
     });
   }
@@ -334,52 +345,51 @@
         n.textContent = "Inicio";
       });
       var t = document.getElementById("pageTitle");
-      if (t && document.getElementById("page-panel") &&
-          document.getElementById("page-panel").classList.contains("active")) {
-        if (/panel/i.test(t.textContent) || t.textContent === "Panel de despachos") {
-          t.textContent = "Inicio";
-        }
-      }
+      var page = document.getElementById("page-panel");
+      if (t && page && page.classList.contains("active")) t.textContent = "Inicio";
     } catch (e) {}
   }
 
   function wrapGo() {
-    if (typeof window.go !== "function") return;
-    if (window.go._mapaFixInicio) return;
+    if (typeof window.go !== "function" || window.go._mf3) return;
     var orig = window.go;
     window.go = function (page) {
       var r = orig.apply(this, arguments);
       setTimeout(function () {
         renameInicio();
-        var t = document.getElementById("pageTitle");
-        if (t && page === "panel") t.textContent = "Inicio";
-        paint();
-      }, 40);
+        if (page === "panel") {
+          var t = document.getElementById("pageTitle");
+          if (t) t.textContent = "Inicio";
+        }
+        paint("go-" + page);
+      }, 50);
       return r;
     };
-    window.go._mapaFixInicio = true;
+    window.go._mf3 = true;
   }
 
   function tick() {
-    after("refrescarRutaUI", false);
-    after("agregarParada", false);
-    after("renderMapas", false);
-    after("construirHoy", true);
-    after("guardarViaje", false);
-    wireButtons();
+    hook("refrescarRutaUI", false);
+    hook("agregarParada", false);
+    hook("renderMapas", false);
+    hook("construirHoy", true);
+    hook("guardarViaje", false);
+    wireConfirmAudit();
+    wireBtns();
     wrapGo();
     renameInicio();
   }
 
   tick();
-  setTimeout(tick, 400);
-  setTimeout(tick, 1200);
+  setTimeout(tick, 300);
+  setTimeout(tick, 1000);
+  setTimeout(tick, 2500);
   setTimeout(function () {
     rebuildCiudades(true);
-    paint();
+    paint("boot");
     renameInicio();
-  }, 1600);
-  setInterval(tick, 5000);
+  }, 1800);
+  setInterval(tick, 4000);
 
-  console.info("[RUTALOG] mapa-fix v2 — puntos trabajados visibles + ruta actual + Inicio");
+  console.info("[RUTALOG] mapa-fix v3 — al guardar, clientes despachados salen del mapa");
 })();

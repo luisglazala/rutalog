@@ -1,4 +1,4 @@
-/* RUTALOG loader + UI polish */
+/* RUTALOG loader */
 (function () {
   try { document.documentElement.classList.add("rutalog-booting"); } catch (e) {}
   var css = document.createElement("style");
@@ -82,17 +82,12 @@
             document.documentElement.classList.remove("rutalog-ready", "rutalog-booting", "rutalog-session-pending");
             document.documentElement.classList.add("rutalog-need-login");
             var ov = document.getElementById("loginOverlay");
-            if (ov) {
-              ov.hidden = false;
-              ov.style.display = "flex";
-            }
+            if (ov) { ov.hidden = false; ov.style.display = "flex"; }
           }
         } catch (e2) {}
         forcePageVisibility();
       });
-    } catch (e) {
-      forcePageVisibility();
-    }
+    } catch (e) { forcePageVisibility(); }
   }
 
   function forceLeafletIcons() {
@@ -179,7 +174,7 @@
       onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
       onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-      onceScript("__rutalogMapaFix", "./mejoras-mapa-fix.js?v=2");
+      onceScript("__rutalogMapaFixV3", "./mejoras-mapa-fix.js?v=3");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -198,7 +193,7 @@
     onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
     onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-    onceScript("__rutalogMapaFix", "./mejoras-mapa-fix.js?v=2");
+    onceScript("__rutalogMapaFixV3", "./mejoras-mapa-fix.js?v=3");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);

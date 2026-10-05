@@ -11,18 +11,12 @@ html.rutalog-need-login:not(.rutalog-session-pending) .sidebar,
 html.rutalog-need-login:not(.rutalog-session-pending) .main,
 html.rutalog-need-login:not(.rutalog-session-pending) .topbar{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
-html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{display:flex!important;visibility:visible!important;opacity:1!important}
 .leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}
 .app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
 </style>
 <script>(function(){try{var d=document.documentElement;d.classList.add("rutalog-booting");var ok=false;try{var r=localStorage.getItem("rutalog_session");if(r){var u=JSON.parse(r);if(u&&u.id&&u.username)ok=true}}catch(e){}if(ok){d.classList.add("rutalog-session-pending");d.classList.remove("rutalog-need-login")}else{d.classList.add("rutalog-need-login");d.classList.remove("rutalog-session-pending")}}catch(e){document.documentElement.classList.add("rutalog-booting","rutalog-need-login")}})();</script>
 <meta charset="UTF-8">
-<meta name="color-scheme" content="dark">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>RUTALOG — Consolidador Territorial · Lazala</title>
 <link rel="icon" href="./favicon.svg?v=1" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -33,9 +27,7 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
 <link rel="stylesheet" href="./mejoras-layout.css?v=3">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<script>
-  window.RUTALOG_API_BASE = "https://rutalog.pages.dev/api";
-</script>
+<script>window.RUTALOG_API_BASE="https://rutalog.pages.dev/api";</script>
 <script src="./mejoras-gh-proxy.js?v=3"></script>
 <script src="./mejoras-login-inmediato.js?v=9"></script>
 <script src="./mejoras-storage.js?v=1"></script>
@@ -43,7 +35,7 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
 <body>
 <script>
 (function(){
-  var SRC='./shell-body.html?v=capa1';
+  var SRC='./shell-body.html?v=capa2';
   function loadScript(src){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script');
@@ -78,20 +70,14 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden]{disp
       var d=document.documentElement;
       d.classList.remove('rutalog-ready');
       d.classList.add('rutalog-booting');
-      if(hasSession){
-        d.classList.add('rutalog-session-pending');
-        d.classList.remove('rutalog-need-login');
-      }else{
-        d.classList.add('rutalog-need-login');
-        d.classList.remove('rutalog-session-pending');
-      }
+      if(hasSession){d.classList.add('rutalog-session-pending');d.classList.remove('rutalog-need-login');}
+      else{d.classList.add('rutalog-need-login');d.classList.remove('rutalog-session-pending');}
     }catch(e){}
     var s=document.createElement('script');
-    s.src='./app.js?v=session10';
-    s.onerror=function(){ console.error('[RUTALOG] app.js fail'); };
+    s.src='./app.js?v=session11';
     document.body.appendChild(s);
   }).catch(function(err){
-    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a><br><small style="color:#a3a3a3">'+err+'</small></p>';
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a></p>';
   });
 })();
 </script>
