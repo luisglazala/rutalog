@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.2 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
+/* RUTALOG mejoras-sync v3.3 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
 (function () {
   "use strict";
   if (window.__rutalogSyncV3) return;
@@ -21,13 +21,17 @@
 
   function hasToken() {
     try {
-      if (typeof ghGetToken === "function") return !!ghGetToken();
+      if (typeof ghGetToken === "function" && ghGetToken()) return true;
     } catch (e) {}
     try {
-      return !!(localStorage.getItem("rutalog_gh_token") || "").trim();
-    } catch (e2) {
-      return false;
-    }
+      if ((localStorage.getItem("rutalog_gh_token") || "").trim()) return true;
+    } catch (e2) {}
+    /* Proxy Cloudflare inyecta el token en el servidor: no hace falta token en el navegador */
+    try {
+      if (window.RUTALOG_API_BASE) return true;
+      if (/rutalog\.pages\.dev$/i.test(location.hostname || "")) return true;
+    } catch (e3) {}
+    return false;
   }
 
   function isDirty() {
