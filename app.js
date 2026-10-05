@@ -185,6 +185,7 @@
       onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=32");
       onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
       onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=1");
+      onceScript("__rutalogMapaViaje", "./mejoras-mapa-viaje.js?v=1");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo();
       forcePageVisibility();
@@ -203,6 +204,7 @@
     onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=32");
     onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=1");
     onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=1");
+    onceScript("__rutalogMapaViaje", "./mejoras-mapa-viaje.js?v=1");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
