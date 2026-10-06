@@ -43,3 +43,17 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay[hidden] {
   visibility: visible !important;
   opacity: 1 !important;
 }
+
+/* Topbar: no mostrar Limpiar día / Viajes sueltos (van dentro de Día ▾) */
+.topbar > #btnLimpiarDia,
+.topbar > #btnBorrarViajesTop {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.ui-day-dropdown #btnLimpiarDia,
+.ui-day-dropdown #btnBorrarViajesTop {
+  display: inline-flex !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
