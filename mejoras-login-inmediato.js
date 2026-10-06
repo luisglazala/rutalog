@@ -209,24 +209,24 @@
     patchIntentarLogin();
     if (hasSession()) unlockApp();
     else showOverlayOnly(null, true);
+    function loginGateTick() {
+      try {
+        patchCerrarSesion();
+        if (hasSession()) {
+          if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
+          /* no tocar DOM de paneles si ya hay sesión */
+          return;
+        }
+        /* solo lock si realmente no hay sesión */
+        if (document.documentElement.classList.contains("rutalog-ready")) {
+          lockToLogin("Introduce usuario y contraseña");
+        }
+      } catch (e) {}
+    }
     if (window.RUTALOG && RUTALOG.tick) {
-      RUTALOG.tick.registrar('login:gate', function () {
-        patchCerrarSesion();
-        if (hasSession()) {
-          if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
-        } else if (document.documentElement.classList.contains("rutalog-ready")) {
-          lockToLogin("Introduce usuario y contraseña");
-        }
-      }, { cada: 1500, vista: 'siempre' });
+      RUTALOG.tick.registrar('login:gate', loginGateTick, { cada: 2500, vista: 'siempre' });
     } else {
-      setInterval(function () {
-        patchCerrarSesion();
-        if (hasSession()) {
-          if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
-        } else if (document.documentElement.classList.contains("rutalog-ready")) {
-          lockToLogin("Introduce usuario y contraseña");
-        }
-      }, 1500);
+      setInterval(loginGateTick, 2500);
     }
   }
 
