@@ -2,4 +2,5 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
   Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://cdnjs.cloudflare.com; connect-src 'self' https://rutalog.pages.dev https://*.rutalog.pages.dev https://*.pages.dev https://api.github.com https://cdn.jsdelivr.net https://router.project-osrm.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://unpkg.com https://cdnjs.cloudflare.com; worker-src 'self' blob:; child-src 'self' blob:; frame-ancestors 'self'
