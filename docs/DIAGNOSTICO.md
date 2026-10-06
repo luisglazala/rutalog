@@ -157,3 +157,10 @@ Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
 - Fase 3: planificacion sin UI camión/restantes.
 - Fase 4: `mejoras-responsive.css`. Sin test-resoluciones.mjs.
 - Fase 5: `_headers` añadido. Workers múltiples aún en repo (documentado en NOTAS).
+
+
+## 13. Perf cambio de paneles (nav-fix v3 + hooks v4)
+
+- Causa de lentitud: cada clic llamaba `renderMapas()` (miles de pines) vía core `go` + hooks + nav-fix.
+- Ahora: UI del panel al instante; `renderMapas` omitido ~350ms en cambio de panel (`__rutalogNavSilent`); solo `invalidateSize`.
+- Producción `rutalog.pages.dev` (main) sin estos cambios hasta merge.
