@@ -1,7 +1,7 @@
-/* RUTALOG hooks v2 — wrapper seguro + repaint mapa al entrar en rutas */
+/* RUTALOG hooks v3 — go nunca se bloquea; renderMapas aparte */
 (function () {
   "use strict";
-  if (window.RUTALOG && window.RUTALOG.hooks && window.RUTALOG.hooks.__v2) return;
+  if (window.RUTALOG && window.RUTALOG.hooks && window.RUTALOG.hooks.__v3) return;
   window.RUTALOG = window.RUTALOG || {};
 
   var listeners = {
@@ -27,22 +27,25 @@
     }
   }
 
-  var installed = false;
   var _go = null;
   var _rm = null;
   var _rr = null;
+  var goInstalled = false;
+  var rmInstalled = false;
+  var rrInstalled = false;
 
-  function callRenderNow() {
+  function forcePages() {
     try {
-      if (typeof _rm === "function") _rm.call(window);
-      else if (typeof window.renderMapas === "function" && !window.renderMapas.__rutalogHooks) {
-        window.renderMapas();
-      } else if (window.renderMapas && window.renderMapas.now) {
-        window.renderMapas.now();
-      }
-    } catch (e) {
-      console.warn("[RUTALOG.hooks] callRenderNow", e);
-    }
+      document.querySelectorAll(".page").forEach(function (p) {
+        if (p.classList.contains("active")) {
+          p.style.setProperty("display", "flex", "important");
+          p.style.setProperty("visibility", "visible", "important");
+          p.style.setProperty("opacity", "1", "important");
+        } else {
+          p.style.setProperty("display", "none", "important");
+        }
+      });
+    } catch (e) {}
   }
 
   function invalidateRutas() {
@@ -53,48 +56,53 @@
     } catch (e) {}
   }
 
-  function install() {
+  function installGo() {
     if (typeof window.go !== "function") return false;
-    if (typeof window.renderMapas !== "function") return false;
+    if (window.go.__rutalogHooksV3) return true;
 
-    /* Si ya instalamos, actualizar refs si alguien reasignó el original por debajo */
-    if (installed) {
-      if (window.go.__rutalogHooks && window.renderMapas.__rutalogHooks) return true;
-    }
-
-    var goCand = window.go;
-    var rmCand = window.renderMapas;
-    var rrCand = typeof window.refrescarRutaUI === "function" ? window.refrescarRutaUI : null;
-
-    /* No re-envolver nuestro propio wrapper */
-    if (goCand.__rutalogHooks) goCand = _go || goCand;
-    if (rmCand.__rutalogHooks) rmCand = _rm || rmCand;
-    if (rrCand && rrCand.__rutalogHooks) rrCand = _rr || rrCand;
-
-    _go = goCand;
-    _rm = rmCand;
-    _rr = rrCand;
-
+    _go = window.go;
     window.go = function (page) {
-      emit("antes:go", [page]);
-      var r = _go.apply(this, arguments);
-      emit("despues:go", [page, r]);
+      var r;
+      try {
+        emit("antes:go", [page]);
+      } catch (e0) {}
+      try {
+        r = _go.apply(this, arguments);
+      } catch (e1) {
+        console.warn("[RUTALOG.hooks] go error", e1);
+      }
+      try {
+        forcePages();
+      } catch (e2) {}
+      try {
+        emit("despues:go", [page, r]);
+      } catch (e3) {}
       if (page === "rutas") {
         setTimeout(function () {
-          invalidateRutas();
-          callRenderNow();
-          invalidateRutas();
-        }, 50);
-        setTimeout(function () {
-          invalidateRutas();
-          callRenderNow();
-        }, 300);
+          try {
+            invalidateRutas();
+            if (typeof _rm === "function") _rm.call(window);
+            else if (typeof window.renderMapas === "function" && window.renderMapas.now) {
+              window.renderMapas.now();
+            } else if (typeof window.renderMapas === "function" && !window.renderMapas.__rutalogHooksV3) {
+              window.renderMapas();
+            }
+            invalidateRutas();
+          } catch (e4) {}
+        }, 80);
       }
       return r;
     };
-    window.go.__rutalogHooks = true;
+    window.go.__rutalogHooksV3 = true;
+    goInstalled = true;
+    return true;
+  }
 
-    /* Sin debounce agresivo: pintar ya; rAF solo para emit after */
+  function installRenderMapas() {
+    if (typeof window.renderMapas !== "function") return false;
+    if (window.renderMapas.__rutalogHooksV3) return true;
+
+    _rm = window.renderMapas;
     window.renderMapas = function () {
       emit("antes:renderMapas", []);
       var r;
@@ -104,16 +112,12 @@
         console.warn("[RUTALOG.hooks] renderMapas", e);
       }
       try {
-        requestAnimationFrame(function () {
-          emit("despues:renderMapas", [r]);
-          invalidateRutas();
-        });
-      } catch (e2) {
         emit("despues:renderMapas", [r]);
-      }
+        invalidateRutas();
+      } catch (e2) {}
       return r;
     };
-    window.renderMapas.__rutalogHooks = true;
+    window.renderMapas.__rutalogHooksV3 = true;
     window.renderMapas.now = function () {
       emit("antes:renderMapas", []);
       try {
@@ -125,34 +129,53 @@
         console.warn("[RUTALOG.hooks] renderMapas.now", e);
       }
     };
-
-    if (_rr) {
-      window.refrescarRutaUI = function () {
-        emit("antes:refrescarRutaUI", []);
-        var r = _rr.apply(this, arguments);
-        emit("despues:refrescarRutaUI", [r]);
-        return r;
-      };
-      window.refrescarRutaUI.__rutalogHooks = true;
-    }
-
-    installed = true;
-    console.info("[RUTALOG.hooks] v2 wrappers instalados");
+    rmInstalled = true;
     return true;
+  }
+
+  function installRefrescar() {
+    if (typeof window.refrescarRutaUI !== "function") return false;
+    if (window.refrescarRutaUI.__rutalogHooksV3) return true;
+    _rr = window.refrescarRutaUI;
+    window.refrescarRutaUI = function () {
+      emit("antes:refrescarRutaUI", []);
+      var r;
+      try {
+        r = _rr.apply(this, arguments);
+      } catch (e) {
+        console.warn("[RUTALOG.hooks] refrescarRutaUI", e);
+      }
+      emit("despues:refrescarRutaUI", [r]);
+      return r;
+    };
+    window.refrescarRutaUI.__rutalogHooksV3 = true;
+    rrInstalled = true;
+    return true;
+  }
+
+  function install() {
+    var a = installGo();
+    var b = installRenderMapas();
+    installRefrescar();
+    return a && b;
   }
 
   window.RUTALOG.hooks = {
     __v1: true,
     __v2: true,
+    __v3: true,
     on: on,
     emit: emit,
     install: install,
-    installed: function () { return installed; }
+    installed: function () { return goInstalled && rmInstalled; }
   };
 
   var n = 0;
   var t = setInterval(function () {
     n++;
-    if (install() || n > 60) clearInterval(t);
+    installGo();
+    installRenderMapas();
+    installRefrescar();
+    if ((goInstalled && rmInstalled) || n > 80) clearInterval(t);
   }, 200);
 })();
