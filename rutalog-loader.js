@@ -97,7 +97,7 @@
     "./codigo-perf.js?v=6",
     "./mejoras-go-perf.js?v=3",
     "./mejoras-ui-polish.js?v=3",
-    "./mejoras-sync.js?v=33",
+    "./mejoras-sync.js?v=34",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
     "./mejoras-centros.js?v=4",
@@ -131,7 +131,6 @@
     if (window.__rutalogExtrasLoaded) return Promise.resolve();
     window.__rutalogExtrasLoaded = true;
     markExisting();
-    /* CSS en paralelo → early en paralelo → mid en paralelo → hooks → map en paralelo */
     return parallel(CSS_POST, loadCss)
       .then(function () { return parallel(JS_EARLY, loadJs); })
       .then(function () { return parallel(JS_MID, loadJs); })
