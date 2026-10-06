@@ -437,5 +437,5 @@
   setTimeout(tick, 800);
   setTimeout(tick, 2000);
   setTimeout(tick, 4000);
-  setInterval(tick, 5000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('excel:export', tick, { cada: 5000, vista: 'siempre' }); else setInterval(tick, 5000);
 })();
