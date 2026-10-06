@@ -1,3 +1,58 @@
+@import url("base.css");
+
+@import url("./styles-part2.css");
+@import url("./mejoras-esteticas.css");
+
+/* RUTALOG: sin cuadrados al pintar marcadores Leaflet */
+.leaflet-div-icon,
+.leaflet-marker-icon.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.leaflet-div-icon .marcador {
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Refuerzo altura mapa panel */
+#page-panel.active .map-box {
+  min-height: min(62vh, 720px) !important;
+}
+#page-panel.active #mapPanel {
+  min-height: 420px !important;
+  width: 100% !important;
+}
+#page-rutas.active .map-box {
+  min-height: min(58vh, 680px) !important;
+}
+#page-rutas.active #mapRutas {
+  min-height: 400px !important;
+}
+
+/* App siempre fila: sidebar | main */
+.app {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+.main {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.page.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* === Layout rutas (post-recuperación) === */
 /* Layout base de rutas + responsive */
 html, body {
   min-height: 100%;
