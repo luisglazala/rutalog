@@ -91,6 +91,7 @@
   ];
 
   var JS_EARLY = [
+    "./rutalog-scheduler.js?v=1",
     "./mejoras-storage.js?v=1",
     "./mejoras-gh-proxy.js?v=3",
     "./mejoras-login-inmediato.js?v=9"
