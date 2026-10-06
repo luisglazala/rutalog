@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v10-session";
+const CACHE = "rutalog-v11-layout";
 const ASSETS = [
   "./",
   "./index.html",

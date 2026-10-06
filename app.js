@@ -125,7 +125,7 @@
       }
       if (!document.getElementById("rutalog-rutas-layout-css")) {
         var lR = document.createElement("link");
-        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=2";
+        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=3";
         document.head.appendChild(lR);
       }
       if (!document.getElementById("rutalog-despachos-layout-css")) {
@@ -158,7 +158,7 @@
       onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
       onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
       onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-      onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=2");
+      onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=3");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
       patchGo(); forcePageVisibility();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
@@ -183,7 +183,7 @@
     onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
     onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
     onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-    onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=2");
+    onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=3");
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);

@@ -90,8 +90,7 @@
       if (box) {
         box.style.flex = "1 1 auto";
         box.style.minHeight = "0";
-        box.style.display = "flex";
-        box.style.alignItems = "stretch";
+        box.style.display = "block";
       }
       var panel = page.querySelector(".side-panel");
       if (panel) {
@@ -162,5 +161,15 @@
   setTimeout(tick, 1200);
   setInterval(tick, 5000);
   window.addEventListener("resize", forcePanelStretch);
+  // El mapa se reajusta solo cuando cambia el tamaño de su recuadro
+  try {
+    var _mapEl = document.getElementById("mapRutas");
+    if (_mapEl && window.ResizeObserver && !_mapEl.__rlRO) {
+      _mapEl.__rlRO = new ResizeObserver(function () {
+        try { if (estado.mapRutas && estado.mapRutas.invalidateSize) estado.mapRutas.invalidateSize(false); } catch (e) {}
+      });
+      _mapEl.__rlRO.observe(_mapEl);
+    }
+  } catch (e) {}
   console.info("[RUTALOG] rutas-panel-ui v2 — panel altura mapa + responsive");
 })();
