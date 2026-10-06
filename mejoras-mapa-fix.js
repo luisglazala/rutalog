@@ -196,11 +196,25 @@
 
   window.rutalogMapaFix = renderMapasFixed;
 
-  function install() {
+    function install() {
+    if (typeof renderMapasFixed !== "function") return false;
+    if (window.__mapaFixHooksV6) return true;
+    if (window.RUTALOG && RUTALOG.hooks) {
+      window.__mapaFixHooksV6 = true;
+      if (typeof RUTALOG.hooks.setCoreRenderMapas === "function") {
+        RUTALOG.hooks.setCoreRenderMapas(renderMapasFixed);
+      }
+      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
+        if (window.__rutalogNavSilent) return;
+        setTimeout(function () {
+          try { renderMapasFixed(); } catch (e) {}
+        }, 40);
+      });
+      return true;
+    }
     if (typeof window.renderMapas !== "function") return false;
     window.renderMapas = function () { renderMapasFixed(); };
     window.renderMapas._mapaFixV5 = true;
-
     if (typeof window.refrescarRutaUI === "function" && !window.refrescarRutaUI._mf5) {
       var origR = window.refrescarRutaUI;
       window.refrescarRutaUI = function () {
@@ -210,39 +224,6 @@
         return r;
       };
       window.refrescarRutaUI._mf5 = true;
-    }
-    if (typeof window.agregarParada === "function" && !window.agregarParada._mf5) {
-      var origA = window.agregarParada;
-      window.agregarParada = function () {
-        var r = origA.apply(this, arguments);
-        setTimeout(renderMapasFixed, 20);
-        setTimeout(renderMapasFixed, 150);
-        return r;
-      };
-      window.agregarParada._mf5 = true;
-    }
-    if (typeof window.confirmarAuditoriaYDespachar === "function" && !window.confirmarAuditoriaYDespachar._mf5) {
-      var origC = window.confirmarAuditoriaYDespachar;
-      window.confirmarAuditoriaYDespachar = async function () {
-        var r = await origC.apply(this, arguments);
-        setTimeout(renderMapasFixed, 50);
-        setTimeout(renderMapasFixed, 250);
-        setTimeout(renderMapasFixed, 600);
-        setTimeout(renderMapasFixed, 1200);
-        return r;
-      };
-      window.confirmarAuditoriaYDespachar._mf5 = true;
-    }
-    if (typeof window.construirHoy === "function" && !window.construirHoy._mf5) {
-      var origH = window.construirHoy;
-      window.construirHoy = function () {
-        var r = origH.apply(this, arguments);
-        setTimeout(function () { rebuildCiudades(true); }, 50);
-        setTimeout(renderMapasFixed, 80);
-        setTimeout(renderMapasFixed, 400);
-        return r;
-      };
-      window.construirHoy._mf5 = true;
     }
     return true;
   }
