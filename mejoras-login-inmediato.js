@@ -61,6 +61,17 @@
 
   function setReady() {
     try {
+      /* Rellenar nombre de sesión ANTES de mostrar topbar */
+      try {
+        var raw = localStorage.getItem("rutalog_session");
+        if (raw) {
+          var s = JSON.parse(raw);
+          var nm = document.getElementById("userChipName");
+          var ch = document.getElementById("userChipBar");
+          if (nm && s) nm.textContent = s.nombre || s.username || "—";
+          if (ch && s && (s.id || s.username)) ch.hidden = false;
+        }
+      } catch (eN) {}
       document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting", "rutalog-session-pending");
       document.documentElement.classList.add("rutalog-ready");
     } catch (e) {}
