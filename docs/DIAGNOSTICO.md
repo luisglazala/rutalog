@@ -119,3 +119,13 @@ Pendiente de relleno tras cargar `debug-perf.js?debug=perf` en la preview:
 - (b) 30 s en Mapa de rutas con viaje en construcción — por medir.
 
 Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
+
+
+## 9. Paso 2.1 — cargador único (2026-10-06)
+
+- Archivo nuevo: `rutalog-loader.js` — Set de claves = path sin `?v=`; `RUTALOG.load.extras()` carga CSS_POST + JS_EARLY + JS_MID + JS_MAP en secuencia.
+- `app.js`: eliminada la segunda pasada de `onceScript` post-core; `loadExtras()` delega al manifiesto único.
+- `index.html`: quitados links duplicados a `mejoras-v2.css` y `mejoras-layout.css` (solo el loader); añadido `rutalog-loader.js` antes de `app.js`.
+- Orden de dependencias: mismo que antes (core-app → construirHoy → correcciones → extras). No se reordenaron módulos de mapa.
+- Cómo revertir: restaurar app.js/index.html previos al commit 2.1 y borrar `rutalog-loader.js`.
+- Medición PERF: pendiente en preview tras deploy (`?debug=perf` + `RUTALOG_PERF.reporte()`).
