@@ -1,7 +1,7 @@
 /* RUTALOG hooks v4 — go ligero; sin renderMapas automático al cambiar panel */
 (function () {
   "use strict";
-  if (window.RUTALOG && window.RUTALOG.hooks && window.RUTALOG.hooks.__v4) return;
+  if (window.RUTALOG && window.RUTALOG.hooks && window.RUTALOG.hooks.__v5) return;
   window.RUTALOG = window.RUTALOG || {};
 
   var listeners = {
@@ -47,7 +47,7 @@
 
   function installGo() {
     if (typeof window.go !== "function") return false;
-    if (window.go.__rutalogHooksV4) return true;
+    if (window.go.__rutalogHooksV5) return true;
     _go = window.go;
     window.go = function (page) {
       var silent = !!window.__rutalogNavSilent;
@@ -70,14 +70,14 @@
       }
       return r;
     };
-    window.go.__rutalogHooksV4 = true;
+    window.go.__rutalogHooksV5 = true;
     goInstalled = true;
     return true;
   }
 
   function installRenderMapas() {
     if (typeof window.renderMapas !== "function") return false;
-    if (window.renderMapas.__rutalogHooksV4) return true;
+    if (window.renderMapas.__rutalogHooksV5) return true;
     _rm = window.renderMapas;
     window.renderMapas = function () {
       /* Durante cambio de panel silencioso: no repintar miles de pines */
@@ -90,7 +90,7 @@
       try { emit("despues:renderMapas", [r]); } catch (e2) {}
       return r;
     };
-    window.renderMapas.__rutalogHooksV4 = true;
+    window.renderMapas.__rutalogHooksV5 = true;
     window.renderMapas.now = function () {
       emit("antes:renderMapas", []);
       try {
@@ -105,7 +105,7 @@
 
   function installRefrescar() {
     if (typeof window.refrescarRutaUI !== "function") return false;
-    if (window.refrescarRutaUI.__rutalogHooksV4) return true;
+    if (window.refrescarRutaUI.__rutalogHooksV5) return true;
     _rr = window.refrescarRutaUI;
     window.refrescarRutaUI = function () {
       emit("antes:refrescarRutaUI", []);
@@ -114,7 +114,7 @@
       emit("despues:refrescarRutaUI", [r]);
       return r;
     };
-    window.refrescarRutaUI.__rutalogHooksV4 = true;
+    window.refrescarRutaUI.__rutalogHooksV5 = true;
     return true;
   }
 
@@ -126,9 +126,18 @@
   }
 
   window.RUTALOG.hooks = {
-    __v1: true, __v2: true, __v3: true, __v4: true,
+    __v1: true, __v2: true, __v3: true, __v4: true, __v5: true,
     on: on, emit: emit, install: install,
-    installed: function () { return goInstalled && rmInstalled; }
+    installed: function () { return goInstalled && rmInstalled; },
+    setCoreRenderMapas: function (fn) {
+      if (typeof fn === "function") { _rm = fn; }
+    },
+    setCoreRefrescarRutaUI: function (fn) {
+      if (typeof fn === "function") { _rr = fn; }
+    },
+    setCoreGo: function (fn) {
+      if (typeof fn === "function") { _go = fn; }
+    }
   };
 
   var n = 0;
