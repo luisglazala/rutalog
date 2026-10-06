@@ -1,8 +1,8 @@
-/* RUTALOG nav-fix v2 — cambio de panel prioritario */
+/* RUTALOG nav-fix v3 — cambio de panel instantáneo (sin renderMapas en el clic) */
 (function () {
   "use strict";
-  if (window.__rutalogNavFixV2) return;
-  window.__rutalogNavFixV2 = true;
+  if (window.__rutalogNavFixV3) return;
+  window.__rutalogNavFixV3 = true;
 
   var TITLES = {
     panel: "Inicio",
@@ -16,24 +16,20 @@
     reserva: "% Reserva física por OV",
     config: "Configuración"
   };
+  var switching = false;
+  var lastPage = "";
 
   function showPage(page) {
     if (!page) return false;
     var target = document.getElementById("page-" + page);
-    if (!target) {
-      console.warn("[nav-fix] no existe page-" + page);
-      return false;
-    }
+    if (!target) return false;
 
     try {
       if (window.estado) estado.page = page;
     } catch (e) {}
 
     document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
-      var on = b.getAttribute("data-page") === page;
-      b.classList.toggle("active", on);
-      if (on) b.setAttribute("aria-current", "page");
-      else b.removeAttribute("aria-current");
+      b.classList.toggle("active", b.getAttribute("data-page") === page);
     });
 
     document.querySelectorAll(".page").forEach(function (p) {
@@ -46,7 +42,6 @@
         p.style.setProperty("pointer-events", "auto", "important");
         p.removeAttribute("hidden");
       } else {
-        p.classList.remove("active");
         p.style.setProperty("display", "none", "important");
       }
     });
@@ -60,57 +55,64 @@
       var main = document.querySelector(".main");
       if (main) {
         main.style.setProperty("visibility", "visible", "important");
-        main.style.setProperty("opacity", "1", "important");
         main.style.setProperty("pointer-events", "auto", "important");
       }
     } catch (e3) {}
 
-    /* mapas */
-    setTimeout(function () {
-      try {
-        if (page === "rutas" && window.estado && estado.mapRutas) {
-          estado.mapRutas.invalidateSize(false);
-          if (typeof window.renderMapas === "function") {
-            try { window.renderMapas(); } catch (e) {}
-          }
-        }
-        if (page === "panel" && window.estado && estado.mapPanel) {
-          estado.mapPanel.invalidateSize(false);
-        }
-        if (page === "cruzados" && window.estado && estado.mapCruzados) {
-          estado.mapCruzados.invalidateSize(false);
-        }
-      } catch (e4) {}
-    }, 60);
-
     return true;
   }
 
+  /** Solo invalidateSize — NO re-render completo del mapa (caro con miles de pines) */
+  function lightMapTouch(page) {
+    try {
+      if (page === "rutas" && window.estado && estado.mapRutas && estado.mapRutas.invalidateSize) {
+        estado.mapRutas.invalidateSize(false);
+      } else if (page === "panel" && window.estado && estado.mapPanel && estado.mapPanel.invalidateSize) {
+        estado.mapPanel.invalidateSize(false);
+      } else if (page === "cruzados" && window.estado && estado.mapCruzados && estado.mapCruzados.invalidateSize) {
+        estado.mapCruzados.invalidateSize(false);
+      }
+    } catch (e) {}
+  }
+
   function safeGo(page) {
-    if (!page) return;
-    /* UI primero (lo que el usuario ve) */
+    if (!page || switching) return;
+    if (page === lastPage) {
+      showPage(page);
+      return;
+    }
+    switching = true;
+    lastPage = page;
+
+    /* 1) Pintar UI al instante */
     showPage(page);
-    /* go nativo después para lógica interna (sin confiar en él para el DOM) */
-    setTimeout(function () {
+
+    /* 2) go nativo en microtask — sin segundo showPage ni renderMapas aquí */
+    queueMicrotask(function () {
       try {
-        if (typeof window.go === "function" && !window.go.__navFixSkip) {
-          /* marcar para no reentrar si go dispara otro click */
-          var prev = window.estado && estado.page;
-          window.go(page);
-          /* si go dejó mal el DOM, reaplicar */
-          showPage(page);
+        if (typeof window.go === "function") {
+          window.__rutalogNavSilent = true;
+          try {
+            window.go(page);
+          } finally {
+            window.__rutalogNavSilent = false;
+          }
         }
       } catch (e) {
         console.warn("[nav-fix] go", e);
-        showPage(page);
       }
-    }, 0);
+      /* 3) Solo ajustar tamaño del mapa visible (barato) */
+      requestAnimationFrame(function () {
+        lightMapTouch(page);
+        switching = false;
+      });
+    });
   }
 
   window.rutalogGo = safeGo;
   window.rutalogShowPage = showPage;
 
-  function onNavActivate(ev) {
+  function onNav(ev) {
     var t = ev.target;
     if (!t || !t.closest) return;
     var btn = t.closest(".nav button[data-page], .nav [data-page]");
@@ -122,33 +124,26 @@
     safeGo(page);
   }
 
-  document.addEventListener("click", onNavActivate, true);
-  document.addEventListener("pointerup", onNavActivate, true);
+  document.addEventListener("click", onNav, true);
 
-  /* Re-wire directo por si el menú se re-renderiza */
   function wireButtons() {
     document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
-      if (b.__navFixWired) return;
-      b.__navFixWired = true;
-      b.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        safeGo(b.getAttribute("data-page"));
-      });
+      if (b.__navFixV3) return;
+      b.__navFixV3 = true;
+      b.addEventListener(
+        "click",
+        function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          safeGo(b.getAttribute("data-page"));
+        },
+        true
+      );
     });
   }
   wireButtons();
-  setTimeout(wireButtons, 500);
-  setTimeout(wireButtons, 2000);
-  setTimeout(wireButtons, 5000);
+  setTimeout(wireButtons, 800);
+  setTimeout(wireButtons, 2500);
 
-  try {
-    var nav = document.querySelector(".nav");
-    if (nav && typeof MutationObserver !== "undefined") {
-      var obs = new MutationObserver(function () { wireButtons(); });
-      obs.observe(nav, { childList: true, subtree: true });
-    }
-  } catch (e) {}
-
-  console.info("[RUTALOG] nav-fix v2 activo — prueba rutalogGo('citas')");
+  console.info("[RUTALOG] nav-fix v3 — paneles rápidos (sin renderMapas al clic)");
 })();
