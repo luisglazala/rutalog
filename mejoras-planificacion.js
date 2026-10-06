@@ -388,7 +388,15 @@
   function boot() {
     try { ensureUI(); } catch (e) {}
     var n = 0;
-    var t = setInterval(function () { n++; if (ensureUI() || n > 60) clearInterval(t); }, 500);
+    /* DOM wait: scheduler 1s x ~30 en vez de setInterval 500ms */
+    if (window.RUTALOG && RUTALOG.tick) {
+      RUTALOG.tick.registrar('plan:ensureUI', function () {
+        n++;
+        if (ensureUI() || n > 30) RUTALOG.tick.cancelar('plan:ensureUI');
+      }, { cada: 1000, vista: 'siempre' });
+    } else {
+      var t = setInterval(function () { n++; if (ensureUI() || n > 60) clearInterval(t); }, 500);
+    }
     try {
       if (typeof MutationObserver !== "undefined") {
         var mo = new MutationObserver(function () { if (ensureUI()) mo.disconnect(); });
