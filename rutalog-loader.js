@@ -88,7 +88,8 @@
     "./mejoras-ui-polish.css?v=1",
     "./mejoras-rutas-layout.css?v=4",
     "./mejoras-despachos-layout.css?v=3",
-    "./mejoras-responsive.css?v=1"
+    "./mejoras-responsive.css?v=2",
+    "./fix-mapa-rutas.css?v=1"
   ];
 
   var JS_EARLY = [
@@ -113,7 +114,7 @@
   ];
 
   var JS_MAP = [
-    "./rutalog-hooks.js?v=1",
+    "./rutalog-hooks.js?v=2",
     "./mejoras-mapa.js?v=3",
     "./mejoras-map-refresh.js?v=33",
     "./mejoras-ciudades.js?v=3",
