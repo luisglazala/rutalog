@@ -371,6 +371,19 @@
   }
 
   function install() {
+    if (window.__ciuRutaHooksV3) return;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      window.__ciuRutaHooksV3 = true;
+      RUTALOG.hooks.on("despues:renderMapas", function () {
+        if (window.__rutalogNavSilent) return;
+        schedulePaint(false);
+      });
+      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
+        if (window.__rutalogNavSilent) return;
+        schedulePaint(false);
+      });
+      return;
+    }
     if (typeof window.renderMapas === "function" && !window.renderMapas._ciuRutaV2) {
       var prev = window.renderMapas;
       window.renderMapas = function () {
