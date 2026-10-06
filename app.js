@@ -4,7 +4,7 @@
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
-    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html.rutalog-booting .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar,html.rutalog-session-pending .app,html:not(.rutalog-ready):not(.rutalog-need-login) .sidebar,html:not(.rutalog-ready):not(.rutalog-need-login) .main,html:not(.rutalog-ready):not(.rutalog-need-login) .topbar,html:not(.rutalog-ready):not(.rutalog-need-login) .app{visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
+    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html.rutalog-booting .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar,html.rutalog-session-pending .app,html.rutalog-need-login .sidebar,html.rutalog-need-login .main,html.rutalog-need-login .topbar,html.rutalog-need-login .app{visibility:visible!important}",
     "html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
@@ -12,12 +12,15 @@
     ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}"
   ].join("\n");
   document.head.appendChild(css);
+
   function removeDiaBtns() {
     ["btnExportSesion","btnImportSesion","fileImportSesion"].forEach(function(id) {
       var el = document.getElementById(id); if (el) el.remove();
     });
   }
+
   removeDiaBtns();
+
   function forcePageVisibility() {
     try {
       document.querySelectorAll(".page").forEach(function (p) {
@@ -26,12 +29,53 @@
       });
     } catch (e) {}
   }
+
+  function cleanupRoutePanel() {
+    try {
+      var page = document.getElementById("page-rutas");
+      if (!page) return;
+      var hiddenSelectors = [
+        "#rutalogPlanCamion",
+        "#planCamion",
+        "#camionSelect",
+        "#selectCamion",
+        ".ruta-camion",
+        ".camion-select",
+        ".restante",
+        "#restante",
+        "[data-role='restante']",
+        "[data-role='camion']",
+        "[id*='camion']",
+        "[id*='restante']",
+        "[class*='camion']",
+        "[class*='restante']"
+      ];
+      hiddenSelectors.forEach(function (selector) {
+        page.querySelectorAll(selector).forEach(function (el) {
+          el.style.display = "none";
+          el.setAttribute("hidden", "hidden");
+          el.setAttribute("aria-hidden", "true");
+        });
+      });
+      page.querySelectorAll("*").forEach(function (el) {
+        var text = (el.textContent || "").toLowerCase();
+        var label = ((el.getAttribute("aria-label") || "") + " " + (el.getAttribute("title") || "")).toLowerCase();
+        if ((text.indexOf("restante") >= 0 || text.indexOf("camión") >= 0 || text.indexOf("camion") >= 0 || label.indexOf("restante") >= 0 || label.indexOf("camión") >= 0 || label.indexOf("camion") >= 0) && !el.closest("#btnCambiarCentro") && !el.closest("#listaViajeActual") && !el.closest("#badgeParadas") && !el.closest("#badgePesoViaje") && !el.closest("#numViaje")) {
+          el.style.display = "none";
+          el.setAttribute("hidden", "hidden");
+          el.setAttribute("aria-hidden", "true");
+        }
+      });
+    } catch (e) {}
+  }
+
   function patchGo() {
     if (typeof window.go !== "function" || window.go.__rutalogPatched) return;
     var _go = window.go;
     window.go = function (page) {
       var r = _go.apply(this, arguments);
       forcePageVisibility();
+      cleanupRoutePanel();
       try {
         var t = document.getElementById("pageTitle");
         if (t && page === "panel") t.textContent = "Inicio";
@@ -41,6 +85,7 @@
     };
     window.go.__rutalogPatched = true;
   }
+
   function hydrateSessionChip() {
     try {
       var raw = localStorage.getItem("rutalog_session");
@@ -54,6 +99,7 @@
       return true;
     } catch (e) { return false; }
   }
+
   function revealApp() {
     try {
       var hasSession = false;
@@ -75,9 +121,11 @@
           }
         } catch (e2) {}
         forcePageVisibility();
+        cleanupRoutePanel();
       });
     } catch (e) { forcePageVisibility(); }
   }
+
   function forceLeafletIcons() {
     if (document.getElementById("rutalog-leaflet-no-square")) return;
     var st = document.createElement("style");
@@ -85,16 +133,27 @@
     st.textContent = ".leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}";
     (document.head || document.documentElement).appendChild(st);
   }
+
   forceLeafletIcons();
+
   function onceScript(flag, src) {
     if (window[flag]) return;
+    if (document.querySelector('script[src="' + src + '"]')) {
+      window[flag] = true;
+      return;
+    }
     window[flag] = true;
     var s = document.createElement("script");
     s.src = src; s.async = false;
     document.head.appendChild(s);
   }
+
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
+      if (document.querySelector('script[src="' + src + '"]')) {
+        resolve();
+        return;
+      }
       var s = document.createElement("script");
       s.src = src;
       s.onload = function () { resolve(); };
@@ -102,11 +161,17 @@
       document.head.appendChild(s);
     });
   }
+
   function afterAppReady() {
-    removeDiaBtns(); patchGo();
-    setTimeout(patchGo, 500); setTimeout(patchGo, 1500);
-    forcePageVisibility(); revealApp();
+    removeDiaBtns();
+    patchGo();
+    cleanupRoutePanel();
+    setTimeout(patchGo, 500);
+    setTimeout(patchGo, 1500);
+    forcePageVisibility();
+    revealApp();
   }
+
   function loadExtras() {
     try {
       if (!document.getElementById("rutalog-mejoras-v2-css")) {
@@ -125,7 +190,7 @@
       }
       if (!document.getElementById("rutalog-rutas-layout-css")) {
         var lR = document.createElement("link");
-        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=3";
+        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=4";
         document.head.appendChild(lR);
       }
       if (!document.getElementById("rutalog-despachos-layout-css")) {
@@ -133,6 +198,7 @@
         lD.id = "rutalog-despachos-layout-css"; lD.rel = "stylesheet"; lD.href = "./mejoras-despachos-layout.css?v=3";
         document.head.appendChild(lD);
       }
+
       onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
       onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
       onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=9");
@@ -146,7 +212,7 @@
       onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
       onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
       onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
-      onceScript("__rutalogMapa", "./mejoras-mapa.js?v=2");
+      onceScript("__rutalogMapa", "./mejoras-mapa.js?v=3");
       onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
       onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=3");
       onceScript("__rutalogCiudadesDisp", "./mejoras-ciudades-disponibles.js?v=1");
@@ -158,15 +224,18 @@
       onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
       onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
       onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-      onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=3");
+      onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=4");
       onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
-      patchGo(); forcePageVisibility();
+      patchGo();
+      forcePageVisibility();
+      cleanupRoutePanel();
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
+
   var APP = "./core-app.js?v=noflicker1";
   loadScript(APP).then(function () {
     forceLeafletIcons();
-    onceScript("__rutalogMapa", "./mejoras-mapa.js?v=2");
+    onceScript("__rutalogMapa", "./mejoras-mapa.js?v=3");
     afterAppReady();
     return loadScript("./app-core-construirHoy.js?v=7");
   }).then(function () {
@@ -183,7 +252,8 @@
     onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
     onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
     onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-    onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=3");
+    onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=4");
+    cleanupRoutePanel();
     loadExtras();
   }).catch(function (e) {
     console.error("[RUTALOG]", e);
@@ -191,6 +261,7 @@
       document.documentElement.classList.add("rutalog-need-login");
       document.documentElement.classList.remove("rutalog-booting");
     } catch (err) {}
+    cleanupRoutePanel();
     loadExtras();
   });
 })();
