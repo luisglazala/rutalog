@@ -159,13 +159,20 @@
 
   function installGo() {
     if (typeof window.go !== "function" || window.go.__rutalogRoutePanelUi) return;
-    var orig = window.go;
-    window.go = function (page) {
-      var r = orig.apply(this, arguments);
-      setTimeout(debouncedRefresh, 40);
-      return r;
-    };
-    window.go.__rutalogRoutePanelUi = true;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      RUTALOG.hooks.on("despues:go", function () {
+        setTimeout(debouncedRefresh, 40);
+      });
+      window.go.__rutalogRoutePanelUi = true;
+    } else {
+      var orig = window.go;
+      window.go = function (page) {
+        var r = orig.apply(this, arguments);
+        setTimeout(debouncedRefresh, 40);
+        return r;
+      };
+      window.go.__rutalogRoutePanelUi = true;
+    }
   }
 
   function installObserver() {
