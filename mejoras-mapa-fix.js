@@ -262,7 +262,7 @@
   setTimeout(tick, 800);
   setTimeout(tick, 2000);
   setTimeout(function () { rebuildCiudades(true); renderMapasFixed(); }, 1500);
-  setInterval(tick, 3000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('mapa:fix', tick, { cada: 3000, vista: 'rutas' }); else setInterval(tick, 3000);
 
   console.info("[RUTALOG] mapa-fix v5 — renderMapas REEMPLAZADO");
 })();
