@@ -418,6 +418,6 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(function () { schedulePaint(true); }, 1600);
-  setInterval(tick, 5000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('mapa:ciudades-ruta', tick, { cada: 5000, vista: 'rutas' }); else setInterval(tick, 5000);
   console.info("[RUTALOG] mapa-ciudades-ruta v2 — sin parpadeo + OSRM estable");
 })();
