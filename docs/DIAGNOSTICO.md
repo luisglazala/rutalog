@@ -140,3 +140,12 @@ Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
 - planificacion ensureUI: tick 1s y `cancelar` al cumplir (sustituye 500ms×60).
 - No migrados aún: timers internos de `core-app.js` (gh pull 60s / 120s) — viven en el core.
 - Cómo revertir: commits paso2.2 en archivos individuales + borrar rutalog-scheduler.js del loader.
+
+
+## 11. Paso 2.3 — hooks (parcial)
+
+- Nuevo: `rutalog-hooks.js` — `RUTALOG.hooks.on/emit/install`. Un wrapper de `go`, `renderMapas` (debounce 60ms) y `refrescarRutaUI`.
+- Migrado a hooks (sin reasignar): `mejoras-mapa-sin-rectas.js` v2.
+- `mejoras-go-perf.js` v3 noop (debounce en hooks).
+- Pendiente migrar a hooks (aún pueden reasignar): mapa-hide, despachos-delete, plan-filtro, ui-centro-viajes, mapa-ciudades-ruta, mapa-fix, rutas-panel-ui, map-refresh, map-despachados, codigo-perf.
+- Riesgo: parches posteriores que reasignan `renderMapas` pueden envolver el wrapper de hooks; el emit sigue si llaman al prev.
