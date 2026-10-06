@@ -174,85 +174,25 @@
 
   function loadExtras() {
     try {
-      if (!document.getElementById("rutalog-mejoras-v2-css")) {
-        var l = document.createElement("link");
-        l.id = "rutalog-mejoras-v2-css"; l.rel = "stylesheet"; l.href = "./mejoras-v2.css?v=11";
-        document.head.appendChild(l);
+      if (window.RUTALOG && RUTALOG.load && typeof RUTALOG.load.extras === "function") {
+        RUTALOG.load.extras().then(function () {
+          try { patchGo(); forcePageVisibility(); cleanupRoutePanel(); } catch (e) {}
+        }).catch(function (eM) { console.warn("[RUTALOG] extras", eM); });
+        return;
       }
-      var oldL = document.getElementById("rutalog-layout-css"); if (oldL) oldL.remove();
-      var lLayout = document.createElement("link");
-      lLayout.id = "rutalog-layout-css"; lLayout.rel = "stylesheet"; lLayout.href = "./mejoras-layout.css?v=3";
-      document.head.appendChild(lLayout);
-      if (!document.getElementById("rutalog-ui-polish-css")) {
-        var lUi = document.createElement("link");
-        lUi.id = "rutalog-ui-polish-css"; lUi.rel = "stylesheet"; lUi.href = "./mejoras-ui-polish.css?v=1";
-        document.head.appendChild(lUi);
-      }
-      if (!document.getElementById("rutalog-rutas-layout-css")) {
-        var lR = document.createElement("link");
-        lR.id = "rutalog-rutas-layout-css"; lR.rel = "stylesheet"; lR.href = "./mejoras-rutas-layout.css?v=4";
-        document.head.appendChild(lR);
-      }
-      if (!document.getElementById("rutalog-despachos-layout-css")) {
-        var lD = document.createElement("link");
-        lD.id = "rutalog-despachos-layout-css"; lD.rel = "stylesheet"; lD.href = "./mejoras-despachos-layout.css?v=3";
-        document.head.appendChild(lD);
-      }
-
-      onceScript("__rutalogStorage", "./mejoras-storage.js?v=1");
-      onceScript("__rutalogGhProxy", "./mejoras-gh-proxy.js?v=3");
-      onceScript("__rutalogLoginInmediatoV8", "./mejoras-login-inmediato.js?v=9");
-      onceScript("__rutalogCodigoPerf", "./codigo-perf.js?v=5");
-      onceScript("__rutalogGoPerf", "./mejoras-go-perf.js?v=2");
-      onceScript("__rutalogUiPolish", "./mejoras-ui-polish.js?v=3");
-      onceScript("__rutalogSync", "./mejoras-sync.js?v=33");
-      onceScript("__rutalogMejorasV2", "./mejoras-v2.js?v=11");
-      onceScript("__rutalogMejorasCitas", "./mejoras-citas-v15.js?v=17");
-      onceScript("__rutalogMejorasCentros", "./mejoras-centros.js?v=4");
-      onceScript("__rutalogMejorasCruzados", "./mejoras-cruzados.js?v=4");
-      onceScript("__rutalogMejorasAudit", "./mejoras-audit.js?v=6");
-      onceScript("__rutalogPlanificacion", "./mejoras-planificacion.js?v=4");
-      onceScript("__rutalogMapa", "./mejoras-mapa.js?v=3");
-      onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
-      onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=3");
-      onceScript("__rutalogCiudadesDisp", "./mejoras-ciudades-disponibles.js?v=1");
-      onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-      onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
-      onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
-      onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
-      onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
-      onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
-      onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
-      onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-      onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=4");
-      onceScript("__rutalogExcelExport", "./mejoras-excel-export.js?v=3");
-      patchGo();
-      forcePageVisibility();
-      cleanupRoutePanel();
+      console.warn("[RUTALOG] rutalog-loader.js no disponible");
     } catch (eM) { console.warn("[RUTALOG] extras", eM); }
   }
 
   var APP = "./core-app.js?v=noflicker1";
   loadScript(APP).then(function () {
     forceLeafletIcons();
-    onceScript("__rutalogMapa", "./mejoras-mapa.js?v=3");
     afterAppReady();
     return loadScript("./app-core-construirHoy.js?v=7");
   }).then(function () {
     return loadScript("./mejoras-correcciones.js?v=2");
   }).then(function () {
-    onceScript("__rutalogMapRefresh", "./mejoras-map-refresh.js?v=33");
-    onceScript("__rutalogCiudades", "./mejoras-ciudades.js?v=3");
-    onceScript("__rutalogCiudadesDisp", "./mejoras-ciudades-disponibles.js?v=1");
-    onceScript("__rutalogMapDespachados", "./mejoras-map-despachados.js?v=2");
-    onceScript("__rutalogMapaFixV6", "./mejoras-mapa-fix.js?v=6");
-    onceScript("__rutalogMapaHide", "./mejoras-mapa-hide.js?v=1");
-    onceScript("__rutalogMapaCiuRutaV2", "./mejoras-mapa-ciudades-ruta.js?v=2");
-    onceScript("__rutalogPlanFiltro", "./mejoras-plan-filtro.js?v=1");
-    onceScript("__rutalogUiCentroViajes", "./mejoras-ui-centro-viajes.js?v=1");
-    onceScript("__rutalogMapaSinRectas", "./mejoras-mapa-sin-rectas.js?v=1");
-    onceScript("__rutalogDespachosDelete", "./mejoras-despachos-delete.js?v=2");
-    onceScript("__rutalogRutasPanelUiV2", "./mejoras-rutas-panel-ui.js?v=4");
+    /* Un solo manifiesto post-core (rutalog-loader.js) — sin second pass de onceScript */
     cleanupRoutePanel();
     loadExtras();
   }).catch(function (e) {
