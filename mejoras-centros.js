@@ -151,5 +151,5 @@
   setTimeout(boot, 800);
   setTimeout(boot, 2000);
   setTimeout(boot, 4500);
-  setInterval(function () { hook(); pintar(); }, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('centros:pintar', function () { hook(); pintar(); }, { cada: 4000, vista: 'siempre' }); else setInterval(function () { hook(); pintar(); }, 4000);
 })();
