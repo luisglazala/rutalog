@@ -87,7 +87,8 @@
     "./mejoras-layout.css?v=3",
     "./mejoras-ui-polish.css?v=1",
     "./mejoras-rutas-layout.css?v=4",
-    "./mejoras-despachos-layout.css?v=3"
+    "./mejoras-despachos-layout.css?v=3",
+    "./mejoras-responsive.css?v=1"
   ];
 
   var JS_EARLY = [
@@ -125,7 +126,8 @@
     "./mejoras-ui-centro-viajes.js?v=1",
     "./mejoras-mapa-sin-rectas.js?v=2",
     "./mejoras-despachos-delete.js?v=2",
-    "./mejoras-rutas-panel-ui.js?v=4"
+    "./mejoras-rutas-panel-ui.js?v=4",
+    "./rutas-mapa.js?v=1"
   ];
 
   function seq(list, fn) {
