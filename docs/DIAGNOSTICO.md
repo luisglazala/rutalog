@@ -164,3 +164,10 @@ Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
 - Causa de lentitud: cada clic llamaba `renderMapas()` (miles de pines) vía core `go` + hooks + nav-fix.
 - Ahora: UI del panel al instante; `renderMapas` omitido ~350ms en cambio de panel (`__rutalogNavSilent`); solo `invalidateSize`.
 - Producción `rutalog.pages.dev` (main) sin estos cambios hasta merge.
+
+
+## 14. Paso 2.3 ampliado + 2.4/3–5
+
+- hooks v5 + migraciones: ui-centro, ciudades-ruta, mapa-fix, rutas-panel.
+- rutas-mapa v2 coordinador.
+- Fases 3–5: ver NOTAS.md.
