@@ -90,7 +90,7 @@
   ];
 
   var JS_MID = [
-    "./codigo-perf.js?v=5",
+    "./codigo-perf.js?v=6",
     "./mejoras-go-perf.js?v=3",
     "./mejoras-ui-polish.js?v=3",
     "./mejoras-sync.js?v=33",
@@ -104,7 +104,7 @@
   ];
 
   var JS_MAP = [
-    "./rutalog-hooks.js?v=2",
+    "./rutalog-hooks.js?v=3",
     "./mejoras-mapa.js?v=3",
     "./mejoras-map-refresh.js?v=33",
     "./mejoras-ciudades.js?v=3",
@@ -117,7 +117,7 @@
     "./mejoras-ui-centro-viajes.js?v=1",
     "./mejoras-mapa-sin-rectas.js?v=2",
     "./mejoras-despachos-delete.js?v=2",
-    "./mejoras-rutas-panel-ui.js?v=4",
+    "./mejoras-rutas-panel-ui.js?v=5",
     "./rutas-mapa.js?v=1"
   ];
 
