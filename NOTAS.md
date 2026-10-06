@@ -47,3 +47,34 @@ mejoras-responsive + fix-mapa-rutas.
 ## Fase 5
 _headers CSP ampliado; worker.js allowlist repos. Cloudflare Access: configurar en dashboard (no en código). No tocar secretos.
 Varios entrypoints worker (_worker.js, functions/) — unificar cuando se confirme cuál usa el proyecto Pages.
+
+
+## Fase 5 — Seguridad (2026-10-06)
+
+### Worker único
+- Canónico: `worker.js` (wrangler.toml `main`).
+- `_worker.js` solo reexporta `worker.js` (no duplicar lógica).
+- `functions/api/[[path]].js` + `functions/api.js`: misma allowlist para Pages Functions.
+
+### Allowlist
+- Solo `luisglazala/rutalog-datos`
+- Solo paths `/repos/.../contents/...` (y meta del repo)
+- Rechazo 403 a cualquier otro repo/ruta
+
+### CSP / headers
+- `_headers`: nosniff, SAMEORIGIN, CSP con OSM/OSRM/cdnjs/pages.dev
+
+### XSS citas
+- `esc()` en `mejoras-citas-tabla.js` escapa `& < > " '`
+
+### CI
+- `.github/workflows/js-check.yml` → `node --check` en todos los `.js`
+
+### Cloudflare Access (manual)
+Rutas a considerar proteger en el dashboard:
+- `/*` (app completa) o al menos la UI de operadores
+- No hace falta poner el PAT en Access: el secret del proxy ya es server-side
+- Evitar exponer preview públicas con datos reales si no hay Access
+
+### No hecho a propósito
+- No se configuró Access desde código (lo hace el dueño en Cloudflare).
