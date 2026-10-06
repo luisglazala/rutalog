@@ -175,11 +175,19 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  setInterval(function () {
-    injectCSS();
-    hideCitasAplicadas();
-    patchRenderCitas();
-  }, 5000);
+  if (window.RUTALOG && RUTALOG.tick) {
+    RUTALOG.tick.registrar('citas:tabla', function () {
+      injectCSS();
+      hideCitasAplicadas();
+      patchRenderCitas();
+    }, { cada: 5000, vista: 'citas' });
+  } else {
+    setInterval(function () {
+      injectCSS();
+      hideCitasAplicadas();
+      patchRenderCitas();
+    }, 5000);
+  }
 
   document.addEventListener("click", function (e) {
     var t = e.target;
