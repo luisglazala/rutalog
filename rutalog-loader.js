@@ -1,7 +1,7 @@
-/* RUTALOG loader único — clave = ruta sin ?v= */
+/* RUTALOG loader v2 — CSS/JS en paralelo (arranque más rápido) */
 (function () {
   "use strict";
-  if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v1) return;
+  if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v2) return;
 
   var loaded = new Set();
   var pending = new Map();
@@ -59,7 +59,7 @@
     var p = new Promise(function (resolve) {
       var s = document.createElement("script");
       s.src = src;
-      s.async = false;
+      s.async = true;
       s.onload = function () { loaded.add(k); pending.delete(k); resolve(true); };
       s.onerror = function () {
         pending.delete(k);
@@ -70,6 +70,10 @@
     });
     pending.set(k, p);
     return p;
+  }
+
+  function parallel(list, fn) {
+    return Promise.all(list.map(function (u) { return fn(u); }));
   }
 
   var CSS_POST = [
@@ -103,8 +107,9 @@
     "./mejoras-excel-export.js?v=3"
   ];
 
+  var JS_HOOKS = ["./rutalog-hooks.js?v=5"];
+
   var JS_MAP = [
-    "./rutalog-hooks.js?v=5",
     "./mejoras-mapa.js?v=3",
     "./mejoras-map-refresh.js?v=33",
     "./mejoras-ciudades.js?v=3",
@@ -119,27 +124,19 @@
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=6",
     "./rutas-mapa.js?v=2",
-    "./mejoras-nav-fix.js?v=3"
+    "./mejoras-nav-fix.js?v=4"
   ];
-
-  function seq(list, fn) {
-    var i = 0;
-    function next() {
-      if (i >= list.length) return Promise.resolve();
-      var u = list[i++];
-      return fn(u).then(next);
-    }
-    return next();
-  }
 
   function loadExtrasOnce() {
     if (window.__rutalogExtrasLoaded) return Promise.resolve();
     window.__rutalogExtrasLoaded = true;
     markExisting();
-    return seq(CSS_POST, loadCss)
-      .then(function () { return seq(JS_EARLY, loadJs); })
-      .then(function () { return seq(JS_MID, loadJs); })
-      .then(function () { return seq(JS_MAP, loadJs); })
+    /* CSS en paralelo → early en paralelo → mid en paralelo → hooks → map en paralelo */
+    return parallel(CSS_POST, loadCss)
+      .then(function () { return parallel(JS_EARLY, loadJs); })
+      .then(function () { return parallel(JS_MID, loadJs); })
+      .then(function () { return parallel(JS_HOOKS, loadJs); })
+      .then(function () { return parallel(JS_MAP, loadJs); })
       .then(function () {
         try {
           if (window.RUTALOG && RUTALOG.hooks && RUTALOG.hooks.install) RUTALOG.hooks.install();
@@ -150,6 +147,7 @@
   window.RUTALOG = window.RUTALOG || {};
   window.RUTALOG.load = {
     __v1: true,
+    __v2: true,
     keyOf: keyOf,
     has: function (url) { return loaded.has(keyOf(url)); },
     css: loadCss,

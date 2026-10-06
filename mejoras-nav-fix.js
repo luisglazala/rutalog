@@ -1,8 +1,8 @@
-/* RUTALOG nav-fix v3 — cambio de panel instantáneo (sin renderMapas en el clic) */
+/* RUTALOG nav-fix v4 — panel al instante; go en segundo plano; silent largo */
 (function () {
   "use strict";
-  if (window.__rutalogNavFixV3) return;
-  window.__rutalogNavFixV3 = true;
+  if (window.__rutalogNavFixV4) return;
+  window.__rutalogNavFixV4 = true;
 
   var TITLES = {
     panel: "Inicio",
@@ -16,7 +16,6 @@
     reserva: "% Reserva física por OV",
     config: "Configuración"
   };
-  var switching = false;
   var lastPage = "";
 
   function showPage(page) {
@@ -62,7 +61,6 @@
     return true;
   }
 
-  /** Solo invalidateSize — NO re-render completo del mapa (caro con miles de pines) */
   function lightMapTouch(page) {
     try {
       if (page === "rutas" && window.estado && estado.mapRutas && estado.mapRutas.invalidateSize) {
@@ -76,37 +74,36 @@
   }
 
   function safeGo(page) {
-    if (!page || switching) return;
+    if (!page) return;
     if (page === lastPage) {
       showPage(page);
       return;
     }
-    switching = true;
     lastPage = page;
 
-    /* 1) Pintar UI al instante */
+    /* UI inmediata — no esperar a go ni a renderMapas */
     showPage(page);
+    requestAnimationFrame(function () { lightMapTouch(page); });
 
-    /* 2) go nativo en microtask — sin segundo showPage ni renderMapas aquí */
-    queueMicrotask(function () {
+    /* go nativo diferido + silent largo (core agenda renderMapas en setTimeout) */
+    setTimeout(function () {
       try {
         if (typeof window.go === "function") {
           window.__rutalogNavSilent = true;
           try {
             window.go(page);
           } catch (eGo) {}
-          /* core go agenda renderMapas en setTimeout — mantener silent un poco */
-          setTimeout(function () { window.__rutalogNavSilent = false; }, 350);
+          setTimeout(function () {
+            window.__rutalogNavSilent = false;
+          }, 1200);
         }
       } catch (e) {
         console.warn("[nav-fix] go", e);
+        window.__rutalogNavSilent = false;
       }
-      /* 3) Solo ajustar tamaño del mapa visible (barato) */
-      requestAnimationFrame(function () {
-        lightMapTouch(page);
-        switching = false;
-      });
-    });
+      showPage(page);
+      lightMapTouch(page);
+    }, 0);
   }
 
   window.rutalogGo = safeGo;
@@ -128,8 +125,8 @@
 
   function wireButtons() {
     document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
-      if (b.__navFixV3) return;
-      b.__navFixV3 = true;
+      if (b.__navFixV4) return;
+      b.__navFixV4 = true;
       b.addEventListener(
         "click",
         function (ev) {
@@ -142,8 +139,8 @@
     });
   }
   wireButtons();
-  setTimeout(wireButtons, 800);
-  setTimeout(wireButtons, 2500);
+  setTimeout(wireButtons, 500);
+  setTimeout(wireButtons, 2000);
 
-  console.info("[RUTALOG] nav-fix v3 — paneles rápidos (sin renderMapas al clic)");
+  console.info("[RUTALOG] nav-fix v4 — paneles instantáneos");
 })();
