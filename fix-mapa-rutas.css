@@ -1,49 +1,83 @@
-/* FIX mapa de rutas vacío — altura y grid forzados */
+/* FIX mapa de rutas — layout v5 alineado con panel alto */
 #page-rutas.active {
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  gap: 8px !important;
-}
-#page-rutas.active .map-layout {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px) !important;
-  grid-template-rows: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
   flex: 1 1 auto !important;
-  min-height: min(70dvh, 900px) !important;
-  height: auto !important;
-  gap: 12px !important;
+  min-height: 0 !important;
+  gap: 8px 12px !important;
   align-items: stretch !important;
 }
+
+#page-rutas.active > .filters {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+}
+
+#page-rutas.active > .ciudades-panel {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#page-rutas.active > .map-layout {
+  display: contents !important;
+}
+
 #page-rutas.active .map-box {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
   display: flex !important;
   flex-direction: column !important;
-  min-height: 420px !important;
-  height: 100% !important;
+  min-height: 380px !important;
   visibility: visible !important;
   opacity: 1 !important;
 }
+
 #page-rutas.active #mapRutas {
   flex: 1 1 auto !important;
-  min-height: 400px !important;
+  min-height: 360px !important;
   height: 100% !important;
   width: 100% !important;
   visibility: visible !important;
   background: #1a1a1a !important;
 }
+
 #page-rutas.active .side-panel {
+  grid-column: 2 !important;
+  grid-row: 2 / 4 !important;
   display: flex !important;
   flex-direction: column !important;
   visibility: visible !important;
   opacity: 1 !important;
-  min-height: 280px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
   overflow: auto !important;
+  align-self: stretch !important;
 }
+
 @media (max-width: 900px) {
-  #page-rutas.active .map-layout {
+  #page-rutas.active {
     grid-template-columns: 1fr !important;
-    grid-template-rows: minmax(280px, 45dvh) minmax(200px, 1fr) !important;
-    min-height: 70dvh !important;
+    grid-template-rows: auto auto minmax(280px, 45dvh) auto !important;
+  }
+  #page-rutas.active > .filters {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+  #page-rutas.active > .ciudades-panel {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+  #page-rutas.active .map-box {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+  #page-rutas.active .side-panel {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
   }
 }
