@@ -28,3 +28,22 @@
 - Worker: ya limitaba repos `rutalog` + `rutalog-datos`. No se eliminaron las 3 variantes de worker en este paso (requiere confirmar cuál usa Pages).
 - Cloudflare Access: proteger `/` (app) y no exponer tokens; el proxy `/api` debe seguir autenticado solo por secret de servidor. Configurar Access tú en el dashboard.
 - No se tocó rutalog-datos ni secretos.
+
+
+## Paso 2.3 (cierre parcial 2026-10-06)
+Migrados a RUTALOG.hooks (sin reasignar window.* cuando hooks está):
+- ui-centro-viajes, mapa-ciudades-ruta, mapa-fix (setCoreRenderMapas), rutas-panel-ui, sin-rectas, go-perf noop, codigo-perf parcial.
+hooks v5: setCoreRenderMapas / setCoreGo / setCoreRefrescarRutaUI.
+
+## Paso 2.4 (parcial)
+rutas-mapa v2 coordinador RO + hooks. No se eliminaron aún todos los archivos de parche (siguen aportando lógica: fillCluster, filtros ciudades, etc.).
+
+## Fase 3
+planificacion sin UI camión/restantes (previo).
+
+## Fase 4
+mejoras-responsive + fix-mapa-rutas.
+
+## Fase 5
+_headers CSP ampliado; worker.js allowlist repos. Cloudflare Access: configurar en dashboard (no en código). No tocar secretos.
+Varios entrypoints worker (_worker.js, functions/) — unificar cuando se confirme cuál usa el proyecto Pages.
