@@ -99,7 +99,7 @@
 
   var JS_MID = [
     "./codigo-perf.js?v=5",
-    "./mejoras-go-perf.js?v=2",
+    "./mejoras-go-perf.js?v=3",
     "./mejoras-ui-polish.js?v=3",
     "./mejoras-sync.js?v=33",
     "./mejoras-v2.js?v=11",
@@ -112,6 +112,7 @@
   ];
 
   var JS_MAP = [
+    "./rutalog-hooks.js?v=1",
     "./mejoras-mapa.js?v=3",
     "./mejoras-map-refresh.js?v=33",
     "./mejoras-ciudades.js?v=3",
@@ -122,7 +123,7 @@
     "./mejoras-mapa-ciudades-ruta.js?v=2",
     "./mejoras-plan-filtro.js?v=1",
     "./mejoras-ui-centro-viajes.js?v=1",
-    "./mejoras-mapa-sin-rectas.js?v=1",
+    "./mejoras-mapa-sin-rectas.js?v=2",
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=4"
   ];
@@ -144,7 +145,12 @@
     return seq(CSS_POST, loadCss)
       .then(function () { return seq(JS_EARLY, loadJs); })
       .then(function () { return seq(JS_MID, loadJs); })
-      .then(function () { return seq(JS_MAP, loadJs); });
+      .then(function () { return seq(JS_MAP, loadJs); })
+      .then(function () {
+        try {
+          if (window.RUTALOG && RUTALOG.hooks && RUTALOG.hooks.install) RUTALOG.hooks.install();
+        } catch (e) {}
+      });
   }
 
   window.RUTALOG = window.RUTALOG || {};
