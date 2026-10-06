@@ -80,10 +80,10 @@
     "./mejoras-v2.css?v=11",
     "./mejoras-layout.css?v=3",
     "./mejoras-ui-polish.css?v=1",
-    "./mejoras-rutas-layout.css?v=4",
+    "./mejoras-rutas-layout.css?v=5",
     "./mejoras-despachos-layout.css?v=3",
     "./mejoras-responsive.css?v=2",
-    "./fix-mapa-rutas.css?v=1"
+    "./fix-mapa-rutas.css?v=2"
   ];
 
   var JS_EARLY = [
