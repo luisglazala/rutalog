@@ -86,7 +86,7 @@
     "./rutalog-scheduler.js?v=1",
     "./mejoras-storage.js?v=1",
     "./mejoras-gh-proxy.js?v=4",
-    "./mejoras-login-inmediato.js?v=9"
+    "./mejoras-login-inmediato.js?v=10"
   ];
 
   var JS_MID = [
@@ -119,7 +119,7 @@
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=5",
     "./rutas-mapa.js?v=1",
-    "./mejoras-nav-fix.js?v=1"
+    "./mejoras-nav-fix.js?v=2"
   ];
 
   function seq(list, fn) {
