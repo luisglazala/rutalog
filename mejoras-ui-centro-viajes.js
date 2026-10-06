@@ -1,11 +1,25 @@
-/* RUTALOG ui-centro-viajes v1
+/* RUTALOG ui-centro-viajes v2
  * - Cancelar cierra el selector de centro
- * - Viajes guardados: solo conteo (sin lista larga)
+ * - Viajes guardados: conteo + Ver → Despachos (delegación)
+ * - Abrir planificador → Mapa de rutas (re-wire fiable)
  */
 (function () {
   "use strict";
-  if (window.__rutalogUiCentroViajesV1) return;
+  if (window.__rutalogUiCentroViajesV2) return;
+  window.__rutalogUiCentroViajesV2 = true;
   window.__rutalogUiCentroViajesV1 = true;
+
+  function goPage(page) {
+    try {
+      if (typeof window.rutalogGo === "function") {
+        window.rutalogGo(page);
+        return;
+      }
+    } catch (e) {}
+    try {
+      if (typeof window.go === "function") window.go(page);
+    } catch (e2) {}
+  }
 
   function cerrarCentro() {
     try {
@@ -60,18 +74,41 @@
           : n + " viajes en el día · detalle en Despachos") +
       "</div></div></div>" +
       (n > 0
-        ? '<button type="button" class="btn btn-secondary btn-sm" id="btnIrDespachosViajes" style="white-space:nowrap;">Ver</button>'
+        ? '<button type="button" class="btn btn-secondary btn-sm" id="btnIrDespachosViajes" data-go="despachos" style="white-space:nowrap;">Ver</button>'
         : "") +
       "</div>";
-    var btn = document.getElementById("btnIrDespachosViajes");
-    if (btn && !btn._hook) {
-      btn._hook = true;
-      btn.onclick = function () {
-        try {
-          if (typeof go === "function") go("despachos");
-        } catch (e) {}
-      };
-    }
+  }
+
+  function wireListaViajes() {
+    var cont = document.getElementById("listaViajesGuardados");
+    if (!cont || cont._viajesDeleg) return;
+    cont._viajesDeleg = true;
+    cont.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var btn = t.closest("#btnIrDespachosViajes, [data-go=\"despachos\"]");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      goPage("despachos");
+    });
+  }
+
+  function wireIrRutas() {
+    var btn = document.getElementById("btnIrRutas");
+    if (!btn || btn._irRutasV2) return;
+    btn._irRutasV2 = true;
+    btn.addEventListener(
+      "click",
+      function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        goPage("rutas");
+      },
+      true
+    );
   }
 
   function installRender() {
@@ -111,11 +148,17 @@
     hookCancelar();
     installRender();
     installRefrescar();
+    wireListaViajes();
+    wireIrRutas();
     pintarConteoViajes();
   }
   tick();
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
-  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ui:centro-viajes', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
-  console.info("[RUTALOG] ui-centro-viajes v1 — Cancelar cierra · conteo viajes");
+  if (window.RUTALOG && RUTALOG.tick) {
+    RUTALOG.tick.registrar("ui:centro-viajes", tick, { cada: 5000, vista: "rutas" });
+  } else {
+    setInterval(tick, 5000);
+  }
+  console.info("[RUTALOG] ui-centro-viajes v2 — Ver→Despachos · Planificador→Rutas");
 })();
