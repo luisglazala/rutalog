@@ -339,7 +339,7 @@
     ready = true;
     tick();
     /* Centro solo al cargar Excel Dynamics (construirHoy), no al recargar la página */
-    setInterval(tick, 2000);
+    if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ui:v2', tick, { cada: 2000, vista: 'siempre' }); else setInterval(tick, 2000);
   }
 
   if (document.readyState === "loading") {
