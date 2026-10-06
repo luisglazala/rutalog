@@ -104,7 +104,7 @@
   ];
 
   var JS_MAP = [
-    "./rutalog-hooks.js?v=3",
+    "./rutalog-hooks.js?v=4",
     "./mejoras-mapa.js?v=3",
     "./mejoras-map-refresh.js?v=33",
     "./mejoras-ciudades.js?v=3",
@@ -119,7 +119,7 @@
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=5",
     "./rutas-mapa.js?v=1",
-    "./mejoras-nav-fix.js?v=2"
+    "./mejoras-nav-fix.js?v=3"
   ];
 
   function seq(list, fn) {
