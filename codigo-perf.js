@@ -232,20 +232,36 @@
   function patchGo() {
     if (typeof window.go !== "function") return;
     if (window.go._codigoPerfV5) return;
-    var _go = window.go;
-    window.go = function (page) {
-      /* Al ir a código: mostrar página YA, tabla después */
-      if (page === "codigo") showPlaceholder();
-      var r = _go.apply(this, arguments);
+    function onGoCodigo(page) {
       if (page === "codigo") {
+        showPlaceholder();
         installRender();
         requestAnimationFrame(function () {
           try { window.renderCodigoTable(); } catch (e) {}
         });
       }
-      return r;
-    };
-    window.go._codigoPerfV5 = true;
+    }
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      RUTALOG.hooks.on("antes:go", function (page) {
+        if (page === "codigo") showPlaceholder();
+      });
+      RUTALOG.hooks.on("despues:go", function (page) { onGoCodigo(page); });
+      window.go._codigoPerfV5 = true;
+    } else {
+      var _go = window.go;
+      window.go = function (page) {
+        if (page === "codigo") showPlaceholder();
+        var r = _go.apply(this, arguments);
+        if (page === "codigo") {
+          installRender();
+          requestAnimationFrame(function () {
+            try { window.renderCodigoTable(); } catch (e) {}
+          });
+        }
+        return r;
+      };
+      window.go._codigoPerfV5 = true;
+    }
   }
 
   function boot() {
