@@ -1,7 +1,6 @@
-# Estado estable (sin depender del tag)
+# Estado estable
 
-- Commit de referencia pre-correcciones en main: `8ae409a598ff31a4a56033d9e26c5ab59ec5c0ff`
-- Rama de trabajo: `mejoras`
-- Producción (GitHub Pages): sigue en `main` hasta merge del PR
-
-Si algo falla tras mergear, usa tu copia local del HTML/JS o ese SHA de main.
+- Producción: rama `main` → https://rutalog.pages.dev/
+- Trabajo en curso: rama `arreglo-ui` (preview)
+- Worker único de referencia: `worker.js`
+- Proxy de datos: solo `luisglazala/rutalog-datos` bajo `/contents/`
