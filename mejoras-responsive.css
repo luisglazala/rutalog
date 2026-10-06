@@ -1,4 +1,4 @@
-/* RUTALOG responsive fase4 */
+/* RUTALOG responsive fase4b — no pisar columnas del mapa */
 html, body {
   min-height: 100%;
   min-height: 100dvh;
@@ -12,19 +12,13 @@ html, body {
   min-width: 0;
   overflow-x: hidden;
 }
-#page-rutas.active .map-layout {
-  display: grid;
-  gap: 10px;
-  min-height: 0;
-  flex: 1 1 auto;
-}
 @media (max-width: 900px) {
   #page-rutas.active .map-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 45dvh) minmax(0, 1fr);
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(280px, 45dvh) minmax(200px, 1fr) !important;
   }
   #page-rutas .map-box {
-    min-height: 220px;
+    min-height: 280px !important;
   }
   .sidebar {
     max-width: min(86vw, 280px);
@@ -37,6 +31,6 @@ html, body {
 }
 @media (min-width: 1400px) {
   #page-rutas.active .map-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
   }
 }
