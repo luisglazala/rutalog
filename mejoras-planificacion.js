@@ -188,25 +188,11 @@
     return accPeso;
   }
   function mostrarRestantes(restantes, meta) {
-    var box = document.getElementById("rutalogRestantesPlan");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "rutalogRestantesPlan";
-      box.style.cssText = "margin:10px 0;padding:10px 12px;border:1px solid var(--border,#1f1f1f);border-radius:10px;background:rgba(255,255,255,.03);font-size:12.5px;max-height:180px;overflow:auto;";
-      var anchor = document.getElementById("listaViajeActual");
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling);
-      else { var side = document.querySelector(".side-panel"); if (side) side.appendChild(box); }
-    }
-    if (!restantes.length) { box.innerHTML = '<div style="color:#a3a3a3">No quedan clientes disponibles.</div>'; return; }
-    var kg = kgMax();
-    var plant = plantillaActiva() === "P" ? "Camión P (" + kg + " kg)" : "Camión G (" + kg + " kg)";
-    var rows = restantes.slice(0, 40).map(function (c) {
-      var d = pesoYSkusCliente(c);
-      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span>' +
-        (c.nombre || c.idCliente) + (c.ciudad ? " · " + c.ciudad : "") + '</span><span class="mono" style="opacity:.85">' + (d.peso || 0).toFixed(1) + " kg</span></div>";
-    }).join("");
-    box.innerHTML = '<div style="font-weight:600;margin-bottom:6px">Restantes: ' + restantes.length + " · " + plant + (meta ? " · " + meta : "") + "</div>" + rows +
-      (restantes.length > 40 ? '<div style="opacity:.7;margin-top:4px">… y ' + (restantes.length - 40) + " más</div>" : "");
+    /* Fase 3: sin panel visual de restantes (lista en mapa) */
+    try {
+      var box = document.getElementById("rutalogRestantesPlan");
+      if (box) box.remove();
+    } catch (e) {}
   }
   function clearOsrmLayer() {
     try { if (osrmLayer && estado && estado.mapRutas) estado.mapRutas.removeLayer(osrmLayer); } catch (e) {}
@@ -256,24 +242,25 @@
       if (!document.getElementById("rutalog-plan-css")) {
         var style = document.createElement("style");
         style.id = "rutalog-plan-css";
-        style.textContent = "#btnGenerarViaje{width:100%;margin:6px 0 8px;}#rutalogPlanCamion{display:flex;gap:6px;margin:8px 0 4px;align-items:center;font-size:12px;}#rutalogPlanCamion select{flex:1;padding:6px 8px;border-radius:8px;border:1px solid #1f1f1f;background:#0f0f0f;color:#fafafa;}";
+        style.textContent = "#btnGenerarViaje{width:100%;margin:6px 0 8px;}#rutalogPlanCamion{display:none!important;gap:6px;margin:8px 0 4px;align-items:center;font-size:12px;}#rutalogPlanCamion select{flex:1;padding:6px 8px;border-radius:8px;border:1px solid #1f1f1f;background:#0f0f0f;color:#fafafa;}";
         (document.head || document.documentElement).appendChild(style);
       }
       var opt = document.getElementById("btnOptimizarRuta");
       var guardar = document.getElementById("btnGuardarViaje");
       if (!opt && !guardar) return false;
-      var row = document.createElement("div");
-      row.id = "rutalogPlanCamion";
-      row.innerHTML = '<label for="selPlanCamion">Camión</label><select id="selPlanCamion"><option value="G">Grande · 12000 kg</option><option value="P">Pequeño · 3800 kg</option></select>';
-      var btn = document.createElement("button");
-      btn.type = "button"; btn.id = "btnGenerarViaje"; btn.className = "btn btn-primary"; btn.textContent = "Generar viaje";
-      btn.onclick = function (ev) { if (ev) ev.preventDefault(); generarViaje(); };
-      if (opt) { opt.insertAdjacentElement("afterend", row); row.insertAdjacentElement("afterend", btn); }
-      else { guardar.insertAdjacentElement("beforebegin", row); row.insertAdjacentElement("afterend", btn); }
-      var sel = document.getElementById("selPlanCamion");
-      if (sel) {
-        sel.value = plantillaActiva() === "P" ? "P" : "G";
-        sel.onchange = function () { try { if (typeof estado !== "undefined" && estado) estado.plantillaCamion = sel.value; } catch (e) {} };
+      /* Fase 3: sin selector de camión en UI — plantilla G por defecto en estado */
+      try {
+        if (typeof estado !== "undefined" && estado && !estado.plantillaCamion) estado.plantillaCamion = "G";
+      } catch (e) {}
+      var oldCam = document.getElementById("rutalogPlanCamion");
+      if (oldCam) oldCam.remove();
+      var btn = document.getElementById("btnGenerarViaje");
+      if (!btn) {
+        btn = document.createElement("button");
+        btn.type = "button"; btn.id = "btnGenerarViaje"; btn.className = "btn btn-primary"; btn.textContent = "Generar viaje";
+        btn.onclick = function (ev) { if (ev) ev.preventDefault(); generarViaje(); };
+        if (opt) opt.insertAdjacentElement("afterend", btn);
+        else if (guardar) guardar.insertAdjacentElement("beforebegin", btn);
       }
       hookReiniciar();
       console.info("[RUTALOG] Generar viaje v4 listo");
