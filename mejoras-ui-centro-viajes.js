@@ -108,6 +108,6 @@
   tick();
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ui:centro-viajes', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] ui-centro-viajes v1 — Cancelar cierra · conteo viajes");
 })();
