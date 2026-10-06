@@ -1,22 +1,31 @@
-/* RUTALOG mejoras-gh-proxy v3 — Cloudflare Pages (sin token en el navegador) */
+/* RUTALOG mejoras-gh-proxy v4 — Cloudflare Pages (sin token en el navegador) */
 (function () {
   "use strict";
-  if (window.__rutalogGhProxyV3) return;
-  window.__rutalogGhProxyV3 = true;
+  if (window.__rutalogGhProxyV4) return;
+  window.__rutalogGhProxyV4 = true;
 
   var CF_API_DEFAULT = "https://rutalog.pages.dev/api";
 
   function apiBase() {
-    if (window.RUTALOG_API_BASE) return String(window.RUTALOG_API_BASE).replace(/\/$/, "");
     try {
-      if (location && /rutalog\.pages\.dev$/i.test(location.hostname)) {
+      /* Misma origin en producción y preview (arreglo-ui.rutalog.pages.dev) */
+      if (location && /\.pages\.dev$/i.test(location.hostname)) {
         return "/api";
       }
     } catch (e) {}
+    if (window.RUTALOG_API_BASE) return String(window.RUTALOG_API_BASE).replace(/\/$/, "");
     return CF_API_DEFAULT;
   }
 
-  window.RUTALOG_API_BASE = window.RUTALOG_API_BASE || CF_API_DEFAULT;
+  try {
+    if (location && /\.pages\.dev$/i.test(location.hostname)) {
+      window.RUTALOG_API_BASE = "/api";
+    } else {
+      window.RUTALOG_API_BASE = window.RUTALOG_API_BASE || CF_API_DEFAULT;
+    }
+  } catch (e) {
+    window.RUTALOG_API_BASE = window.RUTALOG_API_BASE || CF_API_DEFAULT;
+  }
 
   function toProxyUrl(url) {
     var s = String(url || "");
@@ -100,5 +109,5 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('gh:hide-token', hideTokenUI, { cada: 4000, vista: 'siempre' }); else setInterval(hideTokenUI, 4000);
+  setInterval(hideTokenUI, 4000);
 })();
