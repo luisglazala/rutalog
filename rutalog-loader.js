@@ -119,7 +119,7 @@
     "./mejoras-mapa-hide.js?v=1",
     "./mejoras-mapa-ciudades-ruta.js?v=3",
     "./mejoras-plan-filtro.js?v=1",
-    "./mejoras-ui-centro-viajes.js?v=2",
+    "./mejoras-ui-centro-viajes.js?v=3",
     "./mejoras-mapa-sin-rectas.js?v=2",
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=6",
