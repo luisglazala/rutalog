@@ -4,7 +4,7 @@
   var css = document.createElement("style");
   css.id = "rutalog-critical-css";
   css.textContent = [
-    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html.rutalog-booting .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar,html.rutalog-session-pending .app,html.rutalog-need-login .sidebar,html.rutalog-need-login .main,html.rutalog-need-login .topbar,html.rutalog-need-login .app{visibility:visible!important}",
+    "html.rutalog-booting .sidebar,html.rutalog-booting .main,html.rutalog-booting .topbar,html.rutalog-booting .app,html.rutalog-session-pending .sidebar,html.rutalog-session-pending .main,html.rutalog-session-pending .topbar,html.rutalog-session-pending .app,html.rutalog-need-login .sidebar,html.rutalog-need-login .main,html.rutalog-need-login .topbar,html.rutalog-need-login .app > :not(#loginOverlay){visibility:hidden!important;opacity:0!important;pointer-events:none!important}",
     "html.rutalog-need-login #loginOverlay{display:flex!important;visibility:visible!important;pointer-events:auto!important}",
     "#btnExportSesion,#btnImportSesion,#fileImportSesion{display:none!important}",
     ".page{display:none!important}",
