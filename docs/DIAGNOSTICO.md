@@ -129,3 +129,14 @@ Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
 - Orden de dependencias: mismo que antes (core-app → construirHoy → correcciones → extras). No se reordenaron módulos de mapa.
 - Cómo revertir: restaurar app.js/index.html previos al commit 2.1 y borrar `rutalog-loader.js`.
 - Medición PERF: pendiente en preview tras deploy (`?debug=perf` + `RUTALOG_PERF.reporte()`).
+
+
+## 10. Paso 2.2 — planificador único
+
+- Nuevo: `rutalog-scheduler.js` — `RUTALOG.tick.registrar(nombre, fn, { cada, vista })`, un `setInterval` interno de 1000 ms, pausa si `document.hidden`, errores por tarea.
+- Migrados a tick (con fallback setInterval si no hay scheduler): mapa*, ciudades*, plan-filtro, ui-centro-viajes, despachos-delete, centros, cruzados, citas-*, excel-export, gh-proxy, v2, login, storage, sync, planificacion.
+- Vistas: tareas de mapa/ciudades/filtro con `vista: 'rutas'`; citas con `vista: 'citas'`; sync/storage/login `siempre`.
+- sync pull: cada 15s en scheduler; si no dirty salta uno (~30s). badge 20s, wire 15s.
+- planificacion ensureUI: tick 1s y `cancelar` al cumplir (sustituye 500ms×60).
+- No migrados aún: timers internos de `core-app.js` (gh pull 60s / 120s) — viven en el core.
+- Cómo revertir: commits paso2.2 en archivos individuales + borrar rutalog-scheduler.js del loader.
