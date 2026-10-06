@@ -80,6 +80,8 @@
     if (window.renderMapas.__rutalogHooksV4) return true;
     _rm = window.renderMapas;
     window.renderMapas = function () {
+      /* Durante cambio de panel silencioso: no repintar miles de pines */
+      if (window.__rutalogNavSilent) return;
       emit("antes:renderMapas", []);
       var r;
       try { r = _rm.apply(this, arguments); } catch (e) {
