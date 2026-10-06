@@ -70,9 +70,14 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
       if(hasSession){d.classList.add('rutalog-session-pending');d.classList.remove('rutalog-need-login');}
       else{d.classList.add('rutalog-need-login');d.classList.remove('rutalog-session-pending');}
     }catch(e){}
+    var sLoader=document.createElement('script');
+    sLoader.src='./rutalog-loader.js?v=1';
+    sLoader.onload=function(){
     var s=document.createElement('script');
     s.src='./app.js?v=flash11?v=session16';
     document.body.appendChild(s);
+    };
+    document.body.appendChild(sLoader);
   }).catch(function(err){
     document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a></p>';
   });
