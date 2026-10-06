@@ -100,5 +100,5 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  setInterval(hideTokenUI, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('gh:hide-token', hideTokenUI, { cada: 4000, vista: 'siempre' }); else setInterval(hideTokenUI, 4000);
 })();
