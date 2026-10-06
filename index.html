@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="stylesheet" href="./boot.css?v=6">
+<link rel="stylesheet" href="./boot.css?v=7">
 <script src="./boot.js?v=4"></script>
 <script src="./debug-perf.js?v=1"></script>
 <style id="rutalog-boot-css">
@@ -12,6 +12,9 @@ html.rutalog-need-login:not(.rutalog-session-pending) .sidebar,html.rutalog-need
 html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:99999!important;background:#0a0a0a!important;align-items:center!important;justify-content:center!important;padding:24px!important}
 .leaflet-div-icon,.leaflet-marker-icon.leaflet-div-icon{background:transparent!important;border:none!important}
 .app{display:flex!important;flex-direction:row!important;height:100vh!important;overflow:hidden!important}
+/* Limpiar día / Viajes solo dentro del menú Día ▾ */
+.topbar > #btnLimpiarDia,.topbar > #btnBorrarViajesTop{display:none!important;visibility:hidden!important}
+.ui-day-dropdown #btnLimpiarDia,.ui-day-dropdown #btnBorrarViajesTop{display:inline-flex!important;visibility:visible!important}
 </style>
 <script>(function(){try{var d=document.documentElement;d.classList.add("rutalog-booting");var ok=false;try{var r=localStorage.getItem("rutalog_session");if(r){var u=JSON.parse(r);if(u&&u.id&&u.username)ok=true}}catch(e){}if(ok){d.classList.add("rutalog-session-pending");d.classList.remove("rutalog-need-login")}else{d.classList.add("rutalog-need-login");d.classList.remove("rutalog-session-pending")}}catch(e){document.documentElement.classList.add("rutalog-booting","rutalog-need-login")}})();</script>
 <meta charset="UTF-8">
