@@ -1,3 +1,4 @@
+/* FASE5: proxy allowlist — solo rutalog + rutalog-datos */
 /**
  * RUTALOG Cloudflare Worker (capa5)
  * - /api/* → GitHub proxy (solo repos permitidos)
