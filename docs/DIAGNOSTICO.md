@@ -149,3 +149,11 @@ Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
 - `mejoras-go-perf.js` v3 noop (debounce en hooks).
 - Pendiente migrar a hooks (aún pueden reasignar): mapa-hide, despachos-delete, plan-filtro, ui-centro-viajes, mapa-ciudades-ruta, mapa-fix, rutas-panel-ui, map-refresh, map-despachados, codigo-perf.
 - Riesgo: parches posteriores que reasignan `renderMapas` pueden envolver el wrapper de hooks; el emit sigue si llaman al prev.
+
+
+## 12. Pasos 2.4, Fase 3–5 (progreso 2026-10-06)
+
+- 2.4: `rutas-mapa.js` (ResizeObserver). Fusión total de parches de mapa NO completada.
+- Fase 3: planificacion sin UI camión/restantes.
+- Fase 4: `mejoras-responsive.css`. Sin test-resoluciones.mjs.
+- Fase 5: `_headers` añadido. Workers múltiples aún en repo (documentado en NOTAS).
