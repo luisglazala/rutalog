@@ -159,6 +159,6 @@
   tick();
   setTimeout(tick, 500);
   setTimeout(tick, 1500);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ciudades:disp', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] ciudades-disponibles v1 — chips vacíos deshabilitados");
 })();
