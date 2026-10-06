@@ -94,9 +94,9 @@
           window.__rutalogNavSilent = true;
           try {
             window.go(page);
-          } finally {
-            window.__rutalogNavSilent = false;
-          }
+          } catch (eGo) {}
+          /* core go agenda renderMapas en setTimeout — mantener silent un poco */
+          setTimeout(function () { window.__rutalogNavSilent = false; }, 350);
         }
       } catch (e) {
         console.warn("[nav-fix] go", e);
