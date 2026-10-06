@@ -145,6 +145,14 @@
   }
 
   function installRefrescar() {
+    if (window.__routePanelRefrescarHook) return;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      window.__routePanelRefrescarHook = true;
+      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
+        setTimeout(debouncedRefresh, 0);
+      });
+      return;
+    }
     if (typeof window.refrescarRutaUI === "function" && window.refrescarRutaUI.__rutalogRoutePanelUi) return;
     if (typeof window.refrescarRutaUI === "function") {
       var orig = window.refrescarRutaUI;
