@@ -1072,17 +1072,19 @@
     setTimeout(tick, 300);
     setTimeout(tick, 1200);
     setTimeout(tick, 3000);
-    /* Menos agresivo: cada 8s, y más frecuente solo en página citas */
-    setInterval(function () {
-      try {
-        var onCitas = window.estado && estado.page === "citas";
-        if (onCitas) tick();
-        else if (typeof tick === "function") {
-          /* fuera de citas: solo hooks ligeros cada 8s vía tick completo pero más espaciado */
-          tick();
-        }
-      } catch (e) {}
-    }, 8000);
+    /* Scheduler: tick citas cada 8s solo en vista citas */
+    if (window.RUTALOG && RUTALOG.tick) {
+      RUTALOG.tick.registrar('citas:v15', function () {
+        try { tick(); } catch (e) {}
+      }, { cada: 8000, vista: 'citas' });
+    } else {
+      setInterval(function () {
+        try {
+          if (window.estado && estado.page === "citas") tick();
+          else if (typeof tick === "function") tick();
+        } catch (e) {}
+      }, 8000);
+    }
     try { console.info("[RUTALOG] citas v10 — pegar tabla + alertas (planificación / auditoría / mapa)"); } catch (e) {}
   }
 })();

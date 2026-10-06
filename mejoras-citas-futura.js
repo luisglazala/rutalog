@@ -351,6 +351,6 @@
   tick();
   setTimeout(tick, 800);
   setTimeout(tick, 2000);
-  setInterval(tick, 5000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('citas:futura', tick, { cada: 5000, vista: 'citas' }); else setInterval(tick, 5000);
   console.info("[RUTALOG] citas-futura v1 — tabla + mapa naranja");
 })();

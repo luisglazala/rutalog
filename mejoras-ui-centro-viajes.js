@@ -88,6 +88,14 @@
   }
 
   function installRefrescar() {
+    if (window.__conteoHookV2) return;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      window.__conteoHookV2 = true;
+      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
+        setTimeout(pintarConteoViajes, 30);
+      });
+      return;
+    }
     if (typeof window.refrescarRutaUI !== "function") return;
     if (window.refrescarRutaUI._conteoHook) return;
     var orig = window.refrescarRutaUI;
@@ -108,6 +116,6 @@
   tick();
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ui:centro-viajes', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] ui-centro-viajes v1 — Cancelar cierra · conteo viajes");
 })();

@@ -145,6 +145,14 @@
   }
 
   function installRefrescar() {
+    if (window.__routePanelRefrescarHook) return;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      window.__routePanelRefrescarHook = true;
+      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
+        setTimeout(debouncedRefresh, 0);
+      });
+      return;
+    }
     if (typeof window.refrescarRutaUI === "function" && window.refrescarRutaUI.__rutalogRoutePanelUi) return;
     if (typeof window.refrescarRutaUI === "function") {
       var orig = window.refrescarRutaUI;
@@ -158,6 +166,14 @@
   }
 
   function installGo() {
+    if (window.__routePanelGoHook) return;
+    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
+      window.__routePanelGoHook = true;
+      RUTALOG.hooks.on("despues:go", function (page) {
+        if (page === "rutas" || !page) setTimeout(debouncedRefresh, 40);
+      });
+      return;
+    }
     if (typeof window.go !== "function" || window.go.__rutalogRoutePanelUi) return;
     var orig = window.go;
     window.go = function (page) {

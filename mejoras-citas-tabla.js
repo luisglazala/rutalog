@@ -8,7 +8,11 @@
   function el(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s == null ? "" : s)
-      .replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function injectCSS() {
@@ -175,11 +179,19 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  setInterval(function () {
-    injectCSS();
-    hideCitasAplicadas();
-    patchRenderCitas();
-  }, 5000);
+  if (window.RUTALOG && RUTALOG.tick) {
+    RUTALOG.tick.registrar('citas:tabla', function () {
+      injectCSS();
+      hideCitasAplicadas();
+      patchRenderCitas();
+    }, { cada: 5000, vista: 'citas' });
+  } else {
+    setInterval(function () {
+      injectCSS();
+      hideCitasAplicadas();
+      patchRenderCitas();
+    }, 5000);
+  }
 
   document.addEventListener("click", function (e) {
     var t = e.target;

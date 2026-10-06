@@ -91,6 +91,6 @@
   setTimeout(tick, 500);
   setTimeout(tick, 2000);
   setTimeout(rebuildCiudadesList, 1500);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('ciudades:tick', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] ciudades v3 — solo ciudades");
 })();

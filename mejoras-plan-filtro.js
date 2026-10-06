@@ -67,6 +67,6 @@
   tick();
   setTimeout(tick, 500);
   setTimeout(tick, 1500);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('plan:filtro', tick, { cada: 4000, vista: 'rutas' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] plan-filtro v1 — ciudades estrictas al generar");
 })();

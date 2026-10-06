@@ -119,3 +119,55 @@ Pendiente de relleno tras cargar `debug-perf.js?debug=perf` en la preview:
 - (b) 30 s en Mapa de rutas con viaje en construcción — por medir.
 
 Instrumentación: ver `debug-perf.js` (solo activo con `?debug=perf` en la URL).
+
+
+## 9. Paso 2.1 — cargador único (2026-10-06)
+
+- Archivo nuevo: `rutalog-loader.js` — Set de claves = path sin `?v=`; `RUTALOG.load.extras()` carga CSS_POST + JS_EARLY + JS_MID + JS_MAP en secuencia.
+- `app.js`: eliminada la segunda pasada de `onceScript` post-core; `loadExtras()` delega al manifiesto único.
+- `index.html`: quitados links duplicados a `mejoras-v2.css` y `mejoras-layout.css` (solo el loader); añadido `rutalog-loader.js` antes de `app.js`.
+- Orden de dependencias: mismo que antes (core-app → construirHoy → correcciones → extras). No se reordenaron módulos de mapa.
+- Cómo revertir: restaurar app.js/index.html previos al commit 2.1 y borrar `rutalog-loader.js`.
+- Medición PERF: pendiente en preview tras deploy (`?debug=perf` + `RUTALOG_PERF.reporte()`).
+
+
+## 10. Paso 2.2 — planificador único
+
+- Nuevo: `rutalog-scheduler.js` — `RUTALOG.tick.registrar(nombre, fn, { cada, vista })`, un `setInterval` interno de 1000 ms, pausa si `document.hidden`, errores por tarea.
+- Migrados a tick (con fallback setInterval si no hay scheduler): mapa*, ciudades*, plan-filtro, ui-centro-viajes, despachos-delete, centros, cruzados, citas-*, excel-export, gh-proxy, v2, login, storage, sync, planificacion.
+- Vistas: tareas de mapa/ciudades/filtro con `vista: 'rutas'`; citas con `vista: 'citas'`; sync/storage/login `siempre`.
+- sync pull: cada 15s en scheduler; si no dirty salta uno (~30s). badge 20s, wire 15s.
+- planificacion ensureUI: tick 1s y `cancelar` al cumplir (sustituye 500ms×60).
+- No migrados aún: timers internos de `core-app.js` (gh pull 60s / 120s) — viven en el core.
+- Cómo revertir: commits paso2.2 en archivos individuales + borrar rutalog-scheduler.js del loader.
+
+
+## 11. Paso 2.3 — hooks (parcial)
+
+- Nuevo: `rutalog-hooks.js` — `RUTALOG.hooks.on/emit/install`. Un wrapper de `go`, `renderMapas` (debounce 60ms) y `refrescarRutaUI`.
+- Migrado a hooks (sin reasignar): `mejoras-mapa-sin-rectas.js` v2.
+- `mejoras-go-perf.js` v3 noop (debounce en hooks).
+- Pendiente migrar a hooks (aún pueden reasignar): mapa-hide, despachos-delete, plan-filtro, ui-centro-viajes, mapa-ciudades-ruta, mapa-fix, rutas-panel-ui, map-refresh, map-despachados, codigo-perf.
+- Riesgo: parches posteriores que reasignan `renderMapas` pueden envolver el wrapper de hooks; el emit sigue si llaman al prev.
+
+
+## 12. Pasos 2.4, Fase 3–5 (progreso 2026-10-06)
+
+- 2.4: `rutas-mapa.js` (ResizeObserver). Fusión total de parches de mapa NO completada.
+- Fase 3: planificacion sin UI camión/restantes.
+- Fase 4: `mejoras-responsive.css`. Sin test-resoluciones.mjs.
+- Fase 5: `_headers` añadido. Workers múltiples aún en repo (documentado en NOTAS).
+
+
+## 13. Perf cambio de paneles (nav-fix v3 + hooks v4)
+
+- Causa de lentitud: cada clic llamaba `renderMapas()` (miles de pines) vía core `go` + hooks + nav-fix.
+- Ahora: UI del panel al instante; `renderMapas` omitido ~350ms en cambio de panel (`__rutalogNavSilent`); solo `invalidateSize`.
+- Producción `rutalog.pages.dev` (main) sin estos cambios hasta merge.
+
+
+## 14. Paso 2.3 ampliado + 2.4/3–5
+
+- hooks v5 + migraciones: ui-centro, ciudades-ruta, mapa-fix, rutas-panel.
+- rutas-mapa v2 coordinador.
+- Fases 3–5: ver NOTAS.md.

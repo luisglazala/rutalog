@@ -1,0 +1,29 @@
+name: JS syntax check
+on:
+  push:
+    branches: [main, arreglo-ui]
+  pull_request:
+    branches: [main, arreglo-ui]
+jobs:
+  node-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: node --check all JS
+        run: |
+          set -e
+          count=0
+          fail=0
+          while IFS= read -r f; do
+            count=$((count+1))
+            if ! node --check "$f" 2>/tmp/nc.err; then
+              echo "FAIL $f"
+              cat /tmp/nc.err
+              fail=$((fail+1))
+            fi
+          done < <(find . -name '*.js' -not -path './.git/*' | sort)
+          echo "Checked $count files, failures $fail"
+          test "$fail" -eq 0

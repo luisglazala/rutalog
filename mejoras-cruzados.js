@@ -277,5 +277,5 @@
   setTimeout(tick, 800);
   setTimeout(tick, 2000);
   setTimeout(tick, 4000);
-  setInterval(tick, 3000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('cruzados:tick', tick, { cada: 3000, vista: 'cruzados' }); else setInterval(tick, 3000);
 })();

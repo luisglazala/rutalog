@@ -1,12 +1,10 @@
 /**
- * RUTALOG Cloudflare Worker (capa5)
- * - /api/* → GitHub proxy (solo repos permitidos)
- * - resto → ASSETS (Pages)
+ * RUTALOG — único worker / proxy GitHub (Fase 5)
+ * wrangler.toml → main = worker.js
+ * Solo repo luisglazala/rutalog-datos y rutas /contents/ (datos).
+ * Secret: GITHUB_SECRET_TOKEN (nunca en el cliente).
  */
-const ALLOWED_REPOS = [
-  "luisglazala/rutalog-datos",
-  "luisglazala/rutalog",
-];
+const ALLOWED_REPO = "luisglazala/rutalog-datos";
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "POST", "OPTIONS"]);
 
 export default {
@@ -14,7 +12,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api")) {
-      return new Response(null, { status: 204, headers: corsHeaders(request) });
+      return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
@@ -25,14 +23,14 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    return new Response("RUTALOG Worker OK · /api", {
+    return new Response("RUTALOG Worker · /api → rutalog-datos", {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   },
 };
 
-function corsHeaders(request) {
+function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, OPTIONS",
@@ -41,34 +39,54 @@ function corsHeaders(request) {
   };
 }
 
+function json(body, status, cors) {
+  return new Response(JSON.stringify(body), {
+    status: status,
+    headers: Object.assign(
+      { "Content-Type": "application/json; charset=utf-8" },
+      cors || {}
+    ),
+  });
+}
+
+/**
+ * Solo:
+ *  /repos/luisglazala/rutalog-datos/contents/...
+ *  /repos/luisglazala/rutalog-datos (meta)
+ * Rechaza cualquier otro owner/repo o path (git/blobs, etc. fuera de contents).
+ */
 function pathAllowed(githubPath) {
-  // /repos/{owner}/{repo}/...
-  const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/|$)/);
-  if (!m) {
-    // allow /rate_limit for diagnostics
-    if (githubPath === "/rate_limit") return true;
-    return false;
-  }
+  if (githubPath === "/rate_limit") return false;
+  const m = githubPath.match(
+    /^\/repos\/([^/]+)\/([^/]+)(?:\/(contents)(?:\/|$)|\/?$)/
+  );
+  if (!m) return false;
   const full = m[1] + "/" + m[2];
-  return ALLOWED_REPOS.indexOf(full) !== -1;
+  if (full !== ALLOWED_REPO) return false;
+  // repo root meta OK; deep paths must be under contents
+  if (githubPath === "/repos/" + ALLOWED_REPO || githubPath === "/repos/" + ALLOWED_REPO + "/") {
+    return true;
+  }
+  return githubPath.indexOf("/repos/" + ALLOWED_REPO + "/contents") === 0;
 }
 
 async function handleGitHubProxy(request, env, url) {
-  const cors = corsHeaders(request);
+  const cors = corsHeaders();
   try {
     if (!ALLOWED_METHODS.has(request.method)) {
       return json({ error: "Método no permitido" }, 405, cors);
     }
 
-    let githubPath = url.pathname.replace(/^\/api/, "");
+    let githubPath = url.pathname.replace(/^\/api/, "") || "/";
     if (!githubPath.startsWith("/")) githubPath = "/" + githubPath;
-    if (githubPath === "/") {
+
+    if (githubPath === "/" || githubPath === "") {
       return json(
         {
           ok: true,
           service: "RUTALOG GitHub proxy",
-          repos: ALLOWED_REPOS,
-          hint: "/api/repos/luisglazala/rutalog-datos/contents/...",
+          repo: ALLOWED_REPO,
+          scope: "solo /contents/* de rutalog-datos",
         },
         200,
         cors
@@ -78,48 +96,45 @@ async function handleGitHubProxy(request, env, url) {
     if (!pathAllowed(githubPath)) {
       return json(
         {
-          error: "Ruta no permitida en el proxy",
-          path: githubPath,
-          allowed: ALLOWED_REPOS,
+          error: "Ruta o repositorio no permitido",
+          allowed: ALLOWED_REPO + "/contents/*",
         },
         403,
         cors
       );
     }
 
-    const githubUrl = "https://api.github.com" + githubPath + url.search;
-    const token = env.GITHUB_SECRET_TOKEN;
+    const token = env.GITHUB_SECRET_TOKEN || env.GITHUB_TOKEN;
     if (!token) {
-      return json(
-        { error: "GITHUB_SECRET_TOKEN no configurado en el Worker" },
-        500,
-        cors
-      );
+      return json({ error: "Token de servidor no configurado" }, 500, cors);
     }
 
+    const ghUrl = "https://api.github.com" + githubPath + (url.search || "");
     const headers = new Headers();
     headers.set("Authorization", "Bearer " + token);
+    headers.set("Accept", "application/vnd.github+json");
+    headers.set("X-GitHub-Api-Version", "2022-11-28");
     headers.set("User-Agent", "RUTALOG-Cloudflare-Proxy");
-    headers.set(
-      "Accept",
-      request.headers.get("Accept") || "application/vnd.github+json"
-    );
-    headers.set(
-      "X-GitHub-Api-Version",
-      request.headers.get("X-GitHub-Api-Version") || "2022-11-28"
-    );
-    const ct = request.headers.get("Content-Type");
-    if (ct) headers.set("Content-Type", ct);
+    if (request.headers.get("Content-Type")) {
+      headers.set("Content-Type", request.headers.get("Content-Type"));
+    }
 
-    const init = { method: request.method, headers };
+    const init = {
+      method: request.method,
+      headers: headers,
+    };
     if (request.method !== "GET" && request.method !== "HEAD") {
       init.body = request.body;
       init.duplex = "half";
     }
 
-    const ghRes = await fetch(githubUrl, init);
+    const ghRes = await fetch(ghUrl, init);
     const outHeaders = new Headers(ghRes.headers);
-    Object.keys(cors).forEach((k) => outHeaders.set(k, cors[k]));
+    Object.keys(cors).forEach(function (k) {
+      outHeaders.set(k, cors[k]);
+    });
+    outHeaders.delete("content-encoding");
+    outHeaders.delete("content-length");
 
     return new Response(ghRes.body, {
       status: ghRes.status,
@@ -127,17 +142,6 @@ async function handleGitHubProxy(request, env, url) {
       headers: outHeaders,
     });
   } catch (err) {
-    return json(
-      { error: err && err.message ? err.message : String(err) },
-      500,
-      cors
-    );
+    return json({ error: String(err && err.message ? err.message : err) }, 500, corsHeaders());
   }
-}
-
-function json(obj, status, cors) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: Object.assign({}, cors, { "Content-Type": "application/json" }),
-  });
 }
