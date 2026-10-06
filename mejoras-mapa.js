@@ -131,6 +131,6 @@
   tick();
   setTimeout(tick, 300);
   setTimeout(tick, 1200);
-  setInterval(tick, 5000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('mapa:pines', tick, { cada: 5000, vista: 'siempre' }); else setInterval(tick, 5000);
   console.info("[RUTALOG] mapa v2 — pines OK");
 })();
