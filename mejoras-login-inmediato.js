@@ -209,14 +209,25 @@
     patchIntentarLogin();
     if (hasSession()) unlockApp();
     else showOverlayOnly(null, true);
-    setInterval(function () {
-      patchCerrarSesion();
-      if (hasSession()) {
-        if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
-      } else if (document.documentElement.classList.contains("rutalog-ready")) {
-        lockToLogin("Introduce usuario y contraseña");
-      }
-    }, 1500);
+    if (window.RUTALOG && RUTALOG.tick) {
+      RUTALOG.tick.registrar('login:gate', function () {
+        patchCerrarSesion();
+        if (hasSession()) {
+          if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
+        } else if (document.documentElement.classList.contains("rutalog-ready")) {
+          lockToLogin("Introduce usuario y contraseña");
+        }
+      }, { cada: 1500, vista: 'siempre' });
+    } else {
+      setInterval(function () {
+        patchCerrarSesion();
+        if (hasSession()) {
+          if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
+        } else if (document.documentElement.classList.contains("rutalog-ready")) {
+          lockToLogin("Introduce usuario y contraseña");
+        }
+      }, 1500);
+    }
   }
 
   if (document.readyState === "loading") {
