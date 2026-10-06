@@ -243,6 +243,6 @@
   tick();
   setTimeout(tick, 500);
   setTimeout(tick, 1500);
-  setInterval(tick, 4000);
+  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('despachos:delete', tick, { cada: 4000, vista: 'despachos' }); else setInterval(tick, 4000);
   console.info("[RUTALOG] despachos-acciones v2 — quitar cliente o borrar viaje");
 })();
