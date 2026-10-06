@@ -85,9 +85,10 @@
   setTimeout(install, 500);
   setTimeout(install, 1500);
   setTimeout(strip, 2000);
-  setInterval(function () {
-    install();
-    strip();
-  }, 5000);
+  if (window.RUTALOG && RUTALOG.tick) {
+    RUTALOG.tick.registrar('mapa:sin-rectas', function () { install(); strip(); }, { cada: 5000, vista: 'rutas' });
+  } else {
+    setInterval(function () { install(); strip(); }, 5000);
+  }
   console.info("[RUTALOG] mapa-sin-rectas v1 — oculta trazos rectos");
 })();
