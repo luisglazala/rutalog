@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v11-layout";
+const CACHE = "rutalog-v11-flash";
 const ASSETS = [
   "./",
   "./index.html",
