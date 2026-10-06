@@ -118,7 +118,7 @@
     "./mejoras-mapa-sin-rectas.js?v=2",
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=6",
-    "./rutas-mapa.js?v=1",
+    "./rutas-mapa.js?v=2",
     "./mejoras-nav-fix.js?v=3"
   ];
 
