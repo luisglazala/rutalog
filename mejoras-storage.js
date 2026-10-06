@@ -176,9 +176,15 @@
       .catch(function (e) {
         console.warn("[storage-v1] boot", e);
       });
-    setInterval(function () {
-      mirrorToIdb().catch(function () {});
-    }, 120000);
+    if (window.RUTALOG && RUTALOG.tick) {
+      RUTALOG.tick.registrar('storage:mirror', function () {
+        mirrorToIdb().catch(function () {});
+      }, { cada: 120000, vista: 'siempre' });
+    } else {
+      setInterval(function () {
+        mirrorToIdb().catch(function () {});
+      }, 120000);
+    }
     window.rutalogStorage = {
       mirror: mirrorToIdb,
       restore: restoreFromIdb,
