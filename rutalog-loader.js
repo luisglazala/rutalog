@@ -79,7 +79,8 @@
     "./mejoras-storage.js?v=1",
     "./mejoras-storage-h7.js?v=1",
     "./mejoras-gh-proxy.js?v=4",
-    "./mejoras-login-inmediato.js?v=10"
+    "./mejoras-login-inmediato.js?v=10",
+    "./mejoras-logout-clear.js?v=1"
   ];
 
   var JS_MID = [
