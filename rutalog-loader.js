@@ -114,7 +114,7 @@
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=6",
     "./rutas-mapa.js?v=2",
-    "./mejoras-nav-fix.js?v=4"
+    "./mejoras-nav-fix.js?v=5"
   ];
 
   function loadExtrasOnce() {
