@@ -72,14 +72,9 @@
     return p;
   }
 
+  /* H2: un solo CSS de extras (antes 7 requests secuenciales) */
   var CSS_POST = [
-    "./mejoras-v2.css?v=11",
-    "./mejoras-layout.css?v=3",
-    "./mejoras-ui-polish.css?v=1",
-    "./mejoras-rutas-layout.css?v=4",
-    "./mejoras-despachos-layout.css?v=3",
-    "./mejoras-responsive.css?v=2",
-    "./fix-mapa-rutas.css?v=1"
+    "./mejoras-bundle.css?v=1"
   ];
 
   var JS_EARLY = [
@@ -139,7 +134,8 @@
     if (window.__rutalogExtrasLoaded) return Promise.resolve();
     window.__rutalogExtrasLoaded = true;
     markExisting();
-    return seq(CSS_POST, loadCss)
+    /* H2: CSS en paralelo (orden de <link> en DOM preservado) */
+    return Promise.all(CSS_POST.map(loadCss))
       .then(function () { return seq(JS_EARLY, loadJs); })
       .then(function () { return seq(JS_MID, loadJs); })
       .then(function () { return seq(JS_MAP, loadJs); })
