@@ -72,9 +72,15 @@
     return p;
   }
 
-  /* H2: un solo CSS de extras (antes 7 requests secuenciales) */
+  /* H2: CSS extras en paralelo (7 links de una vez; sin waterfall) */
   var CSS_POST = [
-    "./mejoras-bundle.css?v=1"
+    "./mejoras-v2.css?v=11",
+    "./mejoras-layout.css?v=3",
+    "./mejoras-ui-polish.css?v=1",
+    "./mejoras-rutas-layout.css?v=4",
+    "./mejoras-despachos-layout.css?v=3",
+    "./mejoras-responsive.css?v=2",
+    "./fix-mapa-rutas.css?v=1"
   ];
 
   var JS_EARLY = [
