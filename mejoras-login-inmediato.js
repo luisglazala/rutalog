@@ -1,4 +1,4 @@
-/* RUTALOG login v8 — sin flash sesión: si hay localStorage, no mostrar login */
+/* RUTALOG login v11 — sin flash sesión + gate 15s + boot único */
 (function () {
   "use strict";
   try {
@@ -14,8 +14,8 @@
     }
   } catch (_e) {}
 
-  if (window.__rutalogLoginInmediatoV8) return;
-  window.__rutalogLoginInmediatoV8 = true;
+  if (window.__rutalogLoginInmediatoV11) return;
+  window.__rutalogLoginInmediatoV11 = true;
 
   var shownOnce = false;
   var unlocked = false;
@@ -61,7 +61,6 @@
 
   function setReady() {
     try {
-      /* Rellenar nombre de sesión ANTES de mostrar topbar */
       try {
         var raw = localStorage.getItem("rutalog_session");
         if (raw) {
@@ -204,7 +203,11 @@
     window.intentarLogin._stablePatch = true;
   }
 
+  var _loginBooted = false;
+
   function boot() {
+    if (_loginBooted) return;
+    _loginBooted = true;
     patchCerrarSesion();
     patchIntentarLogin();
     if (hasSession()) unlockApp();
@@ -214,20 +217,27 @@
         patchCerrarSesion();
         if (hasSession()) {
           if (!document.documentElement.classList.contains("rutalog-ready")) unlockApp();
-          /* no tocar DOM de paneles si ya hay sesión */
           return;
         }
-        /* solo lock si realmente no hay sesión */
         if (document.documentElement.classList.contains("rutalog-ready")) {
           lockToLogin("Introduce usuario y contraseña");
         }
       } catch (e) {}
     }
     if (window.RUTALOG && RUTALOG.tick) {
-      RUTALOG.tick.registrar('login:gate', loginGateTick, { cada: 2500, vista: 'siempre' });
+      RUTALOG.tick.registrar('login:gate', loginGateTick, { cada: 15000, vista: 'siempre' });
     } else {
-      setInterval(loginGateTick, 2500);
+      setInterval(loginGateTick, 15000);
     }
+    try {
+      window.addEventListener("storage", function (ev) {
+        if (ev && (ev.key === "rutalog_session" || ev.key === null)) loginGateTick();
+      });
+    } catch (e) {}
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) loginGateTick();
+    });
+    console.info("[RUTALOG] login-inmediato v11 — gate 15s + storage/visibility");
   }
 
   if (document.readyState === "loading") {
@@ -235,6 +245,4 @@
   } else {
     setTimeout(boot, 200);
   }
-  setTimeout(boot, 800);
-  setTimeout(boot, 2000);
 })();
