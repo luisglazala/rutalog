@@ -86,8 +86,8 @@
     "./rutalog-scheduler.js?v=1",
     "./mejoras-invalidate-debounce.js?v=1",
     "./mejoras-storage.js?v=1",
-    "./mejoras-gh-proxy.js?v=4",
-    "./mejoras-login-inmediato.js?v=10"
+    "./mejoras-gh-proxy.js?v=5",
+    "./mejoras-login-inmediato.js?v=11"
   ];
 
   var JS_MID = [
