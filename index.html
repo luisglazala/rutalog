@@ -3,8 +3,6 @@
 <head>
 <link rel="stylesheet" href="./boot.css?v=7">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<link rel="preconnect" href="https://router.project-osrm.org" crossorigin>
-<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <script src="./boot.js?v=4"></script>
 <script src="./debug-perf.js?v=1"></script>
 <style id="rutalog-boot-css">
@@ -35,9 +33,8 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
 <body>
 <script>
 (function(){
-  /* Shell local (producción) + respaldo jsdelivr si falla */
-  var SRC_LOCAL = './shell-body.html?v=prod2';
-  var SRC_FALLBACK = 'https://cdn.jsdelivr.net/gh/luisglazala/rutalog@bfd78016efcf1621cce73965f57e7fa4bbc9c063/shell-body.html';
+  /* Shell completo (el de main estaba truncado → pantalla negra) */
+  var SRC = 'https://cdn.jsdelivr.net/gh/luisglazala/rutalog@bfd78016efcf1621cce73965f57e7fa4bbc9c063/shell-body.html';
   function loadScript(src){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script');
@@ -56,22 +53,23 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
     html=html.replace(/<h1 id="pageTitle">Panel de despachos<\/h1>/g,'<h1 id="pageTitle">Inicio</h1>');
     return html;
   }
-  function fetchShell(){
-    return fetch(SRC_LOCAL,{cache:'no-store'}).then(function(r){
-      if(!r.ok) throw new Error('shell local '+r.status);
-      return r.text();
-    }).catch(function(){
-      return fetch(SRC_FALLBACK,{cache:'no-store'}).then(function(r){ return r.text(); });
-    });
-  }
   loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js')
   .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js'); })
   .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); })
-  .then(function(){ return fetchShell(); })
+  .then(function(){ return fetch(SRC,{cache:'no-store'}).then(function(r){
+    if(!r.ok) throw new Error('shell '+r.status);
+    return r.text();
+  }); })
   .then(function(html){
+    if(!html || html.length < 5000 || html.indexOf('loginOverlay') < 0){
+      throw new Error('shell incompleto');
+    }
     html=strip(html);
     var parser=new DOMParser();
     var doc=parser.parseFromString(html,'text/html');
+    if(!doc.body || !doc.body.innerHTML || doc.body.innerHTML.length < 1000){
+      throw new Error('shell body vacío');
+    }
     document.body.innerHTML=doc.body.innerHTML;
     Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
       if(!s.src) return;
@@ -86,14 +84,15 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
       if(hasSession){d.classList.add('rutalog-session-pending');d.classList.remove('rutalog-need-login');}
       else{d.classList.add('rutalog-need-login');d.classList.remove('rutalog-session-pending');}
     }catch(e){}
-    /* CRÍTICO: loader ANTES de app.js para que RUTALOG.load.extras exista */
-    return loadScript('./rutalog-loader.js?v=prod3').then(function(){
-      return loadScript('./app.js?v=prod3');
+    return loadScript('./rutalog-loader.js?v=prod4').then(function(){
+      return loadScript('./app.js?v=prod4');
     });
   })
   .catch(function(e){
     console.error(e);
-    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC_FALLBACK+'">Abrir respaldo</a></p>';
+    document.documentElement.classList.remove('rutalog-booting');
+    document.documentElement.classList.add('rutalog-need-login');
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar la interfaz. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a><br><small>'+String(e)+'</small></p>';
   });
 })();
 </script>
