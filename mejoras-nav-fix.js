@@ -1,7 +1,8 @@
-/* RUTALOG nav-fix v4 — panel al instante; go en segundo plano; silent largo */
+/* RUTALOG nav-fix v5 — Inicio síncrono; go no pisa el título; mapas diferidos */
 (function () {
   "use strict";
-  if (window.__rutalogNavFixV4) return;
+  if (window.__rutalogNavFixV5) return;
+  window.__rutalogNavFixV5 = true;
   window.__rutalogNavFixV4 = true;
 
   var TITLES = {
@@ -18,19 +19,24 @@
   };
   var lastPage = "";
 
+  function applyTitle(page) {
+    try {
+      var t = document.getElementById("pageTitle");
+      if (t) t.textContent = TITLES[page] || page;
+      document.querySelectorAll('.nav button[data-page="panel"] .nav-label').forEach(function (n) {
+        n.textContent = "Inicio";
+      });
+    } catch (e) {}
+  }
+
   function showPage(page) {
     if (!page) return false;
     var target = document.getElementById("page-" + page);
     if (!target) return false;
-
-    try {
-      if (window.estado) estado.page = page;
-    } catch (e) {}
-
+    try { if (window.estado) estado.page = page; } catch (e) {}
     document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-page") === page);
     });
-
     document.querySelectorAll(".page").forEach(function (p) {
       var on = p.id === "page-" + page;
       p.classList.toggle("active", on);
@@ -44,20 +50,7 @@
         p.style.setProperty("display", "none", "important");
       }
     });
-
-    try {
-      var t = document.getElementById("pageTitle");
-      if (t) t.textContent = TITLES[page] || page;
-    } catch (e2) {}
-
-    try {
-      var main = document.querySelector(".main");
-      if (main) {
-        main.style.setProperty("visibility", "visible", "important");
-        main.style.setProperty("pointer-events", "auto", "important");
-      }
-    } catch (e3) {}
-
+    applyTitle(page);
     return true;
   }
 
@@ -75,34 +68,28 @@
 
   function safeGo(page) {
     if (!page) return;
-    if (page === lastPage) {
-      showPage(page);
-      return;
-    }
+    if (page === lastPage) { showPage(page); return; }
     lastPage = page;
-
-    /* UI inmediata — no esperar a go ni a renderMapas */
     showPage(page);
+    applyTitle(page);
     requestAnimationFrame(function () { lightMapTouch(page); });
-
-    /* go nativo diferido + silent largo (core agenda renderMapas en setTimeout) */
     setTimeout(function () {
       try {
+        window.__rutalogNavSilent = true;
         if (typeof window.go === "function") {
-          window.__rutalogNavSilent = true;
-          try {
-            window.go(page);
-          } catch (eGo) {}
-          setTimeout(function () {
-            window.__rutalogNavSilent = false;
-          }, 1200);
+          try { window.go(page); } catch (eGo) {}
         }
       } catch (e) {
         console.warn("[nav-fix] go", e);
-        window.__rutalogNavSilent = false;
       }
+      applyTitle(page);
       showPage(page);
-      lightMapTouch(page);
+      setTimeout(function () {
+        applyTitle(page);
+        window.__rutalogNavSilent = false;
+        lightMapTouch(page);
+      }, 0);
+      setTimeout(function () { applyTitle(page); }, 50);
     }, 0);
   }
 
@@ -120,27 +107,37 @@
     ev.stopPropagation();
     safeGo(page);
   }
-
   document.addEventListener("click", onNav, true);
 
   function wireButtons() {
     document.querySelectorAll(".nav button[data-page]").forEach(function (b) {
-      if (b.__navFixV4) return;
-      b.__navFixV4 = true;
-      b.addEventListener(
-        "click",
-        function (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          safeGo(b.getAttribute("data-page"));
-        },
-        true
-      );
+      if (b.__navFixV5) return;
+      b.__navFixV5 = true;
+      b.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        safeGo(b.getAttribute("data-page"));
+      }, true);
     });
+    applyTitle(window.estado && estado.page ? estado.page : "panel");
   }
   wireButtons();
-  setTimeout(wireButtons, 500);
-  setTimeout(wireButtons, 2000);
+  setTimeout(wireButtons, 400);
+  setTimeout(wireButtons, 1500);
 
-  console.info("[RUTALOG] nav-fix v4 — paneles instantáneos");
+  function patchCoreGoTitles() {
+    if (typeof window.go !== "function" || window.go._navTitleV5) return;
+    var orig = window.go;
+    window.go = function (page) {
+      var r = orig.apply(this, arguments);
+      applyTitle(page);
+      return r;
+    };
+    window.go._navTitleV5 = true;
+  }
+  patchCoreGoTitles();
+  setTimeout(patchCoreGoTitles, 500);
+  setTimeout(patchCoreGoTitles, 2000);
+
+  console.info("[RUTALOG] nav-fix v5 — Inicio síncrono, sin flash Panel");
 })();
