@@ -1,8 +1,4 @@
-/* RUTALOG mapa-ciudades-ruta v2
- * - Sin parpadeo: no limpia marcadores si el set de IDs no cambió
- * - OSRM: abort + 1 retry + debounce; solo actualiza la capa de ruta
- * - Filtro por ciudades seleccionadas
- */
+/* RUTALOG mapa-ciudades-ruta v3.1 — filtro + OSRM; skip live si __rutalogSkipLiveOsrm */
 (function () {
   "use strict";
   if (window.__rutalogMapaCiudadesRutaV2) return;
@@ -19,38 +15,26 @@
   var painting = false;
 
   function norm(s) {
-    return String(s || "")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
   }
-
   function cityKey(s) {
     var n = norm(s);
     if (!n) return "";
     if (n.indexOf("santiago rodriguez") === 0) return "santiago rodriguez";
     if (n === "santiago" || n.indexOf("santiago de los") === 0) return "santiago";
-    if (n.indexOf("santo domingo") === 0 || n === "distrito nacional" || n === "sdn" || n === "sde" || n === "sdo")
-      return "santo domingo";
+    if (n.indexOf("santo domingo") === 0 || n === "distrito nacional" || n === "sdn" || n === "sde" || n === "sdo") return "santo domingo";
     if (n.indexOf("san pedro") === 0) return "san pedro de macoris";
     if (n.indexOf("san francisco") === 0) return "san francisco de macoris";
     return n;
   }
-
   function filtroActivo() {
     try {
       if (typeof getCiudadesSeleccionadas !== "function") return null;
       var sel = getCiudadesSeleccionadas();
       if (!sel || !sel.length || sel.indexOf("__TODAS__") >= 0) return null;
       return sel.map(cityKey).filter(Boolean);
-    } catch (e) {
-      return null;
-    }
+    } catch (e) { return null; }
   }
-
   function ciudadPasaFiltro(ciudad) {
     var f = filtroActivo();
     if (!f) return true;
@@ -58,14 +42,10 @@
     if (!k) return false;
     return f.indexOf(k) >= 0;
   }
-
   function abortOsrm() {
-    osrmControllers.forEach(function (c) {
-      try { c.abort(); } catch (e) {}
-    });
+    osrmControllers.forEach(function (c) { try { c.abort(); } catch (e) {} });
     osrmControllers = [];
   }
-
   function clearOsrmLayersOnly() {
     abortOsrm();
     osrmLayers.forEach(function (ly) {
@@ -85,105 +65,67 @@
       estado.polysGuardadas = [];
     } catch (e) {}
   }
-
   function fetchOsrmOnce(pts, signal) {
     var coordStr = pts.map(function (p) { return p[1] + "," + p[0]; }).join(";");
-    return fetch(OSRM + coordStr + "?overview=full&geometries=geojson", {
-      signal: signal,
-      cache: "no-store"
-    }).then(function (r) {
+    return fetch(OSRM + coordStr + "?overview=full&geometries=geojson", { signal: signal, cache: "no-store" }).then(function (r) {
       if (!r.ok) throw new Error("osrm " + r.status);
       return r.json();
     });
   }
-
   function fetchOsrm(pts, color, weight, seq) {
     if (!pts || pts.length < 2 || !estado.mapRutas) return;
     if (pts.length > 25) pts = [pts[0]].concat(pts.slice(-20));
     var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
     if (ctrl) osrmControllers.push(ctrl);
     var signal = ctrl ? ctrl.signal : undefined;
-
     function addFallback() {
       if (seq !== osrmSeq) return;
       try {
-        var fb = L.polyline(pts, {
-          color: color || "#38bdf8",
-          weight: weight || 4,
-          opacity: 0.75,
-          dashArray: "8,6"
-        }).addTo(estado.mapRutas);
+        var fb = L.polyline(pts, { color: color || "#38bdf8", weight: weight || 4, opacity: 0.75, dashArray: "8,6" }).addTo(estado.mapRutas);
         osrmLayers.push(fb);
       } catch (e) {}
     }
-
     function addGeo(data) {
       if (seq !== osrmSeq) return;
-      if (!data || data.code !== "Ok" || !data.routes || !data.routes[0]) {
-        addFallback();
-        return;
-      }
+      if (!data || data.code !== "Ok" || !data.routes || !data.routes[0]) { addFallback(); return; }
       try {
-        var coords = data.routes[0].geometry.coordinates.map(function (c) {
-          return [c[1], c[0]];
-        });
-        var pl = L.polyline(coords, {
-          color: color || "#38bdf8",
-          weight: weight || 4,
-          opacity: 0.95
-        }).addTo(estado.mapRutas);
+        var coords = data.routes[0].geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+        var pl = L.polyline(coords, { color: color || "#38bdf8", weight: weight || 4, opacity: 0.95 }).addTo(estado.mapRutas);
         osrmLayers.push(pl);
-      } catch (e) {
-        addFallback();
-      }
+      } catch (e) { addFallback(); }
     }
-
-    fetchOsrmOnce(pts, signal)
-      .then(addGeo)
-      .catch(function (err) {
-        if (err && err.name === "AbortError") return;
+    fetchOsrmOnce(pts, signal).then(addGeo).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      if (seq !== osrmSeq) return;
+      setTimeout(function () {
         if (seq !== osrmSeq) return;
-        setTimeout(function () {
+        var ctrl2 = typeof AbortController !== "undefined" ? new AbortController() : null;
+        if (ctrl2) osrmControllers.push(ctrl2);
+        fetchOsrmOnce(pts, ctrl2 ? ctrl2.signal : undefined).then(addGeo).catch(function () {
           if (seq !== osrmSeq) return;
-          var ctrl2 = typeof AbortController !== "undefined" ? new AbortController() : null;
-          if (ctrl2) osrmControllers.push(ctrl2);
-          fetchOsrmOnce(pts, ctrl2 ? ctrl2.signal : undefined)
-            .then(addGeo)
-            .catch(function () {
-              if (seq !== osrmSeq) return;
-              addFallback();
-            });
-        }, 400);
-      });
+          addFallback();
+        });
+      }, 400);
+    });
   }
-
   function resolvePos(p) {
     if (!p) return null;
     var la = p.lat, lo = p.lon;
     if ((la == null || lo == null) && window.estado) {
-      var c = (estado.clientesHoy || []).find(function (x) {
-        return String(x.idCliente) === String(p.idCliente);
-      });
+      var c = (estado.clientesHoy || []).find(function (x) { return String(x.idCliente) === String(p.idCliente); });
       if (c) { la = c.lat; lo = c.lon; }
     }
     if (la == null || lo == null) return null;
     if (typeof jitter === "function") {
-      try {
-        var j = jitter(la, lo, p.idCliente);
-        return [j[0], j[1]];
-      } catch (e) {}
+      try { var j = jitter(la, lo, p.idCliente); return [j[0], j[1]]; } catch (e) {}
     }
     return [la, lo];
   }
-
   function inActual(id) {
     try {
-      return (estado.viajeActual || []).some(function (p) {
-        return String(p.idCliente) === String(id);
-      });
+      return (estado.viajeActual || []).some(function (p) { return String(p.idCliente) === String(id); });
     } catch (e) { return false; }
   }
-
   function debeOcultarDespachado(id) {
     try {
       if (typeof clienteCompletamenteAsignado === "function") {
@@ -192,20 +134,16 @@
     } catch (e) {}
     try {
       var inG = (estado.viajesGuardados || []).some(function (v) {
-        return (v.paradas || []).some(function (p) {
-          return String(p.idCliente) === String(id);
-        });
+        return (v.paradas || []).some(function (p) { return String(p.idCliente) === String(id); });
       });
       if (!inG) return false;
-      var pend = (estado.lineasPendientes &&
-        (estado.lineasPendientes.get(id) || estado.lineasPendientes.get(String(id)))) || [];
+      var pend = (estado.lineasPendientes && (estado.lineasPendientes.get(id) || estado.lineasPendientes.get(String(id)))) || [];
       if (!pend.length) return true;
       return !pend.some(function (l) {
         return !l.despachado && (l.aDespachar == null || Math.abs(Number(l.aDespachar)) > 1e-9);
       });
     } catch (e) { return false; }
   }
-
   function filterClientesForMap() {
     return (estado.clientesHoy || []).filter(function (c) {
       if (!c || c.lat == null || c.lon == null) return false;
@@ -215,60 +153,40 @@
       return true;
     });
   }
-
   function markerSetKey(lista) {
     var ids = lista.map(function (c) { return String(c.idCliente); }).sort();
-    var act = (estado.viajeActual || []).map(function (p, i) {
-      return String(p.idCliente) + ":" + i;
-    }).join(",");
+    var act = (estado.viajeActual || []).map(function (p, i) { return String(p.idCliente) + ":" + i; }).join(",");
     var f = filtroActivo();
     return ids.join(",") + "|" + act + "|" + (f ? f.join(",") : "*");
   }
-
   function routeSetKey() {
     var parts = [];
-    if (estado.origenActual) {
-      parts.push("o:" + estado.origenActual.lat + "," + estado.origenActual.lon);
-    }
+    if (estado.origenActual) parts.push("o:" + estado.origenActual.lat + "," + estado.origenActual.lon);
     (estado.viajeActual || []).forEach(function (p) { parts.push("a:" + p.idCliente); });
     (estado.viajesGuardados || []).forEach(function (v, i) {
       parts.push("g" + i + ":" + (v.paradas || []).map(function (p) { return p.idCliente; }).join("-"));
     });
     return parts.join("|");
   }
-
   function addMarker(cluster, markersMap, cli, st, clickable) {
     if (!cluster || !cli || cli.lat == null) return;
     var la = cli.lat, lo = cli.lon;
     if (typeof jitter === "function") {
-      try {
-        var j = jitter(cli.lat, cli.lon, cli.idCliente);
-        la = j[0]; lo = j[1];
-      } catch (e) {}
+      try { var j = jitter(cli.lat, cli.lon, cli.idCliente); la = j[0]; lo = j[1]; } catch (e) {}
     }
     var ico = typeof icono === "function" ? icono(st.color, st.texto, st.sz) : undefined;
-    var m = ico
-      ? L.marker([la, lo], { icon: ico, zIndexOffset: st.z || 1000 })
-      : L.marker([la, lo], { zIndexOffset: st.z || 1000 });
-    if (typeof popupHtml === "function") {
-      try { m.bindPopup(popupHtml(cli)); } catch (e) {}
-    }
+    var m = ico ? L.marker([la, lo], { icon: ico, zIndexOffset: st.z || 1000 }) : L.marker([la, lo], { zIndexOffset: st.z || 1000 });
+    if (typeof popupHtml === "function") { try { m.bindPopup(popupHtml(cli)); } catch (e) {} }
     if (clickable) {
-      m.on("click", function () {
-        try { if (typeof agregarParada === "function") agregarParada(cli); } catch (e) {}
-      });
+      m.on("click", function () { try { if (typeof agregarParada === "function") agregarParada(cli); } catch (e) {} });
     }
     cluster.addLayer(m);
     if (markersMap) markersMap.set(cli.idCliente, m);
   }
-
   function rebuildMarkers(lista) {
     function fill(cluster, markersMap, allowClick) {
       if (!cluster) return markersMap || new Map();
-      try {
-        cluster.clearLayers();
-        if (markersMap) markersMap.clear();
-      } catch (e) {}
+      try { cluster.clearLayers(); if (markersMap) markersMap.clear(); } catch (e) {}
       if (!markersMap) markersMap = new Map();
       lista.forEach(function (cli) {
         if (inActual(cli.idCliente)) return;
@@ -286,14 +204,11 @@
         var cli = Object.assign({}, p);
         var pos = resolvePos(p);
         if (pos) { cli.lat = pos[0]; cli.lon = pos[1]; }
-        addMarker(estado.clusterRutas, estado.markersRutas, cli, {
-          color: "#f59e0b", texto: String(i + 1), sz: 32, z: 3500
-        }, false);
+        addMarker(estado.clusterRutas, estado.markersRutas, cli, { color: "#f59e0b", texto: String(i + 1), sz: 32, z: 3500 }, false);
       });
       try { estado.mapRutas.invalidateSize(false); } catch (e) {}
     }
   }
-
   function rebuildRoutesOnly() {
     var seq = ++osrmSeq;
     clearOsrmLayersOnly();
@@ -305,7 +220,8 @@
       var pos = resolvePos(p);
       if (pos) ptsAct.push(pos);
     });
-    if (ptsAct.length >= 2) fetchOsrm(ptsAct, "#38bdf8", 5, seq);
+    if (!window.__rutalogSkipLiveOsrm && ptsAct.length >= 2) fetchOsrm(ptsAct, "#38bdf8", 5, seq);
+    if (window.__rutalogSkipLiveOsrm) return;
     (estado.viajesGuardados || []).forEach(function (v) {
       if (!v.paradas || !v.paradas.length) return;
       var line = [];
@@ -320,14 +236,12 @@
       if (line.length >= 2) fetchOsrm(line, v.color || "#38bdf8", 4, seq);
     });
   }
-
   function updateBadges(lista) {
     try {
       var n = 0, peso = 0;
       lista.forEach(function (c) {
         if (inActual(c.idCliente)) return;
-        n++;
-        peso += Number(c.peso) || 0;
+        n++; peso += Number(c.peso) || 0;
       });
       var el = document.getElementById("badgeActivos");
       if (el) el.textContent = n + " puntos activos";
@@ -339,7 +253,6 @@
       if (el) el.textContent = peso.toFixed(2) + " kg";
     } catch (e) {}
   }
-
   function paintFiltered(force) {
     if (!window.estado || painting) return;
     painting = true;
@@ -347,90 +260,48 @@
       var lista = filterClientesForMap();
       var mk = markerSetKey(lista);
       var rk = routeSetKey();
-      if (force || mk !== lastMarkerKey) {
-        rebuildMarkers(lista);
-        lastMarkerKey = mk;
-      }
-      if (force || rk !== lastRouteKey) {
-        rebuildRoutesOnly();
-        lastRouteKey = rk;
-      }
+      if (force || mk !== lastMarkerKey) { rebuildMarkers(lista); lastMarkerKey = mk; }
+      if (force || rk !== lastRouteKey) { rebuildRoutesOnly(); lastRouteKey = rk; }
       updateBadges(lista);
-    } catch (e) {
-      console.warn("[mapa-ciudades-ruta v2]", e);
-    }
+    } catch (e) { console.warn("[mapa-ciudades-ruta]", e); }
     painting = false;
   }
-
   function schedulePaint(force) {
     if (paintTimer) clearTimeout(paintTimer);
-    paintTimer = setTimeout(function () {
-      paintTimer = null;
-      paintFiltered(!!force);
-    }, force ? 60 : 140);
+    paintTimer = setTimeout(function () { paintTimer = null; paintFiltered(!!force); }, force ? 60 : 140);
   }
-
   function install() {
-    if (window.__ciuRutaHooksV3) return;
-    if (window.RUTALOG && RUTALOG.hooks && typeof RUTALOG.hooks.on === "function") {
-      window.__ciuRutaHooksV3 = true;
-      RUTALOG.hooks.on("despues:renderMapas", function () {
-        if (window.__rutalogNavSilent) return;
-        schedulePaint(false);
-      });
-      RUTALOG.hooks.on("despues:refrescarRutaUI", function () {
-        if (window.__rutalogNavSilent) return;
-        schedulePaint(false);
-      });
-      return;
-    }
     if (typeof window.renderMapas === "function" && !window.renderMapas._ciuRutaV2) {
       var prev = window.renderMapas;
-      window.renderMapas = function () {
-        try { prev.apply(this, arguments); } catch (e) {}
-        schedulePaint(false);
-      };
+      window.renderMapas = function () { try { prev.apply(this, arguments); } catch (e) {} schedulePaint(false); };
       window.renderMapas._ciuRutaV2 = true;
       window.renderMapas._ciuRuta = true;
     }
     if (typeof window.refrescarRutaUI === "function" && !window.refrescarRutaUI._ciuRutaV2) {
       var pr = window.refrescarRutaUI;
-      window.refrescarRutaUI = function () {
-        var r = pr.apply(this, arguments);
-        schedulePaint(false);
-        return r;
-      };
+      window.refrescarRutaUI = function () { var r = pr.apply(this, arguments); schedulePaint(false); return r; };
       window.refrescarRutaUI._ciuRutaV2 = true;
     }
   }
-
   function hookCityChecks() {
     document.querySelectorAll(".chk-ciudad").forEach(function (chk) {
       if (chk._ciuRutaHookV2) return;
       chk._ciuRutaHookV2 = true;
-      chk.addEventListener("change", function () {
-        lastMarkerKey = "";
-        schedulePaint(true);
-      });
+      chk.addEventListener("change", function () { lastMarkerKey = ""; schedulePaint(true); });
     });
     var todas = document.getElementById("chkTodasCiudades");
     if (todas && !todas._ciuRutaHookV2) {
       todas._ciuRutaHookV2 = true;
-      todas.addEventListener("change", function () {
-        lastMarkerKey = "";
-        schedulePaint(true);
-      });
+      todas.addEventListener("change", function () { lastMarkerKey = ""; schedulePaint(true); });
     }
   }
-
   window.rutalogCityKey = cityKey;
   window.rutalogCiudadPasaFiltro = ciudadPasaFiltro;
-
   function tick() { install(); hookCityChecks(); }
   tick();
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(function () { schedulePaint(true); }, 1600);
-  if (window.RUTALOG && RUTALOG.tick) RUTALOG.tick.registrar('mapa:ciudades-ruta', tick, { cada: 5000, vista: 'rutas' }); else setInterval(tick, 5000);
-  console.info("[RUTALOG] mapa-ciudades-ruta v2 — sin parpadeo + OSRM estable");
+  setInterval(tick, 5000);
+  console.info("[RUTALOG] mapa-ciudades-ruta v3.1 — skip live OSRM si flag");
 })();
