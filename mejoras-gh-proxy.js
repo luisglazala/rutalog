@@ -1,8 +1,8 @@
-/* RUTALOG mejoras-gh-proxy v4 — Cloudflare Pages (sin token en el navegador) */
+/* RUTALOG mejoras-gh-proxy v5 — Cloudflare Pages (sin token en el navegador) */
 (function () {
   "use strict";
-  if (window.__rutalogGhProxyV4) return;
-  window.__rutalogGhProxyV4 = true;
+  if (window.__rutalogGhProxyV5) return;
+  window.__rutalogGhProxyV5 = true;
 
   var CF_API_DEFAULT = "https://rutalog.pages.dev/api";
 
@@ -109,5 +109,6 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  setInterval(hideTokenUI, 4000);
+  /* H3: sin setInterval 4s — hideTokenUI solo en los ticks de arranque */
+  console.info("[RUTALOG] gh-proxy v5 — sin interval hideTokenUI");
 })();
