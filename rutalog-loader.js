@@ -113,6 +113,7 @@
     "./mejoras-ciudades-disponibles.js?v=1",
     "./mejoras-map-despachados.js?v=2",
     "./mejoras-mapa-fix.js?v=8",
+    "./mejoras-mapa-incremental.js?v=1",
     "./mejoras-mapa-hide.js?v=1",
     "./mejoras-mapa-ciudades-ruta.js?v=4",
     "./mejoras-plan-filtro.js?v=1",
