@@ -1,4 +1,4 @@
-/* RUTALOG load extras v2 — manifiesto único, sin dobles */
+/* RUTALOG load extras v2 — manifiesto único, sin dobles + perf H5-H11 */
 (function () {
   "use strict";
   if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v2) return;
@@ -75,7 +75,9 @@
 
   var JS_EARLY = [
     "./rutalog-scheduler.js?v=1",
+    "./mejoras-invalidate-debounce.js?v=1",
     "./mejoras-storage.js?v=1",
+    "./mejoras-storage-h7.js?v=1",
     "./mejoras-gh-proxy.js?v=4",
     "./mejoras-login-inmediato.js?v=10"
   ];
@@ -83,8 +85,10 @@
   var JS_MID = [
     "./codigo-perf.js?v=6",
     "./mejoras-go-perf.js?v=3",
+    "./mejoras-go-h8.js?v=1",
     "./mejoras-ui-polish.js?v=3",
     "./mejoras-sync.js?v=35",
+    "./mejoras-sync-h6.js?v=1",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
     "./mejoras-centros.js?v=4",
@@ -108,6 +112,8 @@
     "./mejoras-mapa-ciudades-ruta.js?v=31",
     "./mejoras-mapa-incremental.js?v=1",
     "./mejoras-osrm-on-save.js?v=1",
+    "./mejoras-osrm-onsave.js?v=1",
+    "./mejoras-listas-inc.js?v=1",
     "./mejoras-plan-filtro.js?v=1",
     "./mejoras-ui-centro-viajes.js?v=3",
     "./mejoras-mapa-sin-rectas.js?v=2",
