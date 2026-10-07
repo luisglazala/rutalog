@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <link rel="stylesheet" href="./boot.css?v=7">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://router.project-osrm.org" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <script src="./boot.js?v=4"></script>
 <script src="./debug-perf.js?v=1"></script>
 <style id="rutalog-boot-css">
@@ -20,39 +23,51 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
 <meta name="color-scheme" content="dark">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
 <title>RUTALOG</title>
+<link rel="icon" href="./favicon.svg?v=1" type="image/svg+xml">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./styles.css?v=fase0-2">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 </head>
 <body>
 <script>
 (function(){
-  var SRC='https://cdn.jsdelivr.net/gh/luisglazala/rutalog@bfd78016efcf1621cce73965f57e7fa4bbc9c063/shell-body.html';
+  /* Shell local (producción) + respaldo jsdelivr si falla */
+  var SRC_LOCAL = './shell-body.html?v=prod2';
+  var SRC_FALLBACK = 'https://cdn.jsdelivr.net/gh/luisglazala/rutalog@bfd78016efcf1621cce73965f57e7fa4bbc9c063/shell-body.html';
   function loadScript(src){
     return new Promise(function(resolve,reject){
       var s=document.createElement('script');
       s.src=src;
+      s.async=false;
       s.onload=function(){resolve();};
       s.onerror=function(){reject(new Error(src));};
-      document.head.appendChild(s);
+      (document.body||document.head).appendChild(s);
     });
   }
   function strip(html){
     html=html.replace(/<button[^>]*id=["']btnExportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
     html=html.replace(/<button[^>]*id=["']btnImportSesion["'][^>]*>[\s\S]*?<\/button>/gi,'');
     html=html.replace(/<input[^>]*id=["']fileImportSesion["'][^>]*>/gi,'');
-    html=html.replace(/<span class=\"nav-label\">Panel<\/span>/,'<span class="nav-label">Inicio</span>');
-    html=html.replace(/<h1 id=\"pageTitle\">Panel de despachos<\/h1>/,'<h1 id="pageTitle">Inicio</h1>');
+    html=html.replace(/<span class="nav-label">Panel<\/span>/g,'<span class="nav-label">Inicio</span>');
+    html=html.replace(/<h1 id="pageTitle">Panel de despachos<\/h1>/g,'<h1 id="pageTitle">Inicio</h1>');
     return html;
+  }
+  function fetchShell(){
+    return fetch(SRC_LOCAL,{cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error('shell local '+r.status);
+      return r.text();
+    }).catch(function(){
+      return fetch(SRC_FALLBACK,{cache:'no-store'}).then(function(r){ return r.text(); });
+    });
   }
   loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js')
   .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js'); })
   .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); })
-  .then(function(){ return fetch(SRC,{cache:'no-store'}).then(function(r){return r.text();}); })
+  .then(function(){ return fetchShell(); })
   .then(function(html){
     html=strip(html);
     var parser=new DOMParser();
@@ -60,16 +75,25 @@ html.rutalog-need-login:not(.rutalog-session-pending) #loginOverlay{display:flex
     document.body.innerHTML=doc.body.innerHTML;
     Array.prototype.slice.call(document.querySelectorAll('script')).forEach(function(s){
       if(!s.src) return;
-      if(s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1 || s.src.indexOf('xlsx')!==-1) s.remove();
+      if(s.src.indexOf('app.js')!==-1 || s.src.indexOf('leaflet')!==-1 || s.src.indexOf('xlsx')!==-1 || s.src.indexOf('rutalog-loader')!==-1) s.remove();
     });
-    var s=document.createElement('script');
-    s.src='./app.js?v=inicio2';
-    s.async=false;
-    document.head.appendChild(s);
+    try{
+      var hasSession=false;
+      try{var raw=localStorage.getItem('rutalog_session');if(raw){var u=JSON.parse(raw);if(u&&u.id&&u.username)hasSession=true}}catch(e){}
+      var d=document.documentElement;
+      d.classList.remove('rutalog-ready');
+      d.classList.add('rutalog-booting');
+      if(hasSession){d.classList.add('rutalog-session-pending');d.classList.remove('rutalog-need-login');}
+      else{d.classList.add('rutalog-need-login');d.classList.remove('rutalog-session-pending');}
+    }catch(e){}
+    /* CRÍTICO: loader ANTES de app.js para que RUTALOG.load.extras exista */
+    return loadScript('./rutalog-loader.js?v=prod3').then(function(){
+      return loadScript('./app.js?v=prod3');
+    });
   })
   .catch(function(e){
     console.error(e);
-    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC+'">Abrir respaldo</a></p>';
+    document.body.innerHTML='<p style="color:#fafafa;font-family:system-ui;padding:2rem">Error al cargar. <a style="color:#60a5fa" href="'+SRC_FALLBACK+'">Abrir respaldo</a></p>';
   });
 })();
 </script>
