@@ -72,7 +72,6 @@
     return p;
   }
 
-  /* H2: CSS extras en paralelo (7 links de una vez; sin waterfall) */
   var CSS_POST = [
     "./mejoras-v2.css?v=11",
     "./mejoras-layout.css?v=3",
@@ -87,6 +86,7 @@
     "./rutalog-scheduler.js?v=1",
     "./mejoras-invalidate-debounce.js?v=1",
     "./mejoras-storage.js?v=1",
+    "./mejoras-storage-h7.js?v=1",
     "./mejoras-gh-proxy.js?v=5",
     "./mejoras-login-inmediato.js?v=11"
   ];
@@ -94,6 +94,7 @@
   var JS_MID = [
     "./codigo-perf.js?v=6",
     "./mejoras-go-perf.js?v=3",
+    "./mejoras-go-h8.js?v=1",
     "./mejoras-ui-polish.js?v=3",
     "./mejoras-sync.js?v=35",
     "./mejoras-sync-h6.js?v=1",
@@ -115,6 +116,8 @@
     "./mejoras-map-despachados.js?v=2",
     "./mejoras-mapa-fix.js?v=8",
     "./mejoras-mapa-incremental.js?v=1",
+    "./mejoras-osrm-onsave.js?v=1",
+    "./mejoras-listas-inc.js?v=1",
     "./mejoras-mapa-hide.js?v=1",
     "./mejoras-mapa-ciudades-ruta.js?v=4",
     "./mejoras-plan-filtro.js?v=1",
@@ -140,7 +143,6 @@
     if (window.__rutalogExtrasLoaded) return Promise.resolve();
     window.__rutalogExtrasLoaded = true;
     markExisting();
-    /* H2: CSS en paralelo (orden de <link> en DOM preservado) */
     return Promise.all(CSS_POST.map(loadCss))
       .then(function () { return seq(JS_EARLY, loadJs); })
       .then(function () { return seq(JS_MID, loadJs); })
