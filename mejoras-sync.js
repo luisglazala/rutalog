@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.3 — cerca de tiempo real: 10s foco · 7s dirty · online · badge */
+/* RUTALOG mejoras-sync v3.5 — un solo pull inicial + cooldown 8s + boot único */
 (function () {
   "use strict";
   if (window.__rutalogSyncV3) return;
@@ -14,6 +14,9 @@
   var _pulling = false;
   var _tabId = "t" + Math.random().toString(36).slice(2, 10);
   var _bc = null;
+  var _booted = false;
+  var _lastPullAt = 0;
+  var PULL_COOLDOWN_MS = 8000;
 
   function el(id) {
     return document.getElementById(id);
@@ -91,11 +94,11 @@
         return;
       }
       if (_lastOkAt) {
-        setBadge("Sync · " + fmtAgo(_lastOkAt), "Clic para actualizar ahora");
+        setBadge("sync " + fmtAgo(_lastOkAt), "Última sync: " + new Date(_lastOkAt).toLocaleString());
         setStatusLine();
         return;
       }
-      setBadge("sync listo", "Clic para actualizar ahora");
+      setBadge("sync listo", "Token OK — esperando primera sync");
       setStatusLine();
     } catch (e) {}
   }
@@ -116,16 +119,20 @@
     if (!hasToken()) return;
     if (typeof ghActualizar !== "function") return;
     if (_pulling) return;
+    var now = Date.now();
+    /* Cooldown solo en pulls silenciosos; manual (silent===false) siempre pasa */
+    if (silent !== false && _lastPullAt && (now - _lastPullAt) < PULL_COOLDOWN_MS) return;
     _pulling = true;
     refreshBadge();
     try {
       await ghActualizar({ silent: silent !== false });
       _lastOkAt = Date.now();
+      _lastPullAt = _lastOkAt;
       _lastErr = null;
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
-      console.warn("[sync-v3] pull", e);
+      console.warn("[sync-v3.5] pull", e);
     } finally {
       _pulling = false;
       refreshBadge();
@@ -202,33 +209,36 @@
         }
       };
     } catch (e) {
-      console.warn("[sync-v3] BroadcastChannel no disponible", e);
+      console.warn("[sync-v3.5] BroadcastChannel no disponible", e);
     }
   }
 
   function hookDirtyAndPush() {
     try {
-      if (window.__rutalogSyncSetItemPatchedV3) return;
-      window.__rutalogSyncSetItemPatchedV3 = true;
-      var proto = Storage.prototype;
-      var orig = proto.setItem;
-      if (orig._syncV3) return;
-      proto.setItem = function (k, v) {
-        var r = orig.apply(this, arguments);
-        try {
-          if (this === localStorage && String(k) === "rutalog_gh_dirty") {
-            if (String(v) === "1") {
-              broadcast("data-changed");
-              startPullLoop();
-            } else {
-              broadcast("push-ok");
-            }
-          }
-        } catch (e) {}
-        return r;
-      };
-      proto.setItem._syncV3 = true;
+      if (typeof window.ghMarkDirty === "function" && !window.ghMarkDirty._syncV3) {
+        var origDirty = window.ghMarkDirty;
+        window.ghMarkDirty = function () {
+          try {
+            origDirty.apply(this, arguments);
+          } catch (e) {}
+          startPullLoop();
+        };
+        window.ghMarkDirty._syncV3 = true;
+      }
     } catch (e) {}
+    try {
+      if (typeof window.ghPush === "function" && !window.ghPush._syncV3) {
+        var origPush = window.ghPush;
+        window.ghPush = function () {
+          var r = origPush.apply(this, arguments);
+          try {
+            broadcast("push-ok");
+          } catch (e) {}
+          return r;
+        };
+        window.ghPush._syncV3 = true;
+      }
+    } catch (e2) {}
   }
 
   function wireManualControls() {
@@ -274,20 +284,37 @@
   }
 
   function boot() {
+    if (_booted) return;
+    _booted = true;
     setupBroadcast();
     hookDirtyAndPush();
     hookBadgeRefresh();
     wireManualControls();
     startPullLoop();
-    setTimeout(function () {
-      pullOnce(true);
-      refreshBadge();
-      wireManualControls();
-    }, 1000);
-    setTimeout(function () {
-      pullOnce(true);
-      refreshBadge();
-    }, 3500);
+    /* Un solo pull inicial cuando la UI está lista (no doble boot, no 1s+3.5s) */
+    function pullWhenUiReady() {
+      function go() {
+        pullOnce(true);
+        refreshBadge();
+        wireManualControls();
+      }
+      var tries = 0;
+      function wait() {
+        tries++;
+        var ready =
+          document.documentElement.classList.contains("rutalog-ready") ||
+          document.documentElement.classList.contains("rutalog-need-login");
+        if (ready || tries > 40) {
+          requestAnimationFrame(function () {
+            setTimeout(go, 800);
+          });
+          return;
+        }
+        setTimeout(wait, 100);
+      }
+      wait();
+    }
+    pullWhenUiReady();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("focus", onFocus);
     window.addEventListener("online", onOnline);
@@ -305,11 +332,11 @@
       broadcast: broadcast
     };
     console.info(
-      "[RUTALOG] sync v3.1 · " +
+      "[RUTALOG] sync v3.5 · " +
         PULL_MS_FOCUS / 1000 +
         "s foco · " +
         PULL_MS_DIRTY / 1000 +
-        "s dirty · focus/online/badge"
+        "s dirty · pull tras UI lista · cooldown 8s"
     );
   }
 
@@ -320,5 +347,4 @@
   } else {
     setTimeout(boot, 700);
   }
-  setTimeout(boot, 2200);
 })();
