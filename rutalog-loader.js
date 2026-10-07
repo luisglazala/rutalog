@@ -1,4 +1,4 @@
-/* RUTALOG loader v2 — CSS/JS en paralelo (arranque más rápido) */
+/* RUTALOG load extras v2 — manifiesto único, sin dobles */
 (function () {
   "use strict";
   if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v2) return;
@@ -8,13 +8,9 @@
 
   function keyOf(url) {
     try {
-      var u = String(url || "").trim();
-      var q = u.indexOf("?");
-      if (q >= 0) u = u.slice(0, q);
-      var h = u.indexOf("#");
-      if (h >= 0) u = u.slice(0, h);
-      if (u.indexOf("./") === 0) u = u.slice(2);
-      return u;
+      var u = String(url || "");
+      var i = u.indexOf("?");
+      return i >= 0 ? u.slice(0, i) : u;
     } catch (e) {
       return String(url || "");
     }
@@ -23,30 +19,25 @@
   function markExisting() {
     try {
       document.querySelectorAll("script[src]").forEach(function (s) {
-        loaded.add(keyOf(s.getAttribute("src")));
+        loaded.add(keyOf(s.getAttribute("src") || ""));
       });
       document.querySelectorAll('link[rel="stylesheet"][href]').forEach(function (l) {
-        loaded.add(keyOf(l.getAttribute("href")));
+        loaded.add(keyOf(l.getAttribute("href") || ""));
       });
     } catch (e) {}
   }
-  markExisting();
 
   function loadCss(href) {
     var k = keyOf(href);
-    if (loaded.has(k)) return Promise.resolve(false);
+    if (loaded.has(k)) return Promise.resolve();
     if (pending.has(k)) return pending.get(k);
     var p = new Promise(function (resolve) {
-      var link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      link.onload = function () { loaded.add(k); pending.delete(k); resolve(true); };
-      link.onerror = function () {
-        pending.delete(k);
-        console.warn("[RUTALOG.load] CSS fail", href);
-        resolve(false);
-      };
-      document.head.appendChild(link);
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = href;
+      l.onload = function () { loaded.add(k); resolve(); };
+      l.onerror = function () { resolve(); };
+      document.head.appendChild(l);
     });
     pending.set(k, p);
     return p;
@@ -54,19 +45,15 @@
 
   function loadJs(src) {
     var k = keyOf(src);
-    if (loaded.has(k)) return Promise.resolve(false);
+    if (loaded.has(k)) return Promise.resolve();
     if (pending.has(k)) return pending.get(k);
     var p = new Promise(function (resolve) {
       var s = document.createElement("script");
       s.src = src;
       s.async = true;
-      s.onload = function () { loaded.add(k); pending.delete(k); resolve(true); };
-      s.onerror = function () {
-        pending.delete(k);
-        console.warn("[RUTALOG.load] JS fail", src);
-        resolve(false);
-      };
-      (document.body || document.head).appendChild(s);
+      s.onload = function () { loaded.add(k); resolve(); };
+      s.onerror = function () { resolve(); };
+      document.head.appendChild(s);
     });
     pending.set(k, p);
     return p;
@@ -119,6 +106,7 @@
     "./mejoras-mapa-vista.js?v=1",
     "./mejoras-mapa-hide.js?v=1",
     "./mejoras-mapa-ciudades-ruta.js?v=3",
+    "./mejoras-mapa-incremental.js?v=1",
     "./mejoras-plan-filtro.js?v=1",
     "./mejoras-ui-centro-viajes.js?v=3",
     "./mejoras-mapa-sin-rectas.js?v=2",
