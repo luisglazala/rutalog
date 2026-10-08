@@ -1,0 +1,438 @@
+{
+  "generated": "2026-10-07",
+  "branch": "limpieza",
+  "files": {
+    ".github/workflows/js-check.yml": {
+      "size": 1657,
+      "sha256": "f8e70df429e81d81f85ad5a76b0748ab0885dc6d863c5afe691bd525cb971151"
+    },
+    ".gitignore": {
+      "size": 14,
+      "sha256": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97"
+    },
+    "APP_CORE_NOTE.md": {
+      "size": 781,
+      "sha256": "df2e5f5d8a538845ec2eb9ca1c56c8bb9ad6ad4eb112a7f70aff8ce76c3ee405"
+    },
+    "CLOUDFLARE.md": {
+      "size": 1288,
+      "sha256": "eae20134bf6c18b55013a7ac04d1293f9a16f808c5ff2aee394c586836f41dfb"
+    },
+    "DEPLOY_NOTE.txt": {
+      "size": 754,
+      "sha256": "a0e0169a75faec1fcbf39874f307262f6bd8481b7cda698e69cff0f25ea9ee23"
+    },
+    "MEJORAS.md": {
+      "size": 953,
+      "sha256": "44d81fdec156e99d76b645d0e695d9b05892cd85fa2d0da95cba27c5ac8993ae"
+    },
+    "NOTAS.md": {
+      "size": 3786,
+      "sha256": "43a89635b688bd5427debc36b6b7a85ed19462fdfd34d421c40a705662264ee3"
+    },
+    "README.md": {
+      "size": 690,
+      "sha256": "7a47929b52ae1626d72b919fc16c6c39cfec492e35b7ab90fe19566fc79d7317"
+    },
+    "RUTALOG GITHUB.html": {
+      "size": 6377,
+      "sha256": "1f4101ef4bfea17c55aaaabb77d63bdb1f9d9e0a2b7e3af19a7fb91b7fc5456b"
+    },
+    "RUTALOG-TEST.html": {
+      "size": 5433,
+      "sha256": "63f9e3e404abb4f38748be3d9a83dca9badc1b8c28a5d22db98e9767ce524063"
+    },
+    "STABLE.md": {
+      "size": 236,
+      "sha256": "1389727cb31be5dcd10d1b768b07732d36933d3b0f248d41b74fc3e8e4d5e595"
+    },
+    "_headers": {
+      "size": 874,
+      "sha256": "54f2a5bf505fc7a94b66d4bef132faa819087ee826af6293d5f62e82877c62dc"
+    },
+    "_redirects": {
+      "size": 104,
+      "sha256": "c638958b6f97f3ca3998e58b6c28bc61e16dd9dc5dec06c0153cd5536bc6225a"
+    },
+    "_worker.js": {
+      "size": 167,
+      "sha256": "f57556406e63c4890bb20c2c0a80776f4e7584e262c92423053f3c0c4df1767d"
+    },
+    "app-body.html": {
+      "size": 264,
+      "sha256": "d8d1b43f256282057c1ab70f15918760662f8c315c63c65c77f0c3259775c397"
+    },
+    "app-core-construirHoy.js": {
+      "size": 9064,
+      "sha256": "80998952e2d2c586bf4f33b904cc0c916c347f929157517cfdb72f8c28b73cbf"
+    },
+    "app-core-runtime.js": {
+      "size": 848,
+      "sha256": "e6f163bfa2a70ee70652ec52d3f9bf7f628afd575a7581e2656d41fbd5ad7b5e"
+    },
+    "app-core.js": {
+      "size": 205,
+      "sha256": "cb326972718abfebf5c5801da9b1d81459f672442b3f48062196368994545abe"
+    },
+    "app.js": {
+      "size": 8036,
+      "sha256": "8592db626c10c2b40b264960540a582ce8c713f4f3fa8a6f29a2b704f19ad974"
+    },
+    "base.css": {
+      "size": 43107,
+      "sha256": "38d3c46c405fbfe006b919bcc14feaa9bbf99c4f332c23d64d626d24770d4f09"
+    },
+    "boot.css": {
+      "size": 1952,
+      "sha256": "829defd22ac8295abee55e8f9caee0fd28220bc03f9ae32f41045068ce6a1fce"
+    },
+    "boot.js": {
+      "size": 877,
+      "sha256": "a7f015dafecb811f2c730f4ca6a78f7c6e725f7bb58593674c166d150862949d"
+    },
+    "codigo-perf.js": {
+      "size": 11870,
+      "sha256": "8bd2da21f71966f18e2d02a47a1003541c219b0cc6f81eca3f083a0a938d05fa"
+    },
+    "core-app.js": {
+      "size": 391478,
+      "sha256": "9979add20b3e8de76dff617e1d7d3bbc931d9e72616980192d8a200d88bfda42"
+    },
+    "debug-perf.js": {
+      "size": 5189,
+      "sha256": "1ee94a0439fa123041306037aab2ff49b767f86534043d22c322c96eba7ccd07"
+    },
+    "docs/AUDITORIA-RENDIMIENTO.md": {
+      "size": 5566,
+      "sha256": "52fbc6b098373b02d396651c734767cfee367b4be08b9833ed3fea77e924889c"
+    },
+    "docs/DECISIONES.md": {
+      "size": 760,
+      "sha256": "1ffd1ed536e2c9c6cdaf4e15adc6ab643b6cf9f01598f0e8fbeec25fcb8ca649"
+    },
+    "docs/DIAGNOSTICO.md": {
+      "size": 12523,
+      "sha256": "7c0293547b33379a791ba043439894793b09f202245ff59248a149a6954387b1"
+    },
+    "docs/FIX-LECTURA-GRANDE.md": {
+      "size": 1431,
+      "sha256": "ecdd18423b014af464f3a9711e60e0a2003d61c064ee80fe9c6db29c2ec76b11"
+    },
+    "favicon.svg": {
+      "size": 686,
+      "sha256": "dfa30eaea7e25b34657acc1ea05882a2f0ae6fcbecdc915b37e53ff114aac478"
+    },
+    "fix-mapa-rutas.css": {
+      "size": 2115,
+      "sha256": "fb5c58c5825c7e40eb2fd4366a434e26289a674271741661b20bf53370481bd0"
+    },
+    "functions/api/[[path]].js": {
+      "size": 4551,
+      "sha256": "9484a5de580c328184efb5a30df755522ef800c2e6a25a2bf3a2de39a8377848"
+    },
+    "functions/api.js": {
+      "size": 106,
+      "sha256": "760555b2c970f22aa999f89a5b3b76d8366821332cc639f0ea987b1cf4a047aa"
+    },
+    "harness-construirHoy.js": {
+      "size": 2114,
+      "sha256": "b18d2275afb1676f527dd8862d4f1789e14bfaa6d6a023bf2e33ed52f65a6a9d"
+    },
+    "index.html": {
+      "size": 6789,
+      "sha256": "96fe5aae3e227ff58d35ff1fe4903a20adf1c8a3913183a5e23ba4c90aae929b"
+    },
+    "maestro-base.json": {
+      "size": 882008,
+      "sha256": "785cc2f4e26e4bc3b3afa6c70bee0c4726b1d8693705051382708e6136c67379"
+    },
+    "manifest.webmanifest": {
+      "size": 572,
+      "sha256": "bbe2ef763ca5f0dfced85027e5040caf076b7c54d6e24b1def9a0561401c44a1"
+    },
+    "mejoras-audit.js": {
+      "size": 15281,
+      "sha256": "39b6b2435f4ec3059ac94ab181b9f57b3452621175f3044f2ab435e2320a5e47"
+    },
+    "mejoras-centros.js": {
+      "size": 5523,
+      "sha256": "ab5dfeb57e3b6ab1abad77c3466033805ef5c0e4b925db269eaac85fcf4a89ad"
+    },
+    "mejoras-citas-core.js": {
+      "size": 279,
+      "sha256": "0659420bbd41fa9a024434286d1f986cc367651e4e47d3a95f2fc164a9040cbc"
+    },
+    "mejoras-citas-futura.js": {
+      "size": 13131,
+      "sha256": "dfdcd7dbda2e401e95a43d1af4db92157dc7df3eae8609b48c0c1b6b9c167fbf"
+    },
+    "mejoras-citas-tabla.js": {
+      "size": 8743,
+      "sha256": "00ac6299fd9c8fae75a6eb8f53703cb955850145575e4907e8eecfd0e1cf9bb7"
+    },
+    "mejoras-citas-ui.js": {
+      "size": 279,
+      "sha256": "0659420bbd41fa9a024434286d1f986cc367651e4e47d3a95f2fc164a9040cbc"
+    },
+    "mejoras-citas-v15.js": {
+      "size": 53118,
+      "sha256": "66d7d1e93078da8bcdcec170bc5aec2680efb7fa95fc1bb1944a7463d1d593ae"
+    },
+    "mejoras-citas.js": {
+      "size": 53075,
+      "sha256": "5496b79441fb82cf40baa92828e13b2529076abd3025f6ec517bdb82c293b0db"
+    },
+    "mejoras-ciudades-disponibles.js": {
+      "size": 5203,
+      "sha256": "b2bc6389f75f90c0f903f4afa150e5e1205d2bd252a9da785a7d9a235ebd7661"
+    },
+    "mejoras-ciudades.js": {
+      "size": 3345,
+      "sha256": "beb56cf3658e94ef0e18910b97afebc2dfd15d8438a8a08eb09924a33c9bf65a"
+    },
+    "mejoras-correcciones.js": {
+      "size": 10836,
+      "sha256": "d17113a61526c4b79fc4ef7f43ea5c11f226b9a5f499d6f4cb88aee7cf665da3"
+    },
+    "mejoras-cruzados.js": {
+      "size": 10767,
+      "sha256": "bc3c2589e413c1c53f0131382f7d646f7e58e9fb8af3cc3bfd38242ef2b31332"
+    },
+    "mejoras-despachos-delete.js": {
+      "size": 9482,
+      "sha256": "960ec3c5d1e43f5fa01a2573355371b934c4c52c609b2af13b0d412f222b98e9"
+    },
+    "mejoras-despachos-layout.css": {
+      "size": 2660,
+      "sha256": "648d92fe8b6e9260faa2cca9bbd5fef48a52beef848b376eb5189e1fcd151ff6"
+    },
+    "mejoras-esteticas.css": {
+      "size": 1142,
+      "sha256": "71190833b1be9ac10f61af1162d88b5954d1b9734c3fc12e76e58e98400bcd27"
+    },
+    "mejoras-excel-export.js": {
+      "size": 15048,
+      "sha256": "24126b3fcb8e8595ae38d2fb3913453682a3fc1f336fb4ad6c5fb45675f54824"
+    },
+    "mejoras-gh-proxy.js": {
+      "size": 3172,
+      "sha256": "a7847aac087805d221467482af975550a42b8e6a9606b5f4f852b75acf8df17d"
+    },
+    "mejoras-go-h8.js": {
+      "size": 966,
+      "sha256": "2658013caefb2c1c06c288521e631638e9d95a047d7c651acc43a91e14a41c2b"
+    },
+    "mejoras-go-perf.js": {
+      "size": 322,
+      "sha256": "4f4ed242fd4c7b30e13919bf031642159effda2f65edb7c3b7467f90adcc7176"
+    },
+    "mejoras-invalidate-debounce.js": {
+      "size": 1398,
+      "sha256": "c7a67e7edc5ed7aa49e4d55b0c5005077a940b51f470a92d8c00648f2920082d"
+    },
+    "mejoras-layout.css": {
+      "size": 1275,
+      "sha256": "fb0ec52a78a8df352ec202f039edc3041c7c373e515b7b2a2f4f38c421d6302f"
+    },
+    "mejoras-listas-inc.js": {
+      "size": 1756,
+      "sha256": "f3f647fe6e733d028a1bf58b5f1f502cbaed7c3fb0ead0c42061cc401acb7657"
+    },
+    "mejoras-login-inmediato.js": {
+      "size": 7747,
+      "sha256": "23c5a0a428a2a53c30b6a51700cd03a5274bde819e29e98b0c07779f3ae9f6e3"
+    },
+    "mejoras-logout-clear.js": {
+      "size": 1727,
+      "sha256": "5982c117c27a630dd2508fe0ca36e8e71a912c2cbd2a9efc6d8b529104501112"
+    },
+    "mejoras-map-despachados.js": {
+      "size": 196,
+      "sha256": "ba7ccf882ab39598917d9509daa8758520080eda76dce2c69323f49c3d3538de"
+    },
+    "mejoras-map-icons.js": {
+      "size": 334,
+      "sha256": "6646834ccb1139bc84e331595fcdea9ec1f53c5dae7ffd06f0d54691c3b7a367"
+    },
+    "mejoras-map-refresh.js": {
+      "size": 267,
+      "sha256": "ef9871f5326bd226db8c622b00c20e65e8a8a48908213b8d57c9f21a22b4928d"
+    },
+    "mejoras-mapa-ciudades-ruta.js": {
+      "size": 13108,
+      "sha256": "ab0693416e0ad40f4700a59e0c8e7082b1ebb3bd4ec0b958013defa3f47f47c7"
+    },
+    "mejoras-mapa-fix.js": {
+      "size": 9772,
+      "sha256": "beac9ab24dabecf4e365692915a69524734ea18cc3e1f3b81c992366425b47b9"
+    },
+    "mejoras-mapa-hide.js": {
+      "size": 4402,
+      "sha256": "342c53c669d2649782bace2d6945b40e4ff1213919ae014ebefc7362f44eaba4"
+    },
+    "mejoras-mapa-incremental.js": {
+      "size": 8081,
+      "sha256": "19f14cd028cfc2c827f33b8f946c751b581ed65283d9a13c83e9f762f9a08730"
+    },
+    "mejoras-mapa-sin-rectas.js": {
+      "size": 2224,
+      "sha256": "be97a34efb08125f254d2fc8a600e5e41401266d7e1ce7acdd19b77ab00bfeed"
+    },
+    "mejoras-mapa-viaje.js": {
+      "size": 186,
+      "sha256": "554fa9bb5510f729c84a8e79f4545a5dc7cb63f90b3f87f35c3ace6dba823f49"
+    },
+    "mejoras-mapa-vista.js": {
+      "size": 3611,
+      "sha256": "ec99a99bb003b579a6ee103a30c73b50be979f479aadd0091e622b6f09136bf5"
+    },
+    "mejoras-mapa.js": {
+      "size": 4775,
+      "sha256": "5065cccba48b9e554cfe9b02e3f4678bcf5e6ff9e8f457f67347a0ab9c62deef"
+    },
+    "mejoras-marcadores.js": {
+      "size": 338,
+      "sha256": "9fa6381f87ad8ccd7d32bc587016a9b6d9af571d5d8afe956c0250eddc2917fa"
+    },
+    "mejoras-nav-fix.js": {
+      "size": 4550,
+      "sha256": "bf9e7c3265a8ccb8a80334203fd2b9365e8ab73f10d1fa1964474ed7a606fae4"
+    },
+    "mejoras-osrm-on-save.js": {
+      "size": 5382,
+      "sha256": "2818f21c7250e67fe42427362a87edb8da968cb9a11d8e396bce860cc2eabac7"
+    },
+    "mejoras-osrm-onsave.js": {
+      "size": 4565,
+      "sha256": "838dd40113d03e7f1b8dcbe67d5063a37420411e14bb884bcf6e4648e5cae5ef"
+    },
+    "mejoras-plan-filtro.js": {
+      "size": 2550,
+      "sha256": "e478b659cafc199abcafa2c21ebd3ef2652ce6fe0170797251c120e79a085393"
+    },
+    "mejoras-planificacion.js": {
+      "size": 18998,
+      "sha256": "9713925a95fdb92869da990cf6876647f88d8e0fdbaef31fccb3840d620008dc"
+    },
+    "mejoras-responsive.css": {
+      "size": 760,
+      "sha256": "c06cda7637269cfec4855b2fba65311b5339c9fce17185369ac672f3446de46e"
+    },
+    "mejoras-rutas-layout.css": {
+      "size": 2522,
+      "sha256": "ca552728480c0cb1a4172c60d1778012a1b8616a827ba518dedeed99f66e81a7"
+    },
+    "mejoras-rutas-panel-ui.js": {
+      "size": 8743,
+      "sha256": "6b9ffbbaa69ce8e451c6c09c3ed0730e42c9b9b3fbab8793158aa92210fe84aa"
+    },
+    "mejoras-storage-h7.js": {
+      "size": 1712,
+      "sha256": "fdc4f52b16e18a9680f21d81fa76d53c50fa11ddfd332386872a4b579238086b"
+    },
+    "mejoras-storage.js": {
+      "size": 5847,
+      "sha256": "f2377288657896849420a702761f49cb81f485d523aa2e60db1a059d3ac98883"
+    },
+    "mejoras-sync-h6.js": {
+      "size": 998,
+      "sha256": "9fa769ecab7be27d89dce6d8b0285797169f24c17983ae24d9d8b21a39d38a1e"
+    },
+    "mejoras-sync.js": {
+      "size": 9391,
+      "sha256": "1b0dacadd38da7da035a8616929747e31817b42436944996b94ad0c463f7e280"
+    },
+    "mejoras-ui-centro-viajes.js": {
+      "size": 5123,
+      "sha256": "25d6f76d997fb0eada8b5f2b81e0886ed02da18f1155e9ffaac63ae11e9eb841"
+    },
+    "mejoras-ui-polish.css": {
+      "size": 7030,
+      "sha256": "1a58478a73954a1f0870884043a01384abc9362368021ec3f31211c2e4c13014"
+    },
+    "mejoras-ui-polish.js": {
+      "size": 3437,
+      "sha256": "67d96bc8f737b3cfc6e634ee70a2168c6b7a601f71d67f4ab3301429131870e0"
+    },
+    "mejoras-v2.css": {
+      "size": 5886,
+      "sha256": "dda1e6b8cdba3f9fdface08fb1a0e901c5eab48bd06680fa8f1dacc5793f8746"
+    },
+    "mejoras-v2.js": {
+      "size": 16163,
+      "sha256": "bfd20d75276f54a74d925ca8bd223116b773f3f662e2df9abac89c94e0b13aab"
+    },
+    "rutalog-hooks.js": {
+      "size": 4505,
+      "sha256": "cd1e04fde0ebe1a5e62f4d2636d54614d6a26b98d9f088a9e414b0c8a086955e"
+    },
+    "rutalog-loader.js": {
+      "size": 4603,
+      "sha256": "1ba13b29bdf7c0520c8836f1a6385ac99c58cdc075e3d464162c80b3d4772aef"
+    },
+    "rutalog-scheduler.js": {
+      "size": 2595,
+      "sha256": "d891e14f1990928c383f582f3b4b942ee42f8db22bc5409e40994cd6b64e46b8"
+    },
+    "rutas-mapa.js": {
+      "size": 1489,
+      "sha256": "720ccd43cb23eb7bd6aedf4cf79c4d8089393169633368fd2db85be91cec9d05"
+    },
+    "shell-body.html": {
+      "size": 44271,
+      "sha256": "7ba4b7f8d47330f2fe0034ee745d716748440b5c9b26345e9b85354a3133eb68"
+    },
+    "styles-half1.css": {
+      "size": 2042,
+      "sha256": "e1660981f87f635d7516c8c38d700469363f5dda8d5a56acc3c3c24ea20d9bb3"
+    },
+    "styles-part2.css": {
+      "size": 4800,
+      "sha256": "28d9cdafcc30581465d76f5b2b110acc9f0861e4b7ad0ef4ef4de731db915789"
+    },
+    "styles.css": {
+      "size": 3131,
+      "sha256": "624237755840dc7dee4b1aa9c9ef815584c3497cd1364dc579f34a1fa2af62eb"
+    },
+    "sw.js": {
+      "size": 3281,
+      "sha256": "453b496f809643f3502e98ad9456f258d3f1cbdda3e8b8168392ecff81398135"
+    },
+    "test-50k.json": {
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests/e2e/README.md": {
+      "size": 224,
+      "sha256": "27d2b52ae936473eb0504a7bfcc700acbcfd20aaa87b70a1d76ec8507b57d846"
+    },
+    "tests/e2e/shell-login.spec.mjs": {
+      "size": 2360,
+      "sha256": "4d1593adcffd78e118607ebc88b10388bd6c910a1aaa0ab8e7edd233f2de5bea"
+    },
+    "tests/perf.mjs": {
+      "size": 6700,
+      "sha256": "dc0265f9d7136309c8ee45fb71d0ae016eab77b8d1127441030eea0d446141dd"
+    },
+    "tests/unit/proxy-preview-writes.test.mjs": {
+      "size": 3568,
+      "sha256": "6fdc7319a21be2de7e9e0e93d219c19a0b45405bf2907251f32b20c1149c0d6c"
+    },
+    "tests/unit/sw-broken-cache.test.mjs": {
+      "size": 1709,
+      "sha256": "c14195a7f4f89add0deacc111a01a25e955436e114c306c9c83baae41cf55277"
+    },
+    "tests/unit/sync-read-protection.test.mjs": {
+      "size": 9481,
+      "sha256": "0903f2daf6bb38a008d279f4af5cbaa2975f24823316bdd485ead05055704b95"
+    },
+    "worker.js": {
+      "size": 5643,
+      "sha256": "55fbffab02f1c1dfeef790e2b555a5bacbcacc64e61da32622650be129097731"
+    },
+    "wrangler.toml": {
+      "size": 271,
+      "sha256": "613d852d5276c112307486e9ad9d10f411f4a756889f0e193909a9debcb87fd6"
+    }
+  }
+}

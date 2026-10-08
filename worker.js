@@ -1,11 +1,14 @@
 /**
  * RUTALOG — único worker / proxy GitHub (Fase 5)
  * wrangler.toml → main = worker.js
- * Solo repo luisglazala/rutalog-datos y rutas /contents/ (datos).
+ * Solo repo luisglazala/rutalog-datos: /contents/* y GET /git/blobs/* (archivos >1 MB).
  * Secret: GITHUB_SECRET_TOKEN (nunca en el cliente).
+ * Preview: escritura bloqueada salvo ALLOW_PREVIEW_WRITES=1.
  */
 const ALLOWED_REPO = "luisglazala/rutalog-datos";
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "POST", "OPTIONS"]);
+const WRITE_METHODS = new Set(["PUT", "PATCH", "POST", "DELETE"]);
+const PROD_HOST = "rutalog.pages.dev";
 
 export default {
   async fetch(request, env, ctx) {
@@ -51,23 +54,37 @@ function json(body, status, cors) {
 
 /**
  * Solo:
- *  /repos/luisglazala/rutalog-datos/contents/...
- *  /repos/luisglazala/rutalog-datos (meta)
- * Rechaza cualquier otro owner/repo o path (git/blobs, etc. fuera de contents).
+ *  GET/HEAD /repos/luisglazala/rutalog-datos/contents/...
+ *  GET/HEAD /repos/luisglazala/rutalog-datos/git/blobs/{sha40}
+ *  PUT/PATCH/POST /contents/... (escrituras; bloqueadas en preview salvo env)
  */
-function pathAllowed(githubPath) {
+function pathAllowed(githubPath, method) {
   if (githubPath === "/rate_limit") return false;
-  const m = githubPath.match(
-    /^\/repos\/([^/]+)\/([^/]+)(?:\/(contents)(?:\/|$)|\/?$)/
-  );
+  const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/);
   if (!m) return false;
   const full = m[1] + "/" + m[2];
   if (full !== ALLOWED_REPO) return false;
-  // repo root meta OK; deep paths must be under contents
-  if (githubPath === "/repos/" + ALLOWED_REPO || githubPath === "/repos/" + ALLOWED_REPO + "/") {
+  const rest = m[3] || "";
+  if (rest === "" || rest === "/") return true;
+  if (rest.indexOf("/contents") === 0) return true;
+  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest)) {
     return true;
   }
-  return githubPath.indexOf("/repos/" + ALLOWED_REPO + "/contents") === 0;
+  return false;
+}
+
+function isProdHost(request) {
+  const host = (request.headers.get("Host") || "").toLowerCase().split(":")[0];
+  if (host === PROD_HOST) return true;
+  return false;
+}
+
+function writesAllowed(request, env) {
+  if (isProdHost(request)) return true;
+  if (env && (env.ALLOW_PREVIEW_WRITES === "1" || env.ALLOW_PREVIEW_WRITES === "true")) {
+    return true;
+  }
+  return false;
 }
 
 async function handleGitHubProxy(request, env, url) {
@@ -86,18 +103,31 @@ async function handleGitHubProxy(request, env, url) {
           ok: true,
           service: "RUTALOG GitHub proxy",
           repo: ALLOWED_REPO,
-          scope: "solo /contents/* de rutalog-datos",
+          scope: "contents/* + GET git/blobs/*",
+          writes: writesAllowed(request, env) ? "allowed" : "blocked-preview",
         },
         200,
         cors
       );
     }
 
-    if (!pathAllowed(githubPath)) {
+    if (!pathAllowed(githubPath, request.method)) {
       return json(
         {
           error: "Ruta o repositorio no permitido",
-          allowed: ALLOWED_REPO + "/contents/*",
+          allowed: ALLOWED_REPO + "/contents/* y GET git/blobs/{sha}",
+        },
+        403,
+        cors
+      );
+    }
+
+    if (WRITE_METHODS.has(request.method) && !writesAllowed(request, env)) {
+      return json(
+        {
+          error: "Escritura bloqueada en preview",
+          detail: "Solo lectura en hosts distintos de " + PROD_HOST + ". Define ALLOW_PREVIEW_WRITES=1 solo si es necesario.",
+          host: request.headers.get("Host") || "",
         },
         403,
         cors
@@ -112,9 +142,15 @@ async function handleGitHubProxy(request, env, url) {
     const ghUrl = "https://api.github.com" + githubPath + (url.search || "");
     const headers = new Headers();
     headers.set("Authorization", "Bearer " + token);
-    headers.set("Accept", "application/vnd.github+json");
     headers.set("X-GitHub-Api-Version", "2022-11-28");
     headers.set("User-Agent", "RUTALOG-Cloudflare-Proxy");
+
+    const clientAccept = request.headers.get("Accept") || "";
+    if (clientAccept.indexOf("application/vnd.github.raw") >= 0) {
+      headers.set("Accept", "application/vnd.github.raw+json");
+    } else {
+      headers.set("Accept", "application/vnd.github+json");
+    }
     if (request.headers.get("Content-Type")) {
       headers.set("Content-Type", request.headers.get("Content-Type"));
     }
@@ -129,19 +165,16 @@ async function handleGitHubProxy(request, env, url) {
     }
 
     const ghRes = await fetch(ghUrl, init);
-    const outHeaders = new Headers(ghRes.headers);
-    Object.keys(cors).forEach(function (k) {
-      outHeaders.set(k, cors[k]);
-    });
-    outHeaders.delete("content-encoding");
-    outHeaders.delete("content-length");
-
+    const out = new Headers(ghRes.headers);
+    Object.keys(cors).forEach((k) => out.set(k, cors[k]));
+    out.delete("content-encoding");
+    out.delete("content-length");
     return new Response(ghRes.body, {
       status: ghRes.status,
       statusText: ghRes.statusText,
-      headers: outHeaders,
+      headers: out,
     });
-  } catch (err) {
-    return json({ error: String(err && err.message ? err.message : err) }, 500, corsHeaders());
+  } catch (e) {
+    return json({ error: String(e.message || e) }, 500, cors);
   }
 }
