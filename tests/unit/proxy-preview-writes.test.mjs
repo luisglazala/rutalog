@@ -1,61 +1,108 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const ALLOWED_REPO = "luisglazala/rutalog-datos";
-const WRITE_METHODS = new Set(["PUT", "PATCH", "POST", "DELETE"]);
-const PROD_HOST = "rutalog.pages.dev";
-
-function pathAllowed(githubPath, method) {
-  const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/);
-  if (!m) return false;
-  if (m[1] + "/" + m[2] !== ALLOWED_REPO) return false;
-  const rest = m[3] || "";
-  if (rest === "" || rest === "/") return true;
-  if (rest.indexOf("/contents") === 0) return true;
-  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest)) return true;
-  return false;
-}
-function isProdHost(hostHeader) {
-  return String(hostHeader || "").toLowerCase().split(":")[0] === PROD_HOST;
-}
-function writesAllowed(hostHeader, env) {
-  if (isProdHost(hostHeader)) return true;
-  if (env && (env.ALLOW_PREVIEW_WRITES === "1" || env.ALLOW_PREVIEW_WRITES === "true")) return true;
-  return false;
-}
-function decide(method, githubPath, host, env = {}) {
-  if (!pathAllowed(githubPath, method)) return { status: 403, reason: "path" };
-  if (WRITE_METHODS.has(method) && !writesAllowed(host, env)) return { status: 403, reason: "preview-write-block" };
-  return { status: 200, reason: "ok" };
-}
-
-let passed = 0, failed = 0;
-function test(name, fn) {
-  try { fn(); passed++; console.log("PASS:", name); }
-  catch (e) { failed++; console.error("FAIL:", name, e.message); }
-}
-
-const contentsPath = "/repos/luisglazala/rutalog-datos/contents/data.json";
-const blobPath = "/repos/luisglazala/rutalog-datos/git/blobs/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-test("GET contents preview OK", () => assert.equal(decide("GET", contentsPath, "limpieza.rutalog.pages.dev").status, 200));
-test("GET blob preview OK", () => assert.equal(decide("GET", blobPath, "abc.rutalog.pages.dev").status, 200));
-test("PUT preview 403", () => { const r = decide("PUT", contentsPath, "limpieza.rutalog.pages.dev"); assert.equal(r.status, 403); assert.equal(r.reason, "preview-write-block"); });
-test("POST preview 403", () => assert.equal(decide("POST", contentsPath, "x.pages.dev").status, 403));
-test("PUT localhost 403", () => assert.equal(decide("PUT", contentsPath, "localhost:8787").status, 403));
-test("PUT prod OK", () => assert.equal(decide("PUT", contentsPath, "rutalog.pages.dev").status, 200));
-test("POST prod OK", () => assert.equal(decide("POST", contentsPath, "rutalog.pages.dev").status, 200));
-test("PUT preview + ALLOW_PREVIEW_WRITES", () => assert.equal(decide("PUT", contentsPath, "limpieza.rutalog.pages.dev", { ALLOW_PREVIEW_WRITES: "1" }).status, 200));
-test("other repo 403", () => assert.equal(decide("GET", "/repos/other/repo/contents/x", "rutalog.pages.dev").reason, "path"));
-test("DELETE preview 403", () => assert.equal(decide("DELETE", contentsPath, "foo.rutalog.pages.dev").status, 403));
+import { pathToFileURL, fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const worker = fs.readFileSync(path.join(root, "worker.js"), "utf8");
-const fn = fs.readFileSync(path.join(root, "functions/api/[[path]].js"), "utf8");
-test("worker has writesAllowed", () => { assert.match(worker, /writesAllowed/); assert.match(worker, /rutalog\.pages\.dev/); assert.match(worker, /ALLOW_PREVIEW_WRITES/); });
-test("functions has writesAllowed", () => { assert.match(fn, /writesAllowed/); assert.match(fn, /ALLOW_PREVIEW_WRITES/); });
+const workerPath = path.join(root, "worker.js");
+const entryPath = path.join(root, "_worker.js");
+
+const entrySrc = fs.readFileSync(entryPath, "utf8");
+assert.match(entrySrc, /export\s*\{\s*default\s*\}\s*from\s*["']\.\/worker\.js["']/);
+assert.ok(!/pathAllowed|handleGitHubProxy|ALLOWED_REPO/.test(entrySrc), "_worker.js no debe tener lógica propia");
+
+const mod = await import(pathToFileURL(workerPath).href);
+const worker = mod.default;
+assert.ok(worker && typeof worker.fetch === "function");
+
+function req(method, url, host = "preview.rutalog.pages.dev", body = null) {
+  const headers = new Headers({ Host: host });
+  if (body) headers.set("Content-Type", "application/json");
+  return new Request(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+}
+
+const env = {
+  GITHUB_SECRET_TOKEN: "test-token-not-real",
+  ASSETS: { fetch: async () => new Response("asset", { status: 200 }) },
+};
+
+let passed = 0, failed = 0;
+async function test(name, fn) {
+  try { await fn(); passed++; console.log("PASS:", name); }
+  catch (e) { failed++; console.error("FAIL:", name, e && e.message); }
+}
+
+await test("GET /api info", async () => {
+  const r = await worker.fetch(req("GET", "https://preview.rutalog.pages.dev/api"), env);
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(j.ok, true);
+});
+
+await test("GET contents/data.json preview OK (ruta permitida)", async () => {
+  const r = await worker.fetch(
+    req("GET", "https://preview.rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/contents/data.json"),
+    env
+  );
+  assert.notEqual(r.status, 403);
+});
+
+await test("GET contents/otro.json → 403", async () => {
+  const r = await worker.fetch(
+    req("GET", "https://preview.rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/contents/otro.json"),
+    env
+  );
+  assert.equal(r.status, 403);
+});
+
+await test("GET blob SHA preview OK path", async () => {
+  const sha = "a".repeat(40);
+  const r = await worker.fetch(
+    req("GET", "https://preview.rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/git/blobs/" + sha),
+    env
+  );
+  assert.notEqual(r.status, 403);
+});
+
+await test("PUT contents preview 403 escritura", async () => {
+  const r = await worker.fetch(
+    req("PUT", "https://preview.rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/contents/data.json", "preview.rutalog.pages.dev", { message: "x", content: "e30=" }),
+    env
+  );
+  assert.equal(r.status, 403);
+});
+
+await test("PUT localhost 403", async () => {
+  const r = await worker.fetch(
+    req("PUT", "https://localhost/api/repos/luisglazala/rutalog-datos/contents/data.json", "localhost", {}),
+    env
+  );
+  assert.equal(r.status, 403);
+});
+
+await test("PUT prod host no 403 por preview-block", async () => {
+  const r = await worker.fetch(
+    req("PUT", "https://rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/contents/data.json", "rutalog.pages.dev", {}),
+    env
+  );
+  assert.notEqual(r.status, 403);
+});
+
+await test("other repo 403", async () => {
+  const r = await worker.fetch(
+    req("GET", "https://preview.rutalog.pages.dev/api/repos/other/other/contents/data.json"),
+    env
+  );
+  assert.equal(r.status, 403);
+});
+
+await test("POST git/blobs path permitido (no 403 path)", async () => {
+  const r = await worker.fetch(
+    req("POST", "https://rutalog.pages.dev/api/repos/luisglazala/rutalog-datos/git/blobs", "rutalog.pages.dev", { content: "{}", encoding: "utf-8" }),
+    env
+  );
+  assert.notEqual(r.status, 403);
+});
 
 console.log("passed:", passed, "failed:", failed);
 if (failed) process.exit(1);
