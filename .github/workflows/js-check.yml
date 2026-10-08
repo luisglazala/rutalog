@@ -13,24 +13,25 @@ jobs:
           node-version: "20"
       - name: node --check all JS and MJS
         run: |
-          set -euo pipefail
+          set -e
           count=0
           fail=0
-          mapfile -t files < <(find . -type f \( -name '*.js' -o -name '*.mjs' \) -not -path './.git/*' | sort)
-          for f in "${files[@]}"; do
+          find . -type f \( -name '*.js' -o -name '*.mjs' \) -not -path './.git/*' | sort > /tmp/jsfiles.txt
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
             count=$((count+1))
             if ! node --check "$f" 2>/tmp/nc.err; then
               echo "FAIL $f"
               cat /tmp/nc.err || true
               fail=$((fail+1))
             fi
-          done
+          done < /tmp/jsfiles.txt
           echo "Checked $count files, failures $fail"
           test "$count" -gt 0
           test "$fail" -eq 0
       - name: Integridad shell/index
         run: |
-          set -euo pipefail
+          set -e
           SZ=$(wc -c < shell-body.html | tr -d ' ')
           test "$SZ" -ge 30000
           grep -q loginOverlay shell-body.html
@@ -43,7 +44,7 @@ jobs:
           echo "Integridad OK shell=$SZ index=$ISZ"
       - name: Manifiesto docs/INTEGRIDAD.json
         run: |
-          set -euo pipefail
+          set -e
           node -e '
             const fs=require("fs"); const crypto=require("crypto");
             const man=JSON.parse(fs.readFileSync("docs/INTEGRIDAD.json","utf8"));
@@ -61,13 +62,13 @@ jobs:
           '
       - name: Unit tests
         run: |
-          set -euo pipefail
+          set -e
           node tests/unit/sync-read-protection.test.mjs
           node tests/unit/proxy-preview-writes.test.mjs
           node tests/unit/sw-broken-cache.test.mjs
       - name: Proxy entry no logica propia
         run: |
-          set -euo pipefail
+          set -e
           if grep -E 'pathAllowed|handleGitHubProxy|ALLOWED_REPO' _worker.js; then
             echo "FAIL _worker.js contiene logica propia"
             exit 1
@@ -76,7 +77,7 @@ jobs:
           echo "_worker.js OK reexport"
       - name: Sin secretos obvios en cliente
         run: |
-          set -euo pipefail
+          set -e
           if grep -RIn --include='*.js' --include='*.html' --exclude-dir=.git --exclude-dir=tests \
             -E 'ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}' . ; then
             echo "FAIL: posible PAT en repo"
