@@ -40,11 +40,11 @@
     "sha256": "dcc4964543b1572ce4cc21dae93066cbef77945baaa2fe3fe0007c44d8ae1339"
   },
   "mejoras-gh-proxy.js": {
-    "bytes": 3224,
-    "sha256": "f4ad14ec47f0a7737dd0c373ead36ee5cd2e3aecea4eb70de1a7166babfc56a5"
+    "bytes": 3143,
+    "sha256": "943f3bb8bcc0989c7ebbfe1b0927d0fad53d1ec9648d4f1050f0e528d3c783ca"
   },
   "base.css": {
-    "bytes": 43456,
-    "sha256": "07fc013c03e4669c3b2266aefb4ed0803a4d32983a5565853cd2d4a71f5c70e9"
+    "bytes": 43107,
+    "sha256": "38d3c46c405fbfe006b919bcc14feaa9bbf99c4f332c23d64d626d24770d4f09"
   }
 }
