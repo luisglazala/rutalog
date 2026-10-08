@@ -1,10 +1,22 @@
-const CACHE = "rutalog-v11-flash";
+const CACHE = "rutalog-v12-shell";
 const ASSETS = [
   "./",
   "./index.html",
   "./favicon.svg",
   "./manifest.webmanifest"
 ];
+
+function isHtmlPath(pathname) {
+  return pathname === "/" || pathname.endsWith("/") || /\.html$/i.test(pathname) || /shell-body/i.test(pathname);
+}
+
+function isBrokenShell(text) {
+  if (!text || text.length < 5000) return true;
+  if (text.indexOf("loginOverlay") < 0) return true;
+  if (text.indexOf("RESTORE_MARKER") >= 0) return true;
+  if (text.indexOf("content too large for single tool arg") >= 0) return true;
+  return false;
+}
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -26,20 +38,44 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  const isNav = req.mode === "navigate" || /\.html$/i.test(url.pathname) || url.pathname.endsWith("/");
-  if (isNav) {
+  const isNav = req.mode === "navigate" || isHtmlPath(url.pathname);
+  if (isNav || /shell-body/i.test(url.pathname)) {
     e.respondWith(
       fetch(req)
-        .then((res) => {
+        .then(async (res) => {
           try {
             if (res && res.ok) {
               const clone = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
+              const text = await clone.text();
+              if (!isBrokenShell(text)) {
+                const toCache = new Response(text, {
+                  status: res.status,
+                  statusText: res.statusText,
+                  headers: res.headers
+                });
+                caches.open(CACHE).then((c) => c.put(req, toCache)).catch(() => {});
+              }
+              return new Response(text, {
+                status: res.status,
+                statusText: res.statusText,
+                headers: res.headers
+              });
             }
           } catch (err) {}
           return res;
         })
-        .catch(() => caches.match(req))
+        .catch(() =>
+          caches.match(req).then(async (cached) => {
+            if (!cached) return undefined;
+            try {
+              const t = await cached.clone().text();
+              if (isBrokenShell(t)) return undefined;
+            } catch (e) {
+              return undefined;
+            }
+            return cached;
+          })
+        )
     );
     return;
   }

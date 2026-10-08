@@ -3653,7 +3653,13 @@ async function intentarLogin() {
   }
   const users = loadUsers();
   if (!users.length) {
-    if (err) { err.textContent = "No hay usuarios registrados."; err.classList.add("visible"); }
+    if (err) {
+      const readFailed = (typeof ghLastReadFailed === "function" && ghLastReadFailed());
+      err.textContent = readFailed
+        ? "No se pudo leer el catálogo desde GitHub (archivo grande o red). Reintenta «Actualizar» en Configuración."
+        : "No hay usuarios registrados.";
+      err.classList.add("visible");
+    }
     return;
   }
   const found = users.find(u => String(u.username || "").toLowerCase() === user.toLowerCase());
@@ -5298,6 +5304,40 @@ function ghUpdateSyncBadge() {
   b.textContent = ghGetToken() ? "token OK" : "sin configurar";
 }
 
+/** Última lectura buena del catálogo (protección anti-borrado). */
+function ghSetLastGood(info) {
+  try {
+    localStorage.setItem("rutalog_gh_last_good", JSON.stringify({
+      sha: info && info.sha || null,
+      size: info && info.size || 0,
+      users: info && info.users || 0,
+      at: new Date().toISOString(),
+    }));
+  } catch (e) {}
+  try { localStorage.removeItem("rutalog_gh_read_failed"); } catch (e) {}
+}
+function ghGetLastGood() {
+  try { return JSON.parse(localStorage.getItem("rutalog_gh_last_good") || "null"); } catch (e) { return null; }
+}
+function ghMarkReadFailed(msg) {
+  try {
+    localStorage.setItem("rutalog_gh_read_failed", JSON.stringify({
+      msg: String(msg || "read failed"),
+      at: new Date().toISOString(),
+    }));
+  } catch (e) {}
+}
+function ghLastReadFailed() {
+  try {
+    const v = localStorage.getItem("rutalog_gh_read_failed");
+    return !!(v && v.length > 2);
+  } catch (e) { return false; }
+}
+function ghClearReadFailed() {
+  try { localStorage.removeItem("rutalog_gh_read_failed"); } catch (e) {}
+}
+
+
 function ghUtf8ToB64(str) {
   const bytes = new TextEncoder().encode(str);
   let bin = "";
@@ -5562,7 +5602,21 @@ function ghApplyPayload(data, opts) {
   }
 }
 
-async function ghFetchFile() {
+let _ghFetchInflight = null;
+async function ghFetchFile(opts) {
+  opts = opts || {};
+  const force = !!opts.force;
+  if (!force && _ghFetchInflight) return _ghFetchInflight;
+  const run = _ghFetchFileInner(opts);
+  if (!force) {
+    _ghFetchInflight = run.finally(function() { _ghFetchInflight = null; });
+    return _ghFetchInflight;
+  }
+  return run;
+}
+async function _ghFetchFileInner(opts) {
+  opts = opts || {};
+  const force = !!opts.force;
   const token = ghGetToken();
   if (!token) throw new Error("Configura el token de GitHub primero");
   const base = "https://api.github.com/repos/" + GH_SYNC.owner + "/" + GH_SYNC.repo;
@@ -5573,67 +5627,67 @@ async function ghFetchFile() {
     "X-GitHub-Api-Version": "2022-11-28",
   };
 
-  // 1) Intento: contenido raw directo (funciona bien en archivos pequeños y a veces en grandes)
-  try {
-    const rRaw = await fetch(metaUrl, {
-      headers: { ...authHeaders, "Accept": "application/vnd.github.raw" },
-    });
-    if (rRaw.ok) {
-      const text = await rRaw.text();
-      if (text && text.trim() && text.trim()[0] === "{") {
-        // Si devolvió JSON de metadatos por error, no lo usamos como data
-        if (!/"type"\s*:\s*"file"/.test(text.slice(0, 200))) {
-          try {
-            const data = JSON.parse(text);
-            // sha no viene en raw; pedir meta aparte
-            let sha = null;
-            try {
-              const rMeta = await fetch(metaUrl, {
-                headers: { ...authHeaders, "Accept": "application/vnd.github+json" },
-              });
-              if (rMeta.ok) {
-                const meta = await rMeta.json();
-                sha = meta.sha || null;
-              }
-            } catch (e) {}
-            return { sha: sha, data: data, size: text.length };
-          } catch (e) { /* sigue a otros métodos */ }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn("gh raw fetch", e);
-  }
-
-  // 2) Metadatos JSON (sha) — siempre vía api.github.com (CORS OK)
+  // 1) SIEMPRE metadatos primero (petición pequeña → sha)
   let meta;
   try {
     const rMeta = await fetch(metaUrl, {
       headers: { ...authHeaders, "Accept": "application/vnd.github+json" },
     });
     if (rMeta.status === 401 || rMeta.status === 403) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("HTTP " + rMeta.status); } catch (e2) {}
       throw new Error("Token inválido o sin permiso al repo (HTTP " + rMeta.status + "). Regenera el PAT.");
     }
-    if (rMeta.status === 404) throw new Error("No existe data.json en el repo");
+    if (rMeta.status === 404) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("404"); } catch (e2) {}
+      throw new Error("No existe data.json en el repo");
+    }
     if (!rMeta.ok) {
       const tx = await rMeta.text().catch(() => "");
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("HTTP " + rMeta.status); } catch (e2) {}
       throw new Error("GitHub HTTP " + rMeta.status + " " + tx.slice(0, 120));
     }
     meta = await rMeta.json();
   } catch (e) {
     if (String(e.message || "").includes("Token") || String(e.message || "").includes("No existe") || String(e.message || "").includes("GitHub HTTP")) throw e;
+    try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("network"); } catch (e2) {}
     throw new Error("Sin conexión a GitHub (Failed to fetch). Revisa internet.");
   }
 
-  // 2a) content en base64 (archivos ≤ ~1 MB)
-  if (meta.content) {
-    const text = ghB64ToUtf8(String(meta.content).replace(/\n/g, ""));
-    if (!text.trim()) throw new Error("data.json vacío");
-    return { sha: meta.sha, data: JSON.parse(text), size: text.length };
+  // 2) Si el sha coincide con la última lectura buena, no re-descargar
+  let lastSha = null;
+  try { lastSha = localStorage.getItem("rutalog_gh_sha") || null; } catch (e) {}
+  const lg = typeof ghGetLastGood === "function" ? ghGetLastGood() : null;
+  if (!force && meta.sha && lastSha && meta.sha === lastSha && lg && lg.sha === meta.sha) {
+    return { sha: meta.sha, data: null, size: lg.size || 0, unchanged: true };
   }
 
-  // 3) Archivo grande: Git Blob API (api.github.com, con token — evita CORS de raw.githubusercontent)
-  if (!meta.sha) throw new Error("GitHub no devolvió SHA de data.json");
+  // 3a) content en base64 (archivos ≤ ~1 MB)
+  if (meta.content) {
+    const text = ghB64ToUtf8(String(meta.content).replace(/\n/g, ""));
+    if (!text.trim()) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("content vacío"); } catch (e2) {}
+      throw new Error("data.json vacío");
+    }
+    let data;
+    try { data = JSON.parse(text); } catch (e) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("JSON"); } catch (e2) {}
+      throw new Error("data.json incompleto: " + (e.message || "JSON"));
+    }
+    if (typeof ghSetLastGood === "function") {
+      ghSetLastGood({
+        sha: meta.sha,
+        size: text.length,
+        users: Array.isArray(data.usuarios) ? data.usuarios.length : 0,
+      });
+    }
+    return { sha: meta.sha, data: data, size: text.length, unchanged: false };
+  }
+
+  // 3b) Archivo grande: Git Blob API
+  if (!meta.sha) {
+    try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("sin sha"); } catch (e2) {}
+    throw new Error("GitHub no devolvió SHA de data.json");
+  }
   let blob;
   try {
     const rBlob = await fetch(base + "/git/blobs/" + meta.sha, {
@@ -5641,11 +5695,13 @@ async function ghFetchFile() {
     });
     if (!rBlob.ok) {
       const tx = await rBlob.text().catch(() => "");
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("blob " + rBlob.status); } catch (e2) {}
       throw new Error("Blob HTTP " + rBlob.status + " " + tx.slice(0, 100));
     }
     blob = await rBlob.json();
   } catch (e) {
     if (String(e.message || "").startsWith("Blob HTTP")) throw e;
+    try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("blob network"); } catch (e2) {}
     throw new Error("No se pudo leer data.json grande (blob). " + (e.message || e));
   }
 
@@ -5655,14 +5711,25 @@ async function ghFetchFile() {
   } else if (blob.content) {
     text = String(blob.content);
   }
-  if (!text || !text.trim()) throw new Error("Blob de data.json vacío");
+  if (!text || !text.trim()) {
+    try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("blob vacío"); } catch (e2) {}
+    throw new Error("Blob de data.json vacío");
+  }
   let data;
   try {
     data = JSON.parse(text);
   } catch (e) {
+    try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("JSON blob"); } catch (e2) {}
     throw new Error("data.json incompleto: " + (e.message || "JSON") + " (" + text.length + " chars)");
   }
-  return { sha: meta.sha, data: data, size: text.length };
+  if (typeof ghSetLastGood === "function") {
+    ghSetLastGood({
+      sha: meta.sha,
+      size: text.length,
+      users: Array.isArray(data.usuarios) ? data.usuarios.length : 0,
+    });
+  }
+  return { sha: meta.sha, data: data, size: text.length, unchanged: false };
 }
 
 async function ghApi(path, opts) {
@@ -5702,8 +5769,31 @@ async function ghPushWithSha(sha, silent) {
   const token = ghGetToken();
   if (!token) throw new Error("Configura el token de GitHub primero");
 
+  if (typeof ghLastReadFailed === "function" && ghLastReadFailed()) {
+    const msg = "Escritura bloqueada: la última lectura del catálogo falló o llegó vacía. No se sube para no borrar datos en la nube.";
+    if (!silent && typeof toast === "function") toast(msg);
+    throw new Error(msg);
+  }
+
   const payload = ghBuildPayload();
   const jsonText = JSON.stringify(payload);
+
+  try {
+    const lg = typeof ghGetLastGood === "function" ? ghGetLastGood() : null;
+    const usersNow = Array.isArray(payload.usuarios) ? payload.usuarios.length : 0;
+    if (lg && lg.users > 0 && usersNow === 0) {
+      const msg = "Escritura bloqueada: el catálogo local no tiene usuarios y la última lectura buena tenía " + lg.users + ". No se sube.";
+      if (!silent && typeof toast === "function") toast(msg);
+      throw new Error(msg);
+    }
+    if (lg && lg.size > 0 && jsonText.length < lg.size * 0.5) {
+      const msg = "Escritura bloqueada: el contenido nuevo (" + jsonText.length + " B) es <50% de la última lectura buena (" + lg.size + " B).";
+      if (!silent && typeof toast === "function") toast(msg);
+      throw new Error(msg);
+    }
+  } catch (e) {
+    if (String(e.message || "").indexOf("Escritura bloqueada") === 0) throw e;
+  }
   const owner = GH_SYNC.owner;
   const repo = GH_SYNC.repo;
   const branch = GH_SYNC.branch || "main";
@@ -5799,11 +5889,20 @@ async function ghActualizar(opts) {
     try {
       remote = await ghFetchFile();
     } catch (e) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed(e.message || e); } catch (e2) {}
       if (String(e.message || "").includes("No existe")) {
         await ghPushWithSha(null, silent);
         return;
       }
       throw e;
+    }
+    if (remote && remote.unchanged) {
+      if (!silent && typeof toast === "function") toast("Catálogo al día (sin cambios)");
+      return;
+    }
+    if (remote && remote.data == null && !remote.unchanged) {
+      try { if (typeof ghMarkReadFailed === "function") ghMarkReadFailed("data null"); } catch (e2) {}
+      throw new Error("No se pudo leer el catálogo: data.json vacío en la respuesta.");
     }
 
     const remoteAt = (remote.data && remote.data.updatedAt) || "";
