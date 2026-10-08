@@ -1,7 +1,7 @@
 /**
  * RUTALOG — único worker / proxy GitHub (Fase 5)
  * wrangler.toml → main = worker.js
- * Solo repo luisglazala/rutalog-datos: /contents/* y GET /git/blobs/* (archivos >1 MB).
+ * Solo repo luisglazala/rutalog-datos: contents/data.json + Git Data API.
  * Secret: GITHUB_SECRET_TOKEN (nunca en el cliente).
  * Preview: escritura bloqueada salvo ALLOW_PREVIEW_WRITES=1.
  */
@@ -15,7 +15,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS" && url.pathname.startsWith("/api")) {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
@@ -33,12 +33,21 @@ export default {
   },
 };
 
-function corsHeaders() {
+function corsHeaders(request) {
+  var origin = "*";
+  try {
+    var o = (request && request.headers && request.headers.get("Origin")) || "";
+    if (o === "https://rutalog.pages.dev") origin = o;
+    else if (/^https:\/\/[a-z0-9-]+\.rutalog\.pages\.dev$/i.test(o)) origin = o;
+    else if (!o) origin = "https://rutalog.pages.dev";
+    else origin = "https://rutalog.pages.dev";
+  } catch (e) { origin = "https://rutalog.pages.dev"; }
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, OPTIONS",
     "Access-Control-Allow-Headers":
       "Content-Type, Authorization, Accept, X-GitHub-Api-Version",
+    "Vary": "Origin",
   };
 }
 
@@ -52,12 +61,6 @@ function json(body, status, cors) {
   });
 }
 
-/**
- * Solo:
- *  GET/HEAD /repos/luisglazala/rutalog-datos/contents/...
- *  GET/HEAD /repos/luisglazala/rutalog-datos/git/blobs/{sha40}
- *  PUT/PATCH/POST /contents/... (escrituras; bloqueadas en preview salvo env)
- */
 function pathAllowed(githubPath, method) {
   if (githubPath === "/rate_limit") return false;
   const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/);
@@ -66,10 +69,12 @@ function pathAllowed(githubPath, method) {
   if (full !== ALLOWED_REPO) return false;
   const rest = m[3] || "";
   if (rest === "" || rest === "/") return true;
-  if (rest.indexOf("/contents") === 0) return true;
-  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest)) {
-    return true;
-  }
+  if (/^\/contents\/data\.json$/i.test(rest) || /^\/contents\/data\.json\?/i.test(rest)) return true;
+  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest)) return true;
+  if (method === "POST" && rest === "/git/blobs") return true;
+  if (method === "POST" && rest === "/git/trees") return true;
+  if ((method === "GET" || method === "POST") && /^\/git\/commits(\/[0-9a-f]{40})?$/i.test(rest)) return true;
+  if ((method === "GET" || method === "PATCH") && /^\/git\/refs\/heads\//i.test(rest)) return true;
   return false;
 }
 
@@ -88,7 +93,7 @@ function writesAllowed(request, env) {
 }
 
 async function handleGitHubProxy(request, env, url) {
-  const cors = corsHeaders();
+  const cors = corsHeaders(request);
   try {
     if (!ALLOWED_METHODS.has(request.method)) {
       return json({ error: "Método no permitido" }, 405, cors);
@@ -103,7 +108,7 @@ async function handleGitHubProxy(request, env, url) {
           ok: true,
           service: "RUTALOG GitHub proxy",
           repo: ALLOWED_REPO,
-          scope: "contents/* + GET git/blobs/*",
+          scope: "contents/data.json + Git Data API",
           writes: writesAllowed(request, env) ? "allowed" : "blocked-preview",
         },
         200,
@@ -115,7 +120,7 @@ async function handleGitHubProxy(request, env, url) {
       return json(
         {
           error: "Ruta o repositorio no permitido",
-          allowed: ALLOWED_REPO + "/contents/* y GET git/blobs/{sha}",
+          allowed: ALLOWED_REPO + "/contents/data.json y git data API",
         },
         403,
         cors
