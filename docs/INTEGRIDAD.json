@@ -1,23 +1,23 @@
 {
   "index.html": {
-    "bytes": 6789,
-    "sha256": "96fe5aae3e227ff58d35ff1fe4903a20adf1c8a3913183a5e23ba4c90aae929b"
+    "bytes": 6642,
+    "sha256": "4454614ac9a3aa576a33c64236ec63dc87b8dfd7d57a38273a696273a453ceb3"
   },
   "shell-body.html": {
     "bytes": 44271,
     "sha256": "7ba4b7f8d47330f2fe0034ee745d716748440b5c9b26345e9b85354a3133eb68"
   },
   "core-app.js": {
-    "bytes": 393581,
-    "sha256": "8efc28f84827b4b34b42b9727cf4ba1b0dc6da541f411010fd18f6c31e8aa952"
+    "bytes": 391478,
+    "sha256": "9979add20b3e8de76dff617e1d7d3bbc931d9e72616980192d8a200d88bfda42"
   },
   "sw.js": {
     "bytes": 3767,
     "sha256": "b3a77f89712affb6fce1e9d775ff47e24abdaf2f37117a295083c906d787d626"
   },
   "worker.js": {
-    "bytes": 6689,
-    "sha256": "4cd44557ff5a0204ff13c1a9afaf6b9a3935a495ea3adb6f9e65f1e698b710cb"
+    "bytes": 6242,
+    "sha256": "75b36e9c6856081ae6463042785cd9943556906e45abe5b565844d3142fd93fe"
   },
   "_worker.js": {
     "bytes": 167,
@@ -32,7 +32,19 @@
     "sha256": "8592db626c10c2b40b264960540a582ce8c713f4f3fa8a6f29a2b704f19ad974"
   },
   "rutalog-loader.js": {
-    "bytes": 4603,
-    "sha256": "1ba13b29bdf7c0520c8836f1a6385ac99c58cdc075e3d464162c80b3d4772aef"
+    "bytes": 4679,
+    "sha256": "e48be6f343b1ba65e7659adad6277f31fdd58beff451c87dcf712b11a6b78653"
+  },
+  "mejoras-fase1-sync-login.js": {
+    "bytes": 3691,
+    "sha256": "dcc4964543b1572ce4cc21dae93066cbef77945baaa2fe3fe0007c44d8ae1339"
+  },
+  "mejoras-gh-proxy.js": {
+    "bytes": 3224,
+    "sha256": "f4ad14ec47f0a7737dd0c373ead36ee5cd2e3aecea4eb70de1a7166babfc56a5"
+  },
+  "base.css": {
+    "bytes": 43456,
+    "sha256": "07fc013c03e4669c3b2266aefb4ed0803a4d32983a5565853cd2d4a71f5c70e9"
   }
 }
