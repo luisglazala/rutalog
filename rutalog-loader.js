@@ -112,6 +112,7 @@
     "./mejoras-mapa-hide.js?v=1",
     "./mejoras-mapa-ciudades-ruta.js?v=31",
     "./mejoras-mapa-incremental.js?v=1",
+    "./mejoras-mapa-click.js?v=1",
     "./mejoras-osrm-on-save.js?v=1",
     "./mejoras-osrm-onsave.js?v=1",
     "./mejoras-listas-inc.js?v=1",
