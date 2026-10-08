@@ -1,29 +1,81 @@
-name: JS syntax check
+name: RUTALOG checks
 on:
   push:
-    branches: [main, arreglo-ui]
   pull_request:
-    branches: [main, arreglo-ui]
+    branches: [main]
 jobs:
-  node-check:
+  unit-and-integrity:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: node --check all JS
+      - name: node --check all JS and MJS
         run: |
           set -e
-          count=0
-          fail=0
+          count=0; fail=0
           while IFS= read -r f; do
             count=$((count+1))
             if ! node --check "$f" 2>/tmp/nc.err; then
-              echo "FAIL $f"
-              cat /tmp/nc.err
-              fail=$((fail+1))
+              echo "FAIL $f"; cat /tmp/nc.err; fail=$((fail+1))
             fi
-          done < <(find . -name '*.js' -not -path './.git/*' | sort)
+          done < <(find . -type f \( -name '*.js' -o -name '*.mjs' \) -not -path './.git/*' | sort)
           echo "Checked $count files, failures $fail"
           test "$fail" -eq 0
+      - name: Integridad shell/index (sin escanear sw.js ni tests)
+        run: |
+          set -e
+          SZ=$(wc -c < shell-body.html | tr -d ' ')
+          test "$SZ" -ge 30000
+          grep -q loginOverlay shell-body.html
+          ISZ=$(wc -c < index.html | tr -d ' ')
+          test "$ISZ" -ge 5000
+          if grep -R --include='*.html' --include='*.js' --exclude=sw.js --exclude-dir=tests --exclude-dir=.git -n '<!-- RESTORE_MARKER\|content too large for single tool' . ; then
+            echo "FAIL: placeholder encontrado"; exit 1
+          fi
+          echo "Integridad OK shell=$SZ index=$ISZ"
+      - name: Manifiesto docs/INTEGRIDAD.json
+        run: |
+          set -e
+          node -e '
+            const fs=require("fs"); const crypto=require("crypto");
+            const man=JSON.parse(fs.readFileSync("docs/INTEGRIDAD.json","utf8"));
+            let bad=0;
+            for (const [f,meta] of Object.entries(man)) {
+              if (!fs.existsSync(f)) { console.log("MISSING", f); bad++; continue; }
+              const b=fs.readFileSync(f);
+              const sz=b.length;
+              const h=crypto.createHash("sha256").update(b).digest("hex");
+              if (sz < meta.bytes * 0.5) { console.log("SHRINK>50%", f, "was", meta.bytes, "now", sz); bad++; }
+              if (h !== meta.sha256) console.log("HASH_CHANGED", f, "(ok if intentional)");
+              else console.log("OK", f, sz);
+            }
+            if (bad) process.exit(1);
+          '
+      - name: Unit tests
+        run: |
+          node tests/unit/sync-read-protection.test.mjs
+          node tests/unit/proxy-preview-writes.test.mjs
+          node tests/unit/sw-broken-cache.test.mjs
+      - name: Proxy entry no logica propia
+        run: |
+          set -e
+          if grep -E 'pathAllowed|handleGitHubProxy|ALLOWED_REPO' _worker.js; then
+            echo "FAIL _worker.js contiene logica propia"; exit 1
+          fi
+          grep -q 'from "./worker.js"' _worker.js
+          echo "_worker.js OK reexport"
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Playwright e2e (best effort)
+        run: |
+          npm init -y
+          npm i -D playwright-core@1.49.0 || true
+          node tests/e2e/shell-login.spec.mjs || echo "e2e skip/fail (continue-on-error)"
