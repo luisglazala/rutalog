@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v12-shell";
+const CACHE = "rutalog-v13-shell";
 const ASSETS = [
   "./",
   "./index.html",
@@ -45,8 +45,7 @@ self.addEventListener("fetch", (e) => {
         .then(async (res) => {
           try {
             if (res && res.ok) {
-              const clone = res.clone();
-              const text = await clone.text();
+              const text = await res.clone().text();
               if (!isBrokenShell(text)) {
                 const toCache = new Response(text, {
                   status: res.status,
@@ -54,6 +53,19 @@ self.addEventListener("fetch", (e) => {
                   headers: res.headers
                 });
                 caches.open(CACHE).then((c) => c.put(req, toCache)).catch(() => {});
+                return new Response(text, {
+                  status: res.status,
+                  statusText: res.statusText,
+                  headers: res.headers
+                });
+              }
+              /* Red devolvió shell roto: preferir caché buena */
+              const cached = await caches.match(req);
+              if (cached) {
+                try {
+                  const ct = await cached.clone().text();
+                  if (!isBrokenShell(ct)) return cached;
+                } catch (e) {}
               }
               return new Response(text, {
                 status: res.status,
