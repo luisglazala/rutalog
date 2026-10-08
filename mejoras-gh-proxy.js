@@ -8,7 +8,6 @@
 
   function apiBase() {
     try {
-      /* Misma origin en producción y preview (arreglo-ui.rutalog.pages.dev) */
       if (location && /\.pages\.dev$/i.test(location.hostname)) {
         return "/api";
       }
@@ -109,5 +108,5 @@
   setTimeout(tick, 400);
   setTimeout(tick, 1200);
   setTimeout(tick, 3000);
-  setInterval(hideTokenUI, 4000);
+  /* sin setInterval recurrente: menos CPU en reposo; hideTokenUI solo al arrancar */
 })();

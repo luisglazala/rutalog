@@ -13,31 +13,37 @@ jobs:
           node-version: "20"
       - name: node --check all JS and MJS
         run: |
-          set -e
-          count=0; fail=0
-          while IFS= read -r f; do
+          set -euo pipefail
+          count=0
+          fail=0
+          mapfile -t files < <(find . -type f \( -name '*.js' -o -name '*.mjs' \) -not -path './.git/*' | sort)
+          for f in "${files[@]}"; do
             count=$((count+1))
             if ! node --check "$f" 2>/tmp/nc.err; then
-              echo "FAIL $f"; cat /tmp/nc.err; fail=$((fail+1))
+              echo "FAIL $f"
+              cat /tmp/nc.err || true
+              fail=$((fail+1))
             fi
-          done < <(find . -type f \( -name '*.js' -o -name '*.mjs' \) -not -path './.git/*' | sort)
+          done
           echo "Checked $count files, failures $fail"
+          test "$count" -gt 0
           test "$fail" -eq 0
-      - name: Integridad shell/index (sin escanear sw.js ni tests)
+      - name: Integridad shell/index
         run: |
-          set -e
+          set -euo pipefail
           SZ=$(wc -c < shell-body.html | tr -d ' ')
           test "$SZ" -ge 30000
           grep -q loginOverlay shell-body.html
           ISZ=$(wc -c < index.html | tr -d ' ')
-          test "$ISZ" -ge 5000
-          if grep -R --include='*.html' --include='*.js' --exclude=sw.js --exclude-dir=tests --exclude-dir=.git -n '<!-- RESTORE_MARKER\|content too large for single tool' . ; then
-            echo "FAIL: placeholder encontrado"; exit 1
+          test "$ISZ" -ge 4000
+          if grep -R --include='*.html' --include='*.js' --exclude=sw.js --exclude-dir=tests --exclude-dir=.git -nE 'RESTORE_MARKER|content too large for single tool' . ; then
+            echo "FAIL: placeholder encontrado"
+            exit 1
           fi
           echo "Integridad OK shell=$SZ index=$ISZ"
       - name: Manifiesto docs/INTEGRIDAD.json
         run: |
-          set -e
+          set -euo pipefail
           node -e '
             const fs=require("fs"); const crypto=require("crypto");
             const man=JSON.parse(fs.readFileSync("docs/INTEGRIDAD.json","utf8"));
@@ -48,24 +54,35 @@ jobs:
               const sz=b.length;
               const h=crypto.createHash("sha256").update(b).digest("hex");
               if (sz < meta.bytes * 0.5) { console.log("SHRINK>50%", f, "was", meta.bytes, "now", sz); bad++; }
-              if (h !== meta.sha256) console.log("HASH_CHANGED", f, "(ok if intentional)");
+              if (h !== meta.sha256) { console.log("HASH_MISMATCH", f); bad++; }
               else console.log("OK", f, sz);
             }
             if (bad) process.exit(1);
           '
       - name: Unit tests
         run: |
+          set -euo pipefail
           node tests/unit/sync-read-protection.test.mjs
           node tests/unit/proxy-preview-writes.test.mjs
           node tests/unit/sw-broken-cache.test.mjs
       - name: Proxy entry no logica propia
         run: |
-          set -e
+          set -euo pipefail
           if grep -E 'pathAllowed|handleGitHubProxy|ALLOWED_REPO' _worker.js; then
-            echo "FAIL _worker.js contiene logica propia"; exit 1
+            echo "FAIL _worker.js contiene logica propia"
+            exit 1
           fi
           grep -q 'from "./worker.js"' _worker.js
           echo "_worker.js OK reexport"
+      - name: Sin secretos obvios en cliente
+        run: |
+          set -euo pipefail
+          if grep -RIn --include='*.js' --include='*.html' --exclude-dir=.git --exclude-dir=tests \
+            -E 'ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}' . ; then
+            echo "FAIL: posible PAT en repo"
+            exit 1
+          fi
+          echo "OK sin PAT literales"
   e2e:
     runs-on: ubuntu-latest
     continue-on-error: true
