@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.6 — sin toasts duplicados · boot único · silent auto */
+/* RUTALOG mejoras-sync v3.7 — UI fecha + pull 30s + watchdog */
 (function () {
   "use strict";
   if (window.__rutalogSyncV34) return;
@@ -7,8 +7,8 @@
   window.__rutalogSyncV2 = true;
   window.__rutalogSyncV1 = true;
 
-  var PULL_MS_FOCUS = 45000;
-  var PULL_MS_DIRTY = 20000;
+  var PULL_MS_FOCUS = 30000;
+  var PULL_MS_DIRTY = 15000;
   var _pullTimer = null;
   var _lastOkAt = null;
   var _lastErr = null;
@@ -51,7 +51,41 @@
     if (s < 60) return "hace " + s + " s";
     var m = Math.floor(s / 60);
     if (m < 60) return "hace " + m + " min";
-    return "hace " + Math.floor(m / 60) + " h";
+    var h = Math.floor(m / 60);
+    if (h < 48) return "hace " + h + " h";
+    return "hace " + Math.floor(h / 24) + " d";
+  }
+
+  function fmtLocal(ts) {
+    if (!ts) return "—";
+    try {
+      var d = new Date(ts);
+      if (isNaN(d.getTime())) return String(ts);
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+    } catch (e) {
+      return String(ts);
+    }
+  }
+
+  function metaTimestamp() {
+    try {
+      var raw = localStorage.getItem("rutalog_gh_meta");
+      if (!raw) return _lastOkAt;
+      var m = JSON.parse(raw);
+      if (m && m.updatedAt) {
+        var t = Date.parse(m.updatedAt);
+        if (!isNaN(t)) return t;
+      }
+    } catch (e) {}
+    return _lastOkAt;
   }
 
   function setBadge(text, title) {
@@ -66,16 +100,22 @@
     var st = el("syncStatus");
     if (!st) return;
     if (_lastErr) {
-      st.textContent = "Error: " + String(_lastErr).slice(0, 80);
+      st.textContent = "Error: " + String(_lastErr).slice(0, 100);
       return;
     }
-    if (_lastOkAt) {
-      st.textContent =
-        "Última sync: " +
-        new Date(_lastOkAt).toLocaleString() +
-        " (" +
-        fmtAgo(_lastOkAt) +
-        ")";
+    var ts = metaTimestamp();
+    var action = "";
+    var by = "";
+    try {
+      var raw = localStorage.getItem("rutalog_gh_meta");
+      if (raw) {
+        var m = JSON.parse(raw);
+        if (m && m.action) action = " · " + m.action;
+        if (m && m.updatedBy) by = " · " + m.updatedBy;
+      }
+    } catch (e) {}
+    if (ts) {
+      st.textContent = "Última sync: " + fmtLocal(ts) + " (" + fmtAgo(ts) + ")" + action + by;
       return;
     }
     st.textContent = "Última sync: —";
@@ -120,7 +160,6 @@
     var orig = window.ghActualizar;
     window.ghActualizar = function (opts) {
       opts = opts || {};
-      /* manual / force: no reutilizar promesa colgada */
       var bypass = opts.silent === false || opts.force || opts.manual;
       if (_ghInflight && !bypass) return _ghInflight;
       var run = Promise.resolve()
@@ -143,6 +182,13 @@
     if (_pulling) return;
     _pulling = true;
     refreshBadge();
+    var watchdog = setTimeout(function () {
+      if (_pulling) {
+        _pulling = false;
+        _lastErr = "Sync tardó demasiado; reintenta Actualizar ahora";
+        refreshBadge();
+      }
+    }, 28000);
     try {
       var isSilent = silent !== false;
       await ghActualizar({
@@ -155,8 +201,9 @@
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
-      console.warn("[sync-v3.6] pull", e);
+      console.warn("[sync-v3.7] pull", e);
     } finally {
+      clearTimeout(watchdog);
       _pulling = false;
       refreshBadge();
     }
@@ -345,7 +392,7 @@
       },
       broadcast: broadcast
     };
-    console.info("[RUTALOG] sync v3.6 · inflight no bloquea manual");
+    console.info("[RUTALOG] sync v3.7 · UI fecha + pull 30s + watchdog");
   }
 
   if (document.readyState === "loading") {
