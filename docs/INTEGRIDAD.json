@@ -28,8 +28,8 @@
     "sha256": "8592db626c10c2b40b264960540a582ce8c713f4f3fa8a6f29a2b704f19ad974"
   },
   "rutalog-loader.js": {
-    "bytes": 4679,
-    "sha256": "ba2e9bce4fdab6565c516b9f4dac4a87656505b415b3ae3d803bd028ced1aa57"
+    "bytes": 4714,
+    "sha256": "6ca66e2d21087bea0df960ff942fc10377e81c58056077b8f29ab51c4aba88ef"
   },
   "mejoras-fase1-sync-login.js": {
     "bytes": 3691,
@@ -50,6 +50,10 @@
   "mejoras-nav-fix.js": {
     "bytes": 4691,
     "sha256": "dcd7782b2a87f01730183b59ecf9bd8ea7d214047ae6d2993b160f16487e574e"
+  },
+  "mejoras-sync-force.js": {
+    "bytes": 2259,
+    "sha256": "73308a4f7f7ad6a503e4bf7ac2e5d9af95649d18488d49e02d30f4b5549f76f0"
   },
   "functions/api/[[path]].js": {
     "bytes": 4551,
