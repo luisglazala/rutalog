@@ -1,11 +1,12 @@
-/* RUTALOG osrm-on-save v1
+/* RUTALOG osrm-on-save v2 (unificado: on-save + mute del antiguo onsave)
  * Mientras armas el viaje: solo pines + lista (sin OSRM).
  * Al Guardar viaje (tras auditoría): una petición OSRM y se guarda la polilínea.
  */
 (function () {
   "use strict";
-  if (window.__rutalogOsrmOnSaveV1) return;
+  if (window.__rutalogOsrmOnSaveV1 || window.__rutalogOsrmOnSaveV2) return;
   window.__rutalogOsrmOnSaveV1 = true;
+  window.__rutalogOsrmOnSaveV2 = true;
   window.__rutalogSkipLiveOsrm = true;
 
   var OSRM = "https://router.project-osrm.org/route/v1/driving/";
@@ -99,7 +100,9 @@
       }
       var pts = ptsFromViaje(v);
       if (pts.length < 2) return;
+      window.__rutalogOsrmAllow = true;
       fetchOsrm(pts).then(function (coords) {
+        window.__rutalogOsrmAllow = false;
         if (my !== seq) return;
         if (coords) {
           v.osrmLatLngs = coords;
@@ -115,10 +118,13 @@
     if (!viaje) return Promise.resolve(null);
     var pts = ptsFromViaje(viaje);
     if (pts.length < 2) return Promise.resolve(null);
+    window.__rutalogOsrmAllow = true;
     return fetchOsrm(pts).then(function (coords) {
       if (coords) viaje.osrmLatLngs = coords;
       paintSavedOnly();
       return coords;
+    }).finally(function () {
+      setTimeout(function () { window.__rutalogOsrmAllow = false; }, 500);
     });
   };
 
@@ -155,8 +161,34 @@
     }
   }
 
+
+  function muteAutoOsrm() {
+    // Evita peticiones OSRM en vivo (mismo efecto que el antiguo osrm-onsave)
+    if (typeof window.rutalogDibujarOSRM === "function" && !window.rutalogDibujarOSRM._osrmMuted) {
+      var prevDraw = window.rutalogDibujarOSRM;
+      window.rutalogDibujarOSRM = function () {
+        /* no-op live: solo pines; la ruta se calcula al guardar */
+      };
+      window.rutalogDibujarOSRM._osrmMuted = true;
+      window.rutalogDibujarOSRM._prev = prevDraw;
+    }
+    if (window.__osrmFetchPatched) return;
+    window.__osrmFetchPatched = true;
+    var _fetch = window.fetch;
+    window.fetch = function (input, init) {
+      var url = typeof input === "string" ? input : (input && input.url) || "";
+      if (url.indexOf("router.project-osrm.org") !== -1 && !window.__rutalogOsrmAllow) {
+        return Promise.resolve(new Response(JSON.stringify({ code: "Muted" }), {
+          status: 200, headers: { "Content-Type": "application/json" }
+        }));
+      }
+      return _fetch.apply(this, arguments);
+    };
+  }
+
   function tick() {
     window.__rutalogSkipLiveOsrm = true;
+    muteAutoOsrm();
     hookGuardar();
     installPaintHook();
   }
@@ -165,5 +197,5 @@
   setTimeout(tick, 1500);
   setTimeout(paintSavedOnly, 2200);
   setInterval(tick, 5000);
-  console.info("[RUTALOG] osrm-on-save v1 — OSRM solo al guardar viaje");
+  console.info("[RUTALOG] osrm-on-save v2 — OSRM solo al guardar (unificado)");
 })();

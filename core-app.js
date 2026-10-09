@@ -3069,15 +3069,13 @@ function loadMaestroCodigoLS() {
 }
 
 function saveMaestroCodigoLS() {
+  // Sin caché localStorage (catálogo grande → lag). Solo memoria + sync GitHub.
   try {
-    const arr = [];
-    estado.maestroCodigo.forEach(r => arr.push(r));
-    localStorage.setItem(LS_MAESTRO_CODIGO, JSON.stringify(arr));
+    try { localStorage.removeItem(LS_MAESTRO_CODIGO); } catch (e0) {}
     try { if (typeof ghSchedulePush === "function") ghSchedulePush("codigo");
           else if (typeof ghMarkDirty === "function") ghMarkDirty("codigo"); } catch (e) {}
   } catch (e) {
     console.warn("saveMaestroCodigoLS", e);
-    if (typeof toast === "function") toast("No se pudo guardar Código SKU (cuota del navegador)");
   }
 }
 
@@ -3347,7 +3345,7 @@ async function importarMaestroCodigo(file) {
     try { if (typeof ghMarkDirty === "function") ghMarkDirty("codigo-import"); } catch (e) {}
     renderCodigoTable();
     const msg = (replace ? "Reemplazado" : "Fusionado") + ": " + estado.maestroCodigo.size + " SKU (" + nNew + " nuevos, " + nUpd + " actualizados)" +
-      (saved ? " · guardado en este navegador" : " · ⚠ no se guardó (cuota localStorage)");
+      " · en memoria (se sube a GitHub al Actualizar)";
     toast(msg);
     try {
       if (typeof ghGetToken === "function" && ghGetToken() && typeof ghActualizar === "function") {
@@ -4202,8 +4200,8 @@ cargarMaestroEmbed().then(function () {
 }).catch(function (e) {
   console.error("[RUTALOG] Error cargando maestro", e);
 });
-if (!loadMaestroCodigoLS()) cargarMaestroCodigoEmbed();
-else { /* LS ya cargado */ }
+// Código SKU: sin caché LS (lag). Base embed; GitHub sobrescribe al sincronizar.
+cargarMaestroCodigoEmbed();
 if (typeof renderCodigoTable === "function") renderCodigoTable();
 try { initMaps(); } catch (e) { console.error("initMaps", e); toast("Mapa no pudo iniciar; el resto de la app sigue activo"); }
 refrescarRutaUI();
@@ -5558,11 +5556,7 @@ function ghApplyPayload(data, opts) {
         });
       });
       estado.maestroCodigoFuente = "github (" + estado.maestroCodigo.size + " SKU)";
-      try {
-        const arr = [];
-        estado.maestroCodigo.forEach(x => arr.push(x));
-        localStorage.setItem("rutalog_maestro_codigo", JSON.stringify(arr));
-      } catch (e) {}
+      try { localStorage.removeItem("rutalog_maestro_codigo"); } catch (e) {}
       try { if (typeof renderCodigoTable === "function") renderCodigoTable(); } catch (e) {}
     } else if (estado.maestroCodigo && estado.maestroCodigo.size > 0) {
       try { if (typeof ghMarkDirty === "function") ghMarkDirty("codigo-local"); } catch (e) {}
