@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.8 — watchdog 90/120s (catálogo grande) */
+/* RUTALOG mejoras-sync v3.9 — doble fecha (comprobación + catálogo remoto) */
 (function () {
   "use strict";
   if (window.__rutalogSyncV34) return;
@@ -103,22 +103,36 @@
       st.textContent = "Error: " + String(_lastErr).slice(0, 100);
       return;
     }
-    var ts = metaTimestamp();
     var action = "";
     var by = "";
+    var remoteTs = null;
     try {
       var raw = localStorage.getItem("rutalog_gh_meta");
       if (raw) {
         var m = JSON.parse(raw);
         if (m && m.action) action = " · " + m.action;
         if (m && m.updatedBy) by = " · " + m.updatedBy;
+        if (m && m.updatedAt) {
+          var parsed = Date.parse(m.updatedAt);
+          if (!isNaN(parsed)) remoteTs = parsed;
+        }
       }
     } catch (e) {}
-    if (ts) {
-      st.textContent = "Última sync: " + fmtLocal(ts) + " (" + fmtAgo(ts) + ")" + action + by;
-      return;
+    var checkTs = _lastOkAt || null;
+    var line1 = checkTs
+      ? ("Última comprobación: " + fmtLocal(checkTs) + " (" + fmtAgo(checkTs) + ")")
+      : "Última comprobación: —";
+    var line2;
+    if (remoteTs) {
+      line2 = "Catálogo en GitHub: " + fmtLocal(remoteTs) + " (" + fmtAgo(remoteTs) + ")" + action + by;
+    } else if (checkTs) {
+      line2 = "Catálogo en GitHub: (misma sesión)" + action + by;
+    } else {
+      line2 = "Catálogo en GitHub: —";
     }
-    st.textContent = "Última sync: —";
+    st.innerHTML =
+      '<span style="display:block;line-height:1.45">' + line1 + "</span>" +
+      '<span style="display:block;line-height:1.45;opacity:.92">' + line2 + "</span>";
   }
 
   function refreshBadge() {
@@ -204,7 +218,7 @@
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
-      console.warn("[sync-v3.8] pull", e);
+      console.warn("[sync-v3.9] pull", e);
     } finally {
       clearTimeout(watchdog);
       _pulling = false;
@@ -395,7 +409,7 @@
       },
       broadcast: broadcast
     };
-    console.info("[RUTALOG] sync v3.8 · watchdog 90/120s (catálogo grande)");
+    console.info("[RUTALOG] sync v3.9 · doble fecha (comprobación + catálogo remoto)");
   }
 
   if (document.readyState === "loading") {
