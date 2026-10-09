@@ -32,6 +32,7 @@
   var _rr = null;
   var goInstalled = false;
   var rmInstalled = false;
+  var rrInstalled = false;
 
   function forcePages() {
     try {
@@ -46,8 +47,9 @@
   }
 
   function installGo() {
+    if (goInstalled) return true;
     if (typeof window.go !== "function") return false;
-    if (window.go.__rutalogHooksV5) return true;
+    if (window.go.__rutalogHooksV5) { goInstalled = true; return true; }
     _go = window.go;
     window.go = function (page) {
       var silent = !!window.__rutalogNavSilent;
@@ -76,8 +78,9 @@
   }
 
   function installRenderMapas() {
+    if (rmInstalled) return true;
     if (typeof window.renderMapas !== "function") return false;
-    if (window.renderMapas.__rutalogHooksV5) return true;
+    if (window.renderMapas.__rutalogHooksV5) { rmInstalled = true; return true; }
     _rm = window.renderMapas;
     window.renderMapas = function () {
       /* Durante cambio de panel silencioso: no repintar miles de pines */
@@ -104,8 +107,9 @@
   }
 
   function installRefrescar() {
+    if (rrInstalled) return true;
     if (typeof window.refrescarRutaUI !== "function") return false;
-    if (window.refrescarRutaUI.__rutalogHooksV5) return true;
+    if (window.refrescarRutaUI.__rutalogHooksV5) { rrInstalled = true; return true; }
     _rr = window.refrescarRutaUI;
     window.refrescarRutaUI = function () {
       emit("antes:refrescarRutaUI", []);
@@ -115,6 +119,7 @@
       return r;
     };
     window.refrescarRutaUI.__rutalogHooksV5 = true;
+    rrInstalled = true;
     return true;
   }
 
