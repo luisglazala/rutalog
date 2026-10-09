@@ -3389,7 +3389,7 @@ async function resetMaestroCodigo() {
 
 // ============ USUARIOS Y PERMISOS ============
 const LS_USERS = "rutalog_usuarios_v2";
-// Sesión solo en memoria: al recargar siempre pide login
+// Sesión persistente en localStorage (rutalog_session); sobrevive F5
 let _sessionUser = null;
 
 const MODULOS_APP = [
@@ -3490,20 +3490,64 @@ function saveUsers(arr) {
   }
 }
 
-/** Tras bajar/crear usuarios: mostrar login si hace falta */
+/** Restaura UI con sesión ya válida (sin pedir login otra vez). */
+function restaurarSesionUI(sess) {
+  if (!sess) return;
+  try {
+    if (typeof mostrarLogin === "function") mostrarLogin(false);
+    const main = document.querySelector(".main");
+    if (main) main.style.visibility = "";
+    document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = false; });
+    const chip = document.getElementById("userChipBar");
+    if (chip) chip.hidden = false;
+    const chipName = document.getElementById("userChipName");
+    if (chipName) chipName.textContent = sess.nombre || sess.username || "—";
+    if (typeof aplicarPermisosUI === "function") aplicarPermisosUI();
+    try {
+      document.documentElement.classList.remove("rutalog-need-login", "rutalog-booting", "rutalog-session-pending");
+      document.documentElement.classList.add("rutalog-ready");
+    } catch (e0) {}
+  } catch (e) {
+    console.warn("restaurarSesionUI", e);
+  }
+}
+
+/** Si la sesión apunta a un usuario que ya no existe/activo, invalidarla. */
+function validarSesionContraUsuarios() {
+  const sess = typeof usuarioActual === "function" ? usuarioActual() : null;
+  if (!sess) return null;
+  const users = typeof loadUsers === "function" ? loadUsers() : [];
+  const activos = users.filter(u => u.activo !== false);
+  if (!activos.length) return sess; // aún no hay lista: no invalidar
+  const ok = activos.some(u =>
+    (u.id && sess.id && String(u.id) === String(sess.id)) ||
+    (u.username && sess.username && String(u.username).toLowerCase() === String(sess.username).toLowerCase())
+  );
+  if (!ok) {
+    console.info("[RUTALOG] sesión invalidada: usuario ya no está en la lista");
+    if (typeof setSession === "function") setSession(null);
+    return null;
+  }
+  return sess;
+}
+
+/** Tras bajar/crear usuarios: respetar sesión persistente; solo pedir login si hace falta. */
 function aplicarGateLoginDesdeSync() {
   try {
     if (typeof renderUsuariosTable === "function") renderUsuariosTable();
-    if (typeof aplicarPermisosUI === "function") aplicarPermisosUI();
+    const sess = validarSesionContraUsuarios();
+    if (sess) {
+      restaurarSesionUI(sess);
+      return;
+    }
     if (typeof requiereLogin === "function" && requiereLogin() && !usuarioActual()) {
-      mostrarLogin(true);
+      if (typeof mostrarLogin === "function") mostrarLogin(true);
       document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = true; });
       const chip = document.getElementById("userChipBar");
       if (chip) chip.hidden = true;
       const mainEl = document.querySelector(".main");
       if (mainEl) mainEl.style.visibility = "hidden";
     } else if (typeof requiereLogin === "function" && !requiereLogin()) {
-      // modo libre
       if (typeof mostrarLogin === "function") mostrarLogin(false);
       const mainEl = document.querySelector(".main");
       if (mainEl) mainEl.style.visibility = "";
@@ -4058,31 +4102,44 @@ function initUsuariosUI() {
     };
   }
 
-  // Gate de acceso: restaurar sesión persistente si existe
+  // Gate de acceso: priorizar sesión persistente (F5 no debe cerrar sesión)
   const nUsers = loadUsers().filter(u => u.activo !== false).length;
-  console.log("[RUTALOG] Usuarios activos:", nUsers);
-  if (nUsers > 0) {
-    const sess = (typeof usuarioActual === "function") ? usuarioActual() : null;
-    if (sess) {
-      // Sesión persistente restaurada
-      mostrarLogin(false);
-      const main = document.querySelector(".main");
-      if (main) main.style.visibility = "";
-      if (typeof aplicarPermisosUI === "function") aplicarPermisosUI();
-      const chip = document.getElementById("userChipBar");
-      if (chip) chip.hidden = false;
-      const chipName = document.getElementById("userChipName");
-      if (chipName) chipName.textContent = sess.nombre || sess.username || "—";
+  const sessBoot = (typeof usuarioActual === "function") ? usuarioActual() : null;
+  console.log("[RUTALOG] Usuarios activos:", nUsers, "sesión:", sessBoot ? sessBoot.username : null);
+
+  if (sessBoot) {
+    // Hay sesión guardada → entrar directo; validar contra lista cuando exista
+    if (nUsers > 0) {
+      const ok = validarSesionContraUsuarios();
+      if (ok) restaurarSesionUI(ok);
+      else {
+        // sesión huérfana
+        mostrarLogin(true);
+        document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = true; });
+        const main = document.querySelector(".main");
+        if (main) main.style.visibility = "hidden";
+      }
     } else {
-      mostrarLogin(true);
-      document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = true; });
-      const chip = document.getElementById("userChipBar");
-      if (chip) chip.hidden = true;
-      const main = document.querySelector(".main");
-      if (main) main.style.visibility = "hidden";
+      // Lista local vacía pero hay sesión: no sacar al usuario; sync en segundo plano
+      restaurarSesionUI(sessBoot);
+      const hasTok = (typeof ghGetToken === "function" && ghGetToken());
+      if (hasTok && typeof ghActualizar === "function") {
+        setTimeout(async function() {
+          try { await ghActualizar({ silent: true }); } catch (e) { console.warn(e); }
+          if (typeof aplicarGateLoginDesdeSync === "function") aplicarGateLoginDesdeSync();
+        }, 400);
+      }
     }
+  } else if (nUsers > 0) {
+    // Hay usuarios, no hay sesión → login
+    mostrarLogin(true);
+    document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = true; });
+    const chip = document.getElementById("userChipBar");
+    if (chip) chip.hidden = true;
+    const main = document.querySelector(".main");
+    if (main) main.style.visibility = "hidden";
   } else {
-    // Sin usuarios locales: si hay token, bajar de GitHub antes de quedar en modo libre
+    // Sin usuarios ni sesión
     const hasTok = (typeof ghGetToken === "function" && ghGetToken());
     if (hasTok && typeof ghActualizar === "function") {
       mostrarLogin(true);
@@ -4094,9 +4151,7 @@ function initUsuariosUI() {
       const main = document.querySelector(".main");
       if (main) main.style.visibility = "hidden";
       setTimeout(async function() {
-        try {
-          await ghActualizar({ silent: true });
-        } catch (e) { console.warn(e); }
+        try { await ghActualizar({ silent: true }); } catch (e) { console.warn(e); }
         if (err) err.classList.remove("visible");
         if (typeof aplicarGateLoginDesdeSync === "function") aplicarGateLoginDesdeSync();
         else {
@@ -4214,9 +4269,14 @@ try {
   console.warn("initUsuariosUI", e);
   try { mostrarLogin(true); } catch (e2) {}
 }
-// Refuerzo: si hay usuarios y no hay sesión, forzar login otra vez tras pintar el DOM
+// Refuerzo: solo forzar login si realmente no hay sesión (no tumbar F5 con sesión válida)
 setTimeout(function() {
   try {
+    const sess = typeof usuarioActual === "function" ? usuarioActual() : null;
+    if (sess) {
+      if (typeof restaurarSesionUI === "function") restaurarSesionUI(sess);
+      return;
+    }
     if (typeof requiereLogin === "function" && requiereLogin() && !usuarioActual()) {
       mostrarLogin(true);
       document.querySelectorAll(".nav button[data-page]").forEach(b => { b.hidden = true; });

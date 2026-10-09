@@ -1,4 +1,4 @@
-/* RUTALOG login v8 — sin flash sesión: si hay localStorage, no mostrar login */
+/* RUTALOG login v9 — sesión persistente: F5 no cierra sesión */
 (function () {
   "use strict";
   try {
@@ -14,8 +14,8 @@
     }
   } catch (_e) {}
 
-  if (window.__rutalogLoginInmediatoV8) return;
-  window.__rutalogLoginInmediatoV8 = true;
+  if (window.__rutalogLoginInmediatoV9) return;
+  window.__rutalogLoginInmediatoV9 = true;
 
   var shownOnce = false;
   var unlocked = false;
@@ -89,7 +89,8 @@
 
   function unlockApp() {
     if (!hasSession()) {
-      try { localStorage.removeItem("rutalog_session"); } catch (e) {}
+      // No borrar rutalog_session aquí: puede ser carrera de carga de core-app.
+      // Solo pedir login; setSession(null) lo hace el gate si la sesión es inválida.
       setNeedLogin();
       showOverlayOnly(null, true);
       return;
