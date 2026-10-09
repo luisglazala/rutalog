@@ -88,7 +88,7 @@
     "./mejoras-go-perf.js?v=3",
     "./mejoras-go-h8.js?v=1",
     "./mejoras-ui-polish.js?v=3",
-    "./mejoras-sync.js?v=37",
+    "./mejoras-sync.js?v=38",
     "./mejoras-sync-ui.js?v=1",
     "./mejoras-sync-h6.js?v=1",
     "./mejoras-fase1-sync-login.js?v=1",
