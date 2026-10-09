@@ -1,7 +1,8 @@
-/* RUTALOG sync-ui v1 — panel limpio + fecha legible (hora:min:seg) */
+/* RUTALOG sync-ui v2 — panel limpio + respeta doble fecha */
 (function () {
   "use strict";
-  if (window.__rutalogSyncUiV1) return;
+  if (window.__rutalogSyncUiV2) return;
+  window.__rutalogSyncUiV2 = true;
   window.__rutalogSyncUiV1 = true;
 
   function fmtLocal(ts) {
@@ -43,6 +44,9 @@
   function polishStatus() {
     var st = document.getElementById("syncStatus");
     if (!st) return;
+    if (st.querySelector && st.querySelector("span") && /comprobación|Catálogo/i.test(st.textContent || "")) {
+      return;
+    }
     var txt = st.textContent || "";
     var iso = txt.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?/);
     if (iso) {
@@ -139,5 +143,5 @@
     polishStatus();
   }, 15000);
 
-  console.info("[RUTALOG] sync-ui v1 · panel limpio + fecha local");
+  console.info("[RUTALOG] sync-ui v2 · respeta doble fecha");
 })();
