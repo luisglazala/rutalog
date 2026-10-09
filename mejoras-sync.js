@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.5 — sin toasts duplicados · boot único · silent auto */
+/* RUTALOG mejoras-sync v3.6 — sin toasts duplicados · boot único · silent auto */
 (function () {
   "use strict";
   if (window.__rutalogSyncV34) return;
@@ -120,15 +120,18 @@
     var orig = window.ghActualizar;
     window.ghActualizar = function (opts) {
       opts = opts || {};
-      if (_ghInflight) return _ghInflight;
-      _ghInflight = Promise.resolve()
+      /* manual / force: no reutilizar promesa colgada */
+      var bypass = opts.silent === false || opts.force || opts.manual;
+      if (_ghInflight && !bypass) return _ghInflight;
+      var run = Promise.resolve()
         .then(function () {
           return orig.call(window, opts);
         })
         .finally(function () {
-          _ghInflight = null;
+          if (_ghInflight === run) _ghInflight = null;
         });
-      return _ghInflight;
+      if (!bypass) _ghInflight = run;
+      return run;
     };
     window.ghActualizar._syncV34 = true;
   }
@@ -144,14 +147,15 @@
       var isSilent = silent !== false;
       await ghActualizar({
         silent: isSilent,
-        manual: !isSilent
+        manual: !isSilent,
+        force: !isSilent
       });
       _lastOkAt = Date.now();
       _lastErr = null;
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
-      console.warn("[sync-v3.5] pull", e);
+      console.warn("[sync-v3.6] pull", e);
     } finally {
       _pulling = false;
       refreshBadge();
@@ -341,7 +345,7 @@
       },
       broadcast: broadcast
     };
-    console.info("[RUTALOG] sync v3.5 · sin toasts auto · boot único");
+    console.info("[RUTALOG] sync v3.6 · inflight no bloquea manual");
   }
 
   if (document.readyState === "loading") {
