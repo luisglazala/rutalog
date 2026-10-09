@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-sync v3.7 — UI fecha + pull 30s + watchdog */
+/* RUTALOG mejoras-sync v3.8 — watchdog 90/120s (catálogo grande) */
 (function () {
   "use strict";
   if (window.__rutalogSyncV34) return;
@@ -182,26 +182,29 @@
     if (_pulling) return;
     _pulling = true;
     refreshBadge();
+    var isSilent = silent !== false;
+    var timeoutMs = isSilent ? 90000 : 120000;
     var watchdog = setTimeout(function () {
       if (_pulling) {
         _pulling = false;
-        _lastErr = "Sync tardó demasiado; reintenta Actualizar ahora";
+        if (!isSilent) {
+          _lastErr = "Sync tardó más de " + Math.round(timeoutMs / 1000) + " s; reintenta Actualizar ahora";
+        }
         refreshBadge();
       }
-    }, 28000);
+    }, timeoutMs);
     try {
-      var isSilent = silent !== false;
       await ghActualizar({
         silent: isSilent,
         manual: !isSilent,
-        force: !isSilent
+        force: true
       });
       _lastOkAt = Date.now();
       _lastErr = null;
       broadcast("pull-ok");
     } catch (e) {
       _lastErr = e && e.message ? e.message : String(e);
-      console.warn("[sync-v3.7] pull", e);
+      console.warn("[sync-v3.8] pull", e);
     } finally {
       clearTimeout(watchdog);
       _pulling = false;
@@ -392,7 +395,7 @@
       },
       broadcast: broadcast
     };
-    console.info("[RUTALOG] sync v3.7 · UI fecha + pull 30s + watchdog");
+    console.info("[RUTALOG] sync v3.8 · watchdog 90/120s (catálogo grande)");
   }
 
   if (document.readyState === "loading") {
