@@ -1,7 +1,8 @@
-/* RUTALOG login-cold v2 — incógnito/PC nueva: forzar apply de usuarios del remoto */
+/* RUTALOG login-cold v2.1 — incógnito/PC nueva: forzar apply + log de usuarios remotos */
 (function () {
   "use strict";
-  if (window.__rutalogLoginColdV2) return;
+  if (window.__rutalogLoginColdV21) return;
+  window.__rutalogLoginColdV21 = true;
   window.__rutalogLoginColdV2 = true;
   window.__rutalogLoginColdV1 = true;
 
@@ -54,6 +55,15 @@
             });
           }
           if (remote.data) {
+            var rawU = remote.data.usuarios || remote.data.users || [];
+            console.info(
+              "[RUTALOG] login-cold · remoto usuarios:",
+              Array.isArray(rawU) ? rawU.length : 0,
+              "maestro:",
+              Array.isArray(remote.data.maestroClientes) ? remote.data.maestroClientes.length : 0,
+              "bytes:",
+              remote.size || 0
+            );
             var n = applyRemoteUsers(remote.data);
             try {
               if (remote.sha) localStorage.setItem("rutalog_gh_sha", remote.sha);
@@ -87,17 +97,16 @@
     var btn = document.getElementById("btnLogin");
     if (btn) btn.disabled = true;
     pullAndApplyUsers()
-      .then(function (n) {
+      .then(function () {
         pulling = false;
         if (btn) btn.disabled = false;
-        n = nUsers();
-        if (n > 0) {
+        if (nUsers() > 0) {
           setLoginMsg("");
           if (typeof aplicarGateLoginDesdeSync === "function") aplicarGateLoginDesdeSync();
-          console.info("[RUTALOG] login-cold · usuarios:", n);
+          console.info("[RUTALOG] login-cold · usuarios locales:", nUsers());
           fn();
         } else {
-          setLoginMsg("El catálogo remoto no trae usuarios activos. En la PC donde sí entras, abre Configuración → Actualizar ahora para subir usuarios.");
+          setLoginMsg("Remoto sin usuarios activos. En la PC admin: Configuración → Actualizar ahora (con usuarios cargados) para subirlos.");
         }
       })
       .catch(function (e) {
@@ -158,7 +167,7 @@
           if (typeof aplicarGateLoginDesdeSync === "function") aplicarGateLoginDesdeSync();
           console.info("[RUTALOG] login-cold boot · usuarios:", nUsers());
         } else {
-          setLoginMsg("Sincronizado, pero aún no hay usuarios locales. Pulsa Entrar para reintentar o Actualizar en otra sesión admin.");
+          setLoginMsg("Remoto sin usuarios (o no aplicados). Usa la PC admin para subirlos con Actualizar ahora.");
         }
       })
       .catch(function (e) {
@@ -182,5 +191,5 @@
   setTimeout(coldBootPull, 1000);
   setTimeout(coldBootPull, 3000);
 
-  console.info("[RUTALOG] login-cold v2 · apply forzado de usuarios remotos");
+  console.info("[RUTALOG] login-cold v2.1 · log remoto + apply");
 })();
