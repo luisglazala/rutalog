@@ -1,66 +1,33 @@
-/* RUTALOG load extras v2 — manifiesto único, sin dobles + perf H5-H11 */
+/* RUTALOG loader — CSS paralelo; JS en 4 oleadas */
 (function () {
   "use strict";
-  if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v2) return;
-
-  var loaded = new Set();
-  var pending = new Map();
-
-  function keyOf(url) {
-    try {
-      var u = String(url || "");
-      var i = u.indexOf("?");
-      return i >= 0 ? u.slice(0, i) : u;
-    } catch (e) {
-      return String(url || "");
-    }
-  }
-
-  function markExisting() {
-    try {
-      document.querySelectorAll("script[src]").forEach(function (s) {
-        loaded.add(keyOf(s.getAttribute("src") || ""));
-      });
-      document.querySelectorAll('link[rel="stylesheet"][href]').forEach(function (l) {
-        loaded.add(keyOf(l.getAttribute("href") || ""));
-      });
-    } catch (e) {}
-  }
+  if (window.__rutalogLoaderStarted) return;
+  window.__rutalogLoaderStarted = true;
 
   function loadCss(href) {
-    var k = keyOf(href);
-    if (loaded.has(k)) return Promise.resolve();
-    if (pending.has(k)) return pending.get(k);
-    var p = new Promise(function (resolve) {
+    return new Promise(function (resolve) {
       var l = document.createElement("link");
       l.rel = "stylesheet";
       l.href = href;
-      l.onload = function () { loaded.add(k); resolve(); };
+      l.onload = function () { resolve(); };
       l.onerror = function () { resolve(); };
       document.head.appendChild(l);
     });
-    pending.set(k, p);
-    return p;
   }
 
   function loadJs(src) {
-    var k = keyOf(src);
-    if (loaded.has(k)) return Promise.resolve();
-    if (pending.has(k)) return pending.get(k);
-    var p = new Promise(function (resolve) {
+    return new Promise(function (resolve) {
       var s = document.createElement("script");
       s.src = src;
-      s.async = true;
-      s.onload = function () { loaded.add(k); resolve(); };
+      s.async = false;
+      s.onload = function () { resolve(); };
       s.onerror = function () { resolve(); };
-      document.head.appendChild(s);
+      (document.body || document.documentElement).appendChild(s);
     });
-    pending.set(k, p);
-    return p;
   }
 
   function parallel(list, fn) {
-    return Promise.all(list.map(function (u) { return fn(u); }));
+    return Promise.all(list.map(fn));
   }
 
   var CSS_POST = [
@@ -100,7 +67,7 @@
     "./mejoras-excel-export.js?v=3"
   ];
 
-  var JS_HOOKS = ["./rutalog-hooks.js?v=5"];
+  var JS_HOOKS = ["./rutalog-hooks.js?v=6"];
 
   var JS_MAP = [
     "./mejoras-mapa.js?v=3",
@@ -123,35 +90,20 @@
     "./mejoras-despachos-delete.js?v=2",
     "./mejoras-rutas-panel-ui.js?v=6",
     "./rutas-mapa.js?v=2",
-    "./mejoras-nav-fix.js?v=5"
+    "./mejoras-nav-fix.js?v=6"
   ];
 
-  function loadExtrasOnce() {
-    if (window.__rutalogExtrasLoaded) return Promise.resolve();
-    window.__rutalogExtrasLoaded = true;
-    markExisting();
+  function run() {
     return parallel(CSS_POST, loadCss)
       .then(function () { return parallel(JS_EARLY, loadJs); })
       .then(function () { return parallel(JS_MID, loadJs); })
       .then(function () { return parallel(JS_HOOKS, loadJs); })
-      .then(function () { return parallel(JS_MAP, loadJs); })
-      .then(function () {
-        try {
-          if (window.RUTALOG && RUTALOG.hooks && RUTALOG.hooks.install) RUTALOG.hooks.install();
-        } catch (e) {}
-      });
+      .then(function () { return parallel(JS_MAP, loadJs); });
   }
 
-  window.RUTALOG = window.RUTALOG || {};
-  window.RUTALOG.load = {
-    __v1: true,
-    __v2: true,
-    keyOf: keyOf,
-    has: function (url) { return loaded.has(keyOf(url)); },
-    css: loadCss,
-    js: loadJs,
-    extras: loadExtrasOnce,
-    markExisting: markExisting,
-    loadedKeys: function () { return Array.from(loaded); }
-  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { run(); });
+  } else {
+    run();
+  }
 })();

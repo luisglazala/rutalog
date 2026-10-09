@@ -134,6 +134,8 @@
       return r;
     };
     window.go._navTitleV5 = true;
+    /* conservar marcas de hooks para que no re-envuelvan y creen bucle */
+    if (orig.__rutalogHooksV5) window.go.__rutalogHooksV5 = true;
   }
   patchCoreGoTitles();
   setTimeout(patchCoreGoTitles, 500);
