@@ -1,18 +1,21 @@
-/* RUTALOG sync-core v3 — push real: limpia bloqueos, completa payload, logs claros */
+/* RUTALOG sync-core v4 — push real: limpia bloqueos, completa payload, logs claros */
 (function () {
   "use strict";
-  if (window.__rutalogSyncCoreV3) return;
+  if (window.__rutalogSyncCoreV4) return;
+  window.__rutalogSyncCoreV4 = true;
   window.__rutalogSyncCoreV3 = true;
   window.__rutalogSyncCoreV2 = true;
   window.__rutalogSyncCoreV1 = true;
 
   var PENDING_KEY = "rutalog_pending_push";
-  var LOG = "[RUTALOG] sync-core v3";
+  var LOG = "[RUTALOG] sync-core v4";
 
   function isDirty() {
     try {
-      if (typeof ghIsDirty === "function") return !!ghIsDirty();
-      return localStorage.getItem("rutalog_gh_dirty") === "1";
+      var raw = localStorage.getItem("rutalog_gh_dirty");
+      if (raw === "1") return true;
+      if (typeof ghIsDirty === "function" && ghIsDirty()) return true;
+      return false;
     } catch (e) {
       return false;
     }
@@ -182,7 +185,7 @@
   }
 
   function patchActualizar() {
-    if (typeof window.ghActualizar !== "function" || window.ghActualizar._syncCoreV3) return false;
+    if (typeof window.ghActualizar !== "function" || window.ghActualizar._syncCoreV4) return false;
     var orig = window.ghActualizar;
     window.ghActualizar = async function (opts) {
       opts = opts || {};
@@ -200,14 +203,14 @@
       clearReadFailed();
       return r;
     };
+    window.ghActualizar._syncCoreV4 = true;
     window.ghActualizar._syncCoreV3 = true;
-    window.ghActualizar._syncCoreV2 = true;
     window.ghActualizar._syncCore = true;
     return true;
   }
 
   function patchSchedulePush() {
-    if (typeof window.ghSchedulePush !== "function" || window.ghSchedulePush._syncCoreV3) return false;
+    if (typeof window.ghSchedulePush !== "function" || window.ghSchedulePush._syncCoreV4) return false;
     var _timer = null;
     var _inflight = false;
     window.ghSchedulePush = function (reason) {
@@ -245,13 +248,13 @@
         }
       }, 1500);
     };
-    window.ghSchedulePush._syncCoreV3 = true;
+    window.ghSchedulePush._syncCoreV4 = true;
     window.ghSchedulePush._syncCore = true;
     return true;
   }
 
   function patchPushClear() {
-    if (typeof window.ghPushWithSha !== "function" || window.ghPushWithSha._syncCoreV3) return false;
+    if (typeof window.ghPushWithSha !== "function" || window.ghPushWithSha._syncCoreV4) return false;
     var orig = window.ghPushWithSha;
     window.ghPushWithSha = async function (sha, silent) {
       clearReadFailed();
@@ -263,7 +266,7 @@
       clearReadFailed();
       return r;
     };
-    window.ghPushWithSha._syncCoreV3 = true;
+    window.ghPushWithSha._syncCoreV4 = true;
     window.ghPushWithSha._syncCoreDirty = true;
     return true;
   }
@@ -288,12 +291,23 @@
       out.codigo = window.estado && estado.maestroCodigo ? estado.maestroCodigo.size : 0;
       out.pending = !!sessionStorage.getItem(PENDING_KEY);
       out.dirtyWhy = localStorage.getItem("rutalog_gh_dirty_why");
+      out.rawDirty = localStorage.getItem("rutalog_gh_dirty");
     } catch (e) {
       out.error = String(e);
     }
     console.info(LOG, "diagnose", out);
     return out;
   };
+
+  async function forcePush(silent) {
+    try {
+      localStorage.setItem("rutalog_gh_dirty", "1");
+      localStorage.setItem("rutalog_gh_dirty_why", "force-push");
+    } catch (e) {}
+    console.info(LOG, "forcePush: dirty forzado, subiendo…");
+    console.info(LOG, "raw dirty ahora:", localStorage.getItem("rutalog_gh_dirty"));
+    return pushIfDirty(silent !== undefined ? silent : false);
+  }
 
   function install() {
     patchPushClear();
@@ -319,8 +333,9 @@
 
   window.rutalogSyncCore = {
     pushIfDirty: pushIfDirty,
+    forcePush: forcePush,
     isDirty: isDirty,
     diagnose: window.rutalogDiagnoseSync
   };
-  console.info(LOG, "dirty→push · desbloqueo · payload completo · rutalogDiagnoseSync()");
+  console.info(LOG, "dirty→push · forcePush() · rutalogDiagnoseSync()");
 })();
