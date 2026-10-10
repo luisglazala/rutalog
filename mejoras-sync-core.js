@@ -1,24 +1,59 @@
-/* RUTALOG sync-core v4 — push real: limpia bloqueos, completa payload, logs claros */
+/* RUTALOG sync-core v5 — dirty en memoria si localStorage no persiste */
 (function () {
   "use strict";
-  if (window.__rutalogSyncCoreV4) return;
+  if (window.__rutalogSyncCoreV5) return;
+  window.__rutalogSyncCoreV5 = true;
   window.__rutalogSyncCoreV4 = true;
   window.__rutalogSyncCoreV3 = true;
   window.__rutalogSyncCoreV2 = true;
   window.__rutalogSyncCoreV1 = true;
 
   var PENDING_KEY = "rutalog_pending_push";
-  var LOG = "[RUTALOG] sync-core v4";
+  var LOG = "[RUTALOG] sync-core v5";
+  var _memDirty = false;
+  var _memDirtyWhy = "";
 
   function isDirty() {
+    if (_memDirty) return true;
     try {
-      var raw = localStorage.getItem("rutalog_gh_dirty");
-      if (raw === "1") return true;
+      if (localStorage.getItem("rutalog_gh_dirty") === "1") return true;
+      if (sessionStorage.getItem("rutalog_gh_dirty") === "1") return true;
       if (typeof ghIsDirty === "function" && ghIsDirty()) return true;
       return false;
     } catch (e) {
-      return false;
+      return !!_memDirty;
     }
+  }
+
+  function markDirtyMem(why) {
+    _memDirty = true;
+    _memDirtyWhy = why || "edit";
+    try {
+      localStorage.setItem("rutalog_gh_dirty", "1");
+      localStorage.setItem("rutalog_gh_dirty_why", _memDirtyWhy);
+      localStorage.setItem("rutalog_gh_dirty_at", new Date().toISOString());
+    } catch (e) {
+      console.warn(LOG, "localStorage dirty fallo:", e && e.name, e && e.message);
+    }
+    try {
+      sessionStorage.setItem("rutalog_gh_dirty", "1");
+    } catch (e2) {}
+  }
+
+  function clearDirtyMem() {
+    _memDirty = false;
+    _memDirtyWhy = "";
+    try {
+      if (typeof ghClearDirty === "function") ghClearDirty();
+      else {
+        localStorage.removeItem("rutalog_gh_dirty");
+        localStorage.removeItem("rutalog_gh_dirty_why");
+        localStorage.removeItem("rutalog_gh_dirty_at");
+      }
+    } catch (e) {}
+    try {
+      sessionStorage.removeItem("rutalog_gh_dirty");
+    } catch (e2) {}
   }
 
   function lastSha() {
@@ -62,40 +97,6 @@
     } catch (e) {}
   }
 
-  function restorePendingIfNeeded() {
-    try {
-      var raw = sessionStorage.getItem(PENDING_KEY);
-      if (!raw || !window.estado) return false;
-      var slim = JSON.parse(raw);
-      if (!slim || Date.now() - (slim.at || 0) > 86400000) {
-        clearPendingSnapshot();
-        return false;
-      }
-      var restored = false;
-      if (Array.isArray(slim.codigoSku) && slim.codigoSku.length) {
-        estado.maestroCodigo = estado.maestroCodigo || new Map();
-        if (
-          estado.maestroCodigo.size === 0 ||
-          /base|embed|pending/i.test(String(estado.maestroCodigoFuente || ""))
-        ) {
-          estado.maestroCodigo.clear();
-          slim.codigoSku.forEach(function (r) {
-            if (!r || r.sku == null) return;
-            var key = typeof normSkuKey === "function" ? normSkuKey(r.sku) : String(r.sku).trim();
-            if (key) estado.maestroCodigo.set(key, r);
-          });
-          estado.maestroCodigoFuente = "pending (" + estado.maestroCodigo.size + ")";
-          restored = true;
-        }
-      }
-      if (restored && typeof ghMarkDirty === "function") ghMarkDirty("pending-restore");
-      if (restored) console.info(LOG, "restaurado pending");
-      return restored;
-    } catch (e) {
-      return false;
-    }
-  }
-
   async function ensurePayloadSafeForPush() {
     clearReadFailed();
     var users = [];
@@ -103,38 +104,25 @@
       if (typeof loadUsers === "function") users = loadUsers() || [];
     } catch (e) {}
     var maestroSize = window.estado && estado.maestro ? estado.maestro.size : 0;
-    var needRemote = users.length === 0 || maestroSize < 100;
-    if (!needRemote) return true;
-    console.info(LOG, "payload incompleto (users=" + users.length + " maestro=" + maestroSize + ") → fetch remoto");
+    if (!(users.length === 0 || maestroSize < 100)) return true;
+    console.info(LOG, "payload incompleto → fetch remoto");
     try {
       if (typeof ghFetchFile !== "function") return true;
       var remote = await ghFetchFile({ force: true });
-      if (!remote || !remote.data) {
-        console.warn(LOG, "fetch remoto sin data");
-        return true;
-      }
+      if (!remote || !remote.data) return true;
       var d = remote.data;
-      if (users.length === 0 && Array.isArray(d.usuarios) && d.usuarios.length > 0) {
+      if (users.length === 0 && Array.isArray(d.usuarios) && d.usuarios.length) {
         try {
           localStorage.setItem("rutalog_usuarios_v2", JSON.stringify(d.usuarios));
-          console.info(LOG, "usuarios rellenados desde remoto:", d.usuarios.length);
-        } catch (e3) {
-          console.warn(LOG, "no se pudieron rellenar usuarios", e3);
-        }
+        } catch (e3) {}
       }
       if (maestroSize < 100 && Array.isArray(d.maestroClientes) && d.maestroClientes.length > 100) {
         try {
-          if (window.estado && estado.maestro) {
-            estado.maestro.clear();
-            d.maestroClientes.forEach(function (r) {
-              if (r && r.id) estado.maestro.set(String(r.id), r);
-            });
-            estado.maestroFuente = "github-pre-push";
-            console.info(LOG, "maestro rellenado desde remoto:", estado.maestro.size);
-          }
-        } catch (e4) {
-          console.warn(LOG, "no se pudo rellenar maestro", e4);
-        }
+          estado.maestro.clear();
+          d.maestroClientes.forEach(function (r) {
+            if (r && r.id) estado.maestro.set(String(r.id), r);
+          });
+        } catch (e4) {}
       }
       if (typeof ghSetLastGood === "function") {
         try {
@@ -146,11 +134,10 @@
         } catch (e5) {}
       }
       clearReadFailed();
-      return true;
     } catch (e) {
-      console.warn(LOG, "ensurePayload fetch", e);
-      return true;
+      console.warn(LOG, "ensurePayload", e);
     }
+    return true;
   }
 
   async function pushIfDirty(silent) {
@@ -172,6 +159,7 @@
     try {
       await ghPushWithSha(lastSha(), !!silent);
       clearPendingSnapshot();
+      clearDirtyMem();
       console.info(LOG, "push OK");
       if (!silent && typeof toast === "function") toast("Cambios subidos a GitHub");
       return true;
@@ -184,8 +172,21 @@
     }
   }
 
+  function patchMarkDirty() {
+    if (typeof window.ghMarkDirty !== "function" || window.ghMarkDirty._syncCoreV5) return false;
+    var orig = window.ghMarkDirty;
+    window.ghMarkDirty = function (reason) {
+      markDirtyMem(reason || "edit");
+      try {
+        return orig.apply(this, arguments);
+      } catch (e) {}
+    };
+    window.ghMarkDirty._syncCoreV5 = true;
+    return true;
+  }
+
   function patchActualizar() {
-    if (typeof window.ghActualizar !== "function" || window.ghActualizar._syncCoreV4) return false;
+    if (typeof window.ghActualizar !== "function" || window.ghActualizar._syncCoreV5) return false;
     var orig = window.ghActualizar;
     window.ghActualizar = async function (opts) {
       opts = opts || {};
@@ -203,14 +204,12 @@
       clearReadFailed();
       return r;
     };
-    window.ghActualizar._syncCoreV4 = true;
-    window.ghActualizar._syncCoreV3 = true;
-    window.ghActualizar._syncCore = true;
+    window.ghActualizar._syncCoreV5 = true;
     return true;
   }
 
   function patchSchedulePush() {
-    if (typeof window.ghSchedulePush !== "function" || window.ghSchedulePush._syncCoreV4) return false;
+    if (typeof window.ghSchedulePush !== "function" || window.ghSchedulePush._syncCoreV5) return false;
     var _timer = null;
     var _inflight = false;
     window.ghSchedulePush = function (reason) {
@@ -218,6 +217,7 @@
         if (typeof _ghApplyingRemote !== "undefined" && _ghApplyingRemote) return;
         if (typeof _ghApplyingUsers !== "undefined" && _ghApplyingUsers) return;
       } catch (e) {}
+      markDirtyMem(reason || "edit");
       try {
         if (typeof ghMarkDirty === "function") ghMarkDirty(reason || "edit");
       } catch (e2) {}
@@ -226,10 +226,7 @@
       try {
         token = typeof ghGetToken === "function" ? ghGetToken() : "";
       } catch (e3) {}
-      if (!token) {
-        console.warn(LOG, "schedule: sin token");
-        return;
-      }
+      if (!token) return;
       if (_timer) clearTimeout(_timer);
       _timer = setTimeout(async function () {
         _timer = null;
@@ -248,13 +245,12 @@
         }
       }, 1500);
     };
-    window.ghSchedulePush._syncCoreV4 = true;
-    window.ghSchedulePush._syncCore = true;
+    window.ghSchedulePush._syncCoreV5 = true;
     return true;
   }
 
   function patchPushClear() {
-    if (typeof window.ghPushWithSha !== "function" || window.ghPushWithSha._syncCoreV4) return false;
+    if (typeof window.ghPushWithSha !== "function" || window.ghPushWithSha._syncCoreV5) return false;
     var orig = window.ghPushWithSha;
     window.ghPushWithSha = async function (sha, silent) {
       clearReadFailed();
@@ -263,35 +259,31 @@
       } catch (e) {}
       var r = await orig.apply(this, arguments);
       clearPendingSnapshot();
+      clearDirtyMem();
       clearReadFailed();
       return r;
     };
-    window.ghPushWithSha._syncCoreV4 = true;
-    window.ghPushWithSha._syncCoreDirty = true;
+    window.ghPushWithSha._syncCoreV5 = true;
     return true;
   }
 
   window.rutalogDiagnoseSync = function () {
     var out = {
       dirty: isDirty(),
-      readFailed: null,
-      lastGood: null,
+      memDirty: _memDirty,
       token: null,
       users: 0,
       maestro: 0,
-      codigo: 0,
-      pending: false
+      codigo: 0
     };
     try {
       out.readFailed = localStorage.getItem("rutalog_gh_read_failed");
-      out.lastGood = localStorage.getItem("rutalog_gh_last_good");
+      out.rawDirty = localStorage.getItem("rutalog_gh_dirty");
+      out.ssDirty = sessionStorage.getItem("rutalog_gh_dirty");
       out.token = typeof ghGetToken === "function" ? ghGetToken() : null;
       out.users = typeof loadUsers === "function" ? (loadUsers() || []).length : 0;
       out.maestro = window.estado && estado.maestro ? estado.maestro.size : 0;
       out.codigo = window.estado && estado.maestroCodigo ? estado.maestroCodigo.size : 0;
-      out.pending = !!sessionStorage.getItem(PENDING_KEY);
-      out.dirtyWhy = localStorage.getItem("rutalog_gh_dirty_why");
-      out.rawDirty = localStorage.getItem("rutalog_gh_dirty");
     } catch (e) {
       out.error = String(e);
     }
@@ -300,30 +292,18 @@
   };
 
   async function forcePush(silent) {
-    try {
-      localStorage.setItem("rutalog_gh_dirty", "1");
-      localStorage.setItem("rutalog_gh_dirty_why", "force-push");
-    } catch (e) {}
-    console.info(LOG, "forcePush: dirty forzado, subiendo…");
-    console.info(LOG, "raw dirty ahora:", localStorage.getItem("rutalog_gh_dirty"));
+    markDirtyMem("force-push");
+    console.info(LOG, "forcePush: memDirty=", _memDirty, "ls=", localStorage.getItem("rutalog_gh_dirty"));
     return pushIfDirty(silent !== undefined ? silent : false);
   }
 
   function install() {
+    patchMarkDirty();
     patchPushClear();
     patchSchedulePush();
     patchActualizar();
   }
-
   install();
-  setTimeout(function () {
-    if (restorePendingIfNeeded()) {
-      setTimeout(function () {
-        pushIfDirty(true).catch(function () {});
-      }, 2500);
-    }
-  }, 3000);
-
   var n = 0;
   var t = setInterval(function () {
     n++;
@@ -337,5 +317,5 @@
     isDirty: isDirty,
     diagnose: window.rutalogDiagnoseSync
   };
-  console.info(LOG, "dirty→push · forcePush() · rutalogDiagnoseSync()");
+  console.info(LOG, "dirty en memoria · forcePush() · rutalogDiagnoseSync()");
 })();
