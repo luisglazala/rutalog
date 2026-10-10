@@ -1,4 +1,4 @@
-/* RUTALOG mejoras-storage v1 — espejo IndexedDB de catálogos pesados (retrocompatible) */
+/* RUTALOG mejoras-storage v1.1 — espejo IndexedDB sin código SKU (lag) */
 (function () {
   "use strict";
   if (window.__rutalogStorageV1) return;
@@ -9,11 +9,11 @@
   var STORE = "kv";
   var HEAVY = [
     "rutalog_maestro",
-    "rutalog_maestro_codigo",
     "rutalog_topes_sku",
     "rutalog_citas",
     "rutalog_usuarios_v2"
   ];
+  /* rutalog_maestro_codigo: NO espejar (lag); solo memoria + GitHub */
 
   var dbPromise = null;
 
@@ -35,6 +35,18 @@
       req.onerror = function () { reject(req.error || new Error("idb open")); };
     });
     return dbPromise;
+  }
+
+  function dropCodigoSkuCache() {
+    try { localStorage.removeItem("rutalog_maestro_codigo"); } catch (e) {}
+    try {
+      openDb().then(function (db) {
+        try {
+          var tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).delete("rutalog_maestro_codigo");
+        } catch (e2) {}
+      }).catch(function () {});
+    } catch (e3) {}
   }
 
   function idbSet(key, value) {
@@ -73,41 +85,38 @@
   }
 
   function estimateLsBytes() {
-    var n = 0;
+    var total = 0;
     try {
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i);
         var v = localStorage.getItem(k) || "";
-        n += (k ? k.length : 0) + v.length;
+        total += (k ? k.length : 0) + v.length;
       }
     } catch (e) {}
-    return n * 2;
+    return total * 2;
   }
 
-  function mirrorToIdb() {
-    var jobs = [];
-    HEAVY.forEach(function (key) {
-      var v = lsGet(key);
-      if (v && v.length > 20) {
-        jobs.push(idbSet(key, v).catch(function () {}));
-      }
+  function restoreFromIdb() {
+    if (!window.indexedDB) return Promise.resolve();
+    var jobs = HEAVY.map(function (key) {
+      if (lsGet(key)) return Promise.resolve();
+      return idbGet(key).then(function (v) {
+        if (v != null && v !== "") {
+          if (lsSet(key, String(v))) {
+            console.info("[storage-v1.1] restaurado desde IDB:", key, String(v).length);
+          }
+        }
+      }).catch(function () {});
     });
     return Promise.all(jobs);
   }
 
-  function restoreFromIdb() {
-    var jobs = HEAVY.map(function (key) {
-      var cur = lsGet(key);
-      if (cur && cur.length > 20) return Promise.resolve();
-      return idbGet(key).then(function (v) {
-        if (typeof v === "string" && v.length > 20) {
-          if (!lsSet(key, v)) {
-            console.warn("[storage-v1] no se pudo restaurar a LS:", key);
-          } else {
-            console.info("[storage-v1] restaurado desde IDB:", key, v.length);
-          }
-        }
-      }).catch(function () {});
+  function mirrorToIdb() {
+    if (!window.indexedDB) return Promise.resolve();
+    var jobs = [];
+    HEAVY.forEach(function (key) {
+      var v = lsGet(key);
+      if (v != null) jobs.push(idbSet(key, v).catch(function () {}));
     });
     return Promise.all(jobs);
   }
@@ -118,7 +127,7 @@
         try {
           localStorage.setItem(key + "__idb", "1");
         } catch (e) {}
-        console.warn("[storage-v1] LS lleno; " + key + " guardado en IndexedDB");
+        console.warn("[storage-v1.1] LS lleno; " + key + " guardado en IndexedDB");
         return false;
       });
     }
@@ -140,7 +149,7 @@
             try {
               orig.call(this, String(key) + "__idb", "1");
             } catch (e2) {}
-            console.warn("[storage-v1] setItem falló, espejo IDB:", key, e && e.name);
+            console.warn("[storage-v1.1] setItem falló, espejo IDB:", key, e && e.name);
             return;
           }
         }
@@ -148,7 +157,7 @@
       };
       proto.setItem._rutalogStorageV1 = true;
     } catch (e) {
-      console.warn("[storage-v1] no se pudo parchear setItem", e);
+      console.warn("[storage-v1.1] no se pudo parchear setItem", e);
     }
   }
 
@@ -157,29 +166,26 @@
       var bytes = estimateLsBytes();
       var kb = Math.round(bytes / 1024);
       if (kb > 3500) {
-        console.warn("[storage-v1] localStorage ~" + kb + " KB (cerca del límite típico ~5 MB)");
+        console.warn("[storage-v1.1] localStorage ~" + kb + " KB (cerca del límite típico ~5 MB)");
       } else {
-        console.info("[storage-v1] localStorage ~" + kb + " KB · espejo IDB activo");
-      }
-      var badge = document.getElementById("badgeSync");
-      if (badge && kb > 4000) {
-        badge.title = (badge.title || "") + " · LS ~" + kb + "KB";
+        console.info("[storage-v1.1] localStorage ~" + kb + " KB · espejo IDB activo");
       }
     } catch (e) {}
   }
 
   function boot() {
+    dropCodigoSkuCache();
     patchSetItem();
     restoreFromIdb()
       .then(function () { return mirrorToIdb(); })
       .then(function () { showUsageHint(); })
       .catch(function (e) {
-        console.warn("[storage-v1] boot", e);
+        console.warn("[storage-v1.1] boot", e);
       });
     if (window.RUTALOG && RUTALOG.tick) {
-      RUTALOG.tick.registrar('storage:mirror', function () {
+      RUTALOG.tick.registrar("storage:mirror", function () {
         mirrorToIdb().catch(function () {});
-      }, { cada: 120000, vista: 'siempre' });
+      }, { cada: 120000, vista: "siempre" });
     } else {
       setInterval(function () {
         mirrorToIdb().catch(function () {});

@@ -76,7 +76,7 @@
   var JS_EARLY = [
     "./rutalog-scheduler.js?v=1",
     "./mejoras-invalidate-debounce.js?v=1",
-    "./mejoras-storage.js?v=1",
+    "./mejoras-storage.js?v=2",
     "./mejoras-storage-h7.js?v=1",
     "./mejoras-gh-proxy.js?v=4",
     "./mejoras-login-inmediato.js?v=10",
@@ -94,6 +94,7 @@
     "./mejoras-fase1-sync-login.js?v=1",
     "./mejoras-sync-force.js?v=2",
     "./mejoras-sync-skip-unchanged.js?v=1",
+    "./mejoras-sync-dirty-push.js?v=1",
     "./mejoras-login-cold.js?v=3",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
