@@ -79,7 +79,7 @@
     "./mejoras-storage.js?v=1",
     "./mejoras-storage-h7.js?v=1",
     "./mejoras-gh-proxy.js?v=4",
-    "./mejoras-login-inmediato.js?v=11",
+    "./mejoras-login-inmediato.js?v=10",
     "./mejoras-logout-clear.js?v=1"
   ];
 
@@ -93,6 +93,7 @@
     "./mejoras-sync-h6.js?v=1",
     "./mejoras-fase1-sync-login.js?v=1",
     "./mejoras-sync-force.js?v=2",
+    "./mejoras-sync-skip-unchanged.js?v=1",
     "./mejoras-login-cold.js?v=3",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
@@ -117,7 +118,8 @@
     "./mejoras-mapa-ciudades-ruta.js?v=31",
     "./mejoras-mapa-incremental.js?v=1",
     "./mejoras-mapa-click.js?v=1",
-    "./mejoras-osrm-on-save.js?v=2",
+    "./mejoras-osrm-on-save.js?v=1",
+    "./mejoras-osrm-onsave.js?v=1",
     "./mejoras-listas-inc.js?v=1",
     "./mejoras-plan-filtro.js?v=1",
     "./mejoras-ui-centro-viajes.js?v=3",
