@@ -95,7 +95,7 @@
     "./mejoras-sync-force.js?v=3",
     "./mejoras-sync-skip-unchanged.js?v=2",
     "./mejoras-sync-dirty-push.js?v=1",
-    "./mejoras-push-codigo.js?v=1",
+    "./mejoras-sync-core.js?v=1",
     "./mejoras-login-cold.js?v=3",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
