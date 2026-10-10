@@ -1,7 +1,8 @@
-/* RUTALOG sync-skip-unchanged v1 — no crear commit si el catálogo es idéntico */
+/* RUTALOG sync-skip-unchanged v2 — no commit si idéntico; NUNCA omitir si dirty */
 (function () {
   "use strict";
-  if (window.__rutalogSkipUnchangedV1) return;
+  if (window.__rutalogSkipUnchangedV2) return;
+  window.__rutalogSkipUnchangedV2 = true;
   window.__rutalogSkipUnchangedV1 = true;
 
   var HASH_KEY = "rutalog_gh_content_hash";
@@ -73,7 +74,14 @@
         }
       } catch (e) {}
       var remoteHash = getStoredHash();
-      if (localHash && remoteHash && localHash === remoteHash) {
+      var dirty = false;
+      try {
+        dirty =
+          typeof ghIsDirty === "function"
+            ? !!ghIsDirty()
+            : localStorage.getItem("rutalog_gh_dirty") === "1";
+      } catch (e0) {}
+      if (!dirty && localHash && remoteHash && localHash === remoteHash) {
         try {
           if (typeof ghClearDirty === "function") ghClearDirty();
         } catch (e) {}
@@ -153,5 +161,5 @@
     if (n > 40) clearInterval(t);
   }, 300);
 
-  console.info("[RUTALOG] skip-unchanged v1 · no commit si hash igual + código sin LS");
+  console.info("[RUTALOG] skip-unchanged v2 · no commit si hash igual; respeta dirty");
 })();
