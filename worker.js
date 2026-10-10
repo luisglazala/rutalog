@@ -74,7 +74,8 @@ function pathAllowed(githubPath, method) {
   if (method === "POST" && rest === "/git/blobs") return true;
   if (method === "POST" && rest === "/git/trees") return true;
   if ((method === "GET" || method === "POST") && /^\/git\/commits(\/[0-9a-f]{40})?$/i.test(rest)) return true;
-  if ((method === "GET" || method === "PATCH") && /^\/git\/refs\/heads\//i.test(rest)) return true;
+  // GitHub API: /git/ref/heads/main (singular) y /git/refs/heads/main (plural)
+  if ((method === "GET" || method === "PATCH") && /^\/git\/refs?\/heads\//i.test(rest)) return true;
   return false;
 }
 
