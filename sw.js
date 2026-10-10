@@ -1,4 +1,4 @@
-const CACHE = "rutalog-v13-shell";
+const CACHE = "rutalog-v14-shell";
 const ASSETS = [
   "./",
   "./index.html",
@@ -38,6 +38,12 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  /* NUNCA cachear /api (data.json / proxy GitHub): si no, otras PCs ven catálogo viejo */
+  if (url.pathname === "/api" || url.pathname.indexOf("/api/") === 0) {
+    e.respondWith(fetch(req));
+    return;
+  }
+
   const isNav = req.mode === "navigate" || isHtmlPath(url.pathname);
   if (isNav || /shell-body/i.test(url.pathname)) {
     e.respondWith(
@@ -59,7 +65,6 @@ self.addEventListener("fetch", (e) => {
                   headers: res.headers
                 });
               }
-              /* Red devolvió shell roto: preferir caché buena */
               const cached = await caches.match(req);
               if (cached) {
                 try {
