@@ -108,7 +108,7 @@
     "./mejoras-audit.js?v=6",
     "./mejoras-planificacion.js?v=4",
     "./mejoras-excel-export.js?v=3",
-    "./mejoras-maestro-import.js?v=2"
+    "./mejoras-maestro-import.js?v=3"
   ];
 
   var JS_HOOKS = ["./rutalog-hooks.js?v=6"];

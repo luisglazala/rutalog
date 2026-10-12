@@ -1,7 +1,8 @@
-/* RUTALOG maestro-import v2 — fusión conserva ediciones app + Excel completa/agrega */
+/* RUTALOG maestro-import v3 — fusión app+Excel con prioridad cuando difieren */
 (function () {
   "use strict";
-  if (window.__rutalogMaestroImportV2) return;
+  if (window.__rutalogMaestroImportV3) return;
+  window.__rutalogMaestroImportV3 = true;
   window.__rutalogMaestroImportV2 = true;
   window.__rutalogMaestroImportV1 = true;
 
@@ -47,6 +48,36 @@
     return out;
   }
 
+  function filled(v) {
+    return v != null && String(v).trim() !== "";
+  }
+
+  function normTxt(v) {
+    return filled(v) ? String(v).trim() : "";
+  }
+
+  function pickText(appVal, excelVal, preferExcel) {
+    var a = normTxt(appVal);
+    var e = normTxt(excelVal);
+    if (!a && !e) return "";
+    if (!a) return e;
+    if (!e) return a;
+    if (a === e) return a;
+    return preferExcel ? e : a;
+  }
+
+  function pickCoord(appVal, excelVal, preferExcel) {
+    var eOk = excelVal != null && Number.isFinite(Number(excelVal));
+    var aOk = appVal != null && Number.isFinite(Number(appVal));
+    if (eOk && aOk) {
+      if (Number(excelVal) === Number(appVal)) return Number(appVal);
+      return preferExcel ? Number(excelVal) : Number(appVal);
+    }
+    if (eOk) return Number(excelVal);
+    if (aOk) return Number(appVal);
+    return excelVal != null ? excelVal : appVal;
+  }
+
   async function importarMaestroClientes(file) {
     if (!file) return;
     if (typeof leerXLS !== "function") {
@@ -63,38 +94,47 @@
       }
 
       var replace = true;
+      var preferExcel = false;
+
       if (estado.maestro && estado.maestro.size > 0) {
         var ok = true;
         if (typeof confirmDialog === "function") {
           ok = await confirmDialog(
-            "Archivo: " + file.name + "\n" + parsed.length + " clientes leídos.\n\n" +
+            "Archivo: " + file.name + "\n" +
+              parsed.length + " clientes leídos.\n\n" +
               "Actual en panel: " + estado.maestro.size + " clientes.\n\n" +
-              "Aceptar = REEMPLAZAR todo el maestro por el archivo.\n" +
-              "Cancelar = FUSIONAR: se conservan tus ediciones en la app (ej. condición)\n" +
-              "y el Excel agrega clientes nuevos y completa campos vacíos (coords, etc.).",
+              "Aceptar = REEMPLAZAR (solo queda el Excel).\n" +
+              "Cancelar = FUSIONAR (se combinan app + Excel).",
             { title: "Importar Maestro de clientes", okText: "Reemplazar", cancelText: "Fusionar" }
           );
         }
         replace = !!ok;
+
+        if (!replace && typeof confirmDialog === "function") {
+          var excelWins = await confirmDialog(
+            "Fusión app + Excel\n\n" +
+              "• Clientes solo en la app → se conservan\n" +
+              "• Clientes solo en el Excel → se agregan\n" +
+              "• Campos vacíos → se completan con el otro lado\n\n" +
+              "Si APP y EXCEL tienen valores distintos en el mismo campo\n" +
+              "(ej. condición distinta):\n\n" +
+              "Aceptar = gana el EXCEL (cambios del archivo)\n" +
+              "Cancelar = gana la APP (ediciones en pantalla)",
+            {
+              title: "¿Qué priorizar si hay conflicto?",
+              okText: "Priorizar Excel",
+              cancelText: "Priorizar app"
+            }
+          );
+          preferExcel = !!excelWins;
+        }
       }
 
       if (replace) estado.maestro.clear();
 
-      var nNew = 0, nUpd = 0;
-      function filled(v) { return v != null && String(v).trim() !== ""; }
-      function pickText(appVal, excelVal) {
-        var a = filled(appVal) ? String(appVal).trim() : "";
-        var e = filled(excelVal) ? String(excelVal).trim() : "";
-        if (!a && !e) return "";
-        if (!a) return e;
-        if (!e) return a;
-        return a;
-      }
-      function pickCoord(appVal, excelVal) {
-        if (excelVal != null && Number.isFinite(Number(excelVal))) return Number(excelVal);
-        if (appVal != null && Number.isFinite(Number(appVal))) return Number(appVal);
-        return excelVal != null ? excelVal : appVal;
-      }
+      var nNew = 0;
+      var nUpd = 0;
+      var nConflict = 0;
 
       if (replace) {
         for (var j0 = 0; j0 < parsed.length; j0++) {
@@ -107,18 +147,25 @@
           var prev = estado.maestro.get(r.id);
           if (prev) {
             nUpd++;
+            var fields = ["nombre", "zona", "condicion", "region", "direccion", "ciudad", "provincia", "localidad"];
+            for (var fi = 0; fi < fields.length; fi++) {
+              var fk = fields[fi];
+              var av = normTxt(prev[fk]);
+              var ev = normTxt(r[fk]);
+              if (av && ev && av !== ev) nConflict++;
+            }
             estado.maestro.set(r.id, {
               id: r.id,
-              nombre: pickText(prev.nombre, r.nombre),
-              zona: pickText(prev.zona, r.zona),
-              condicion: pickText(prev.condicion, r.condicion),
-              region: pickText(prev.region, r.region),
-              direccion: pickText(prev.direccion, r.direccion),
-              ciudad: pickText(prev.ciudad, r.ciudad),
-              provincia: pickText(prev.provincia, r.provincia),
-              localidad: pickText(prev.localidad, r.localidad),
-              lat: pickCoord(prev.lat, r.lat),
-              lon: pickCoord(prev.lon, r.lon)
+              nombre: pickText(prev.nombre, r.nombre, preferExcel),
+              zona: pickText(prev.zona, r.zona, preferExcel),
+              condicion: pickText(prev.condicion, r.condicion, preferExcel),
+              region: pickText(prev.region, r.region, preferExcel),
+              direccion: pickText(prev.direccion, r.direccion, preferExcel),
+              ciudad: pickText(prev.ciudad, r.ciudad, preferExcel),
+              provincia: pickText(prev.provincia, r.provincia, preferExcel),
+              localidad: pickText(prev.localidad, r.localidad, preferExcel),
+              lat: pickCoord(prev.lat, r.lat, preferExcel),
+              lon: pickCoord(prev.lon, r.lon, preferExcel)
             });
           } else {
             nNew++;
@@ -128,8 +175,9 @@
       }
 
       rebuildBare();
-      estado.maestroFuente =
-        (replace ? "importado (reemplazo)" : "fusionado (app+excel)") + " · " + (file.name || "excel");
+      estado.maestroFuente = replace
+        ? "importado (reemplazo) · " + (file.name || "excel")
+        : "fusionado (" + (preferExcel ? "Excel prioriza" : "app prioriza") + ") · " + (file.name || "excel");
 
       try {
         var badge = document.getElementById("badgeMaestro");
@@ -142,25 +190,46 @@
       if (typeof fillProvFilter === "function") fillProvFilter();
       if (typeof renderMaestroTable === "function") renderMaestroTable();
       if (typeof saveMaestroLS === "function") saveMaestroLS();
-      try { if (typeof ghMarkDirty === "function") ghMarkDirty("maestro-import"); } catch (e1) {}
+      try {
+        if (typeof ghMarkDirty === "function") ghMarkDirty("maestro-import");
+      } catch (e1) {}
 
-      var msg = replace
-        ? "Reemplazado: " + estado.maestro.size + " clientes · " + (file.name || "")
-        : "Fusionado: " + estado.maestro.size + " clientes (" + nNew +
-          " nuevos del Excel, " + nUpd + " cruzados; ediciones de la app conservadas) · " + (file.name || "");
+      var msg;
+      if (replace) {
+        msg = "Reemplazado: " + estado.maestro.size + " clientes · " + (file.name || "");
+      } else {
+        msg =
+          "Fusionado: " +
+          estado.maestro.size +
+          " clientes (" +
+          nNew +
+          " nuevos Excel, " +
+          nUpd +
+          " cruzados, prioridad " +
+          (preferExcel ? "Excel" : "app") +
+          (nConflict ? ", " + nConflict + " campos en conflicto resueltos" : "") +
+          ") · " +
+          (file.name || "");
+      }
       toast(msg);
       console.info(LOG, msg);
 
       if (estado.diarioRaw && estado.diarioRaw.length && typeof construirHoy === "function") {
-        try { construirHoy(estado.diarioRaw); } catch (e2) {}
+        try {
+          construirHoy(estado.diarioRaw);
+        } catch (e2) {}
       }
 
       try {
         if (typeof ghGetToken === "function" && ghGetToken()) {
           if (window.rutalogSyncCore && window.rutalogSyncCore.forcePush) {
-            setTimeout(function () { window.rutalogSyncCore.forcePush(false).catch(function () {}); }, 500);
+            setTimeout(function () {
+              window.rutalogSyncCore.forcePush(false).catch(function () {});
+            }, 500);
           } else if (typeof ghActualizar === "function") {
-            setTimeout(function () { ghActualizar({ silent: false }); }, 500);
+            setTimeout(function () {
+              ghActualizar({ silent: false });
+            }, 500);
           }
         }
       } catch (e3) {}
@@ -183,7 +252,7 @@
       if (t) t.textContent = "Importar maestro de clientes (.xlsx)";
       if (s)
         s.textContent =
-          "Arrastra o haz clic · REEMPLAZAR = solo el Excel. FUSIONAR = se guardan tus cambios en la app y los del Excel (nuevos y campos vacíos / coordenadas).";
+          "Arrastra o haz clic · Puedes REEMPLAZAR o FUSIONAR (app + Excel). Si hay conflicto en un campo, eliges si gana la app o el Excel.";
     } catch (e) {}
   }
 
@@ -203,5 +272,5 @@
   }, 400);
 
   window.rutalogImportarMaestro = importarMaestroClientes;
-  console.info(LOG, "v2 · fusión conserva ediciones app + Excel completa/agrega");
+  console.info(LOG, "v3 · fusión con prioridad app o Excel si hay conflicto");
 })();
