@@ -1,13 +1,14 @@
-/* RUTALOG login-cold v3 — apply usuarios con escritura directa a localStorage */
+/* RUTALOG login-cold v4 — usuarios aunque localStorage esté al límite */
 (function () {
   "use strict";
-  if (window.__rutalogLoginColdV3) return;
+  if (window.__rutalogLoginColdV4) return;
+  window.__rutalogLoginColdV4 = true;
   window.__rutalogLoginColdV3 = true;
-  window.__rutalogLoginColdV21 = true;
   window.__rutalogLoginColdV2 = true;
   window.__rutalogLoginColdV1 = true;
 
   var LS_USERS = "rutalog_usuarios_v2";
+  var SS_USERS = "rutalog_usuarios_v2_ss";
   var pulling = false;
 
   function setLoginMsg(text) {
@@ -18,12 +19,82 @@
     else err.classList.remove("visible");
   }
 
+  function freeLocalStorageQuota() {
+    var victims = [
+      "rutalog_maestro_codigo",
+      "rutalog_pending_push",
+      "rutalog_gh_content_hash",
+      "rutalog_maestro_codigo__idb",
+      "rutalog_usuarios",
+      "rutalog_users",
+      "rutalog_usuarios_v1"
+    ];
+    var freed = 0;
+    victims.forEach(function (k) {
+      try {
+        var v = localStorage.getItem(k);
+        if (v) {
+          freed += v.length;
+          localStorage.removeItem(k);
+        }
+      } catch (e) {}
+    });
+    if (freed) console.info("[login-cold] liberados ~" + Math.round(freed / 1024) + " KB de LS");
+    return freed;
+  }
+
+  function writeUsersArray(arr) {
+    var json = JSON.stringify(arr);
+    window.__rutalogUsersMem = arr;
+    try {
+      sessionStorage.setItem(SS_USERS, json);
+    } catch (e0) {
+      console.warn("[login-cold] sessionStorage usuarios", e0);
+    }
+    var ok = false;
+    try {
+      localStorage.setItem(LS_USERS, json);
+      ok = localStorage.getItem(LS_USERS) && localStorage.getItem(LS_USERS).length > 2;
+    } catch (e) {
+      console.warn("[login-cold] LS setItem usuarios falló:", e && e.name, e && e.message);
+      freeLocalStorageQuota();
+      try {
+        localStorage.setItem(LS_USERS, json);
+        ok = localStorage.getItem(LS_USERS) && localStorage.getItem(LS_USERS).length > 2;
+      } catch (e2) {
+        console.warn("[login-cold] LS reintento falló:", e2 && e2.name);
+        ok = false;
+      }
+    }
+    if (!ok && typeof window.rutalogStorage === "object" && window.rutalogStorage.safeSetHeavy) {
+      try {
+        window.rutalogStorage.safeSetHeavy(LS_USERS, json);
+        ok = true;
+        console.info("[login-cold] usuarios vía IndexedDB (safeSetHeavy)");
+      } catch (e3) {}
+    }
+    return ok || (arr && arr.length > 0);
+  }
+
   function nUsers() {
     try {
+      if (window.__rutalogUsersMem && window.__rutalogUsersMem.length) {
+        return window.__rutalogUsersMem.filter(function (u) {
+          return u.activo !== false;
+        }).length;
+      }
       if (typeof loadUsers === "function") {
-        return loadUsers().filter(function (u) { return u.activo !== false; }).length;
+        var fromFn = loadUsers().filter(function (u) {
+          return u.activo !== false;
+        }).length;
+        if (fromFn > 0) return fromFn;
       }
       var raw = localStorage.getItem(LS_USERS);
+      if (!raw) {
+        try {
+          raw = sessionStorage.getItem(SS_USERS);
+        } catch (e) {}
+      }
       if (!raw) return 0;
       var arr = JSON.parse(raw);
       return Array.isArray(arr) ? arr.length : 0;
@@ -37,7 +108,7 @@
     var username = String(u.username || u.user || u.usuario || u.login || u.nombre || "").trim();
     if (!username) return null;
     return {
-      id: u.id || ("u_" + Math.random().toString(36).slice(2, 9)),
+      id: u.id || "u_" + Math.random().toString(36).slice(2, 9),
       username: username,
       nombre: u.nombre || u.name || username,
       passHash: u.passHash || u.hash || u.passwordHash || "",
@@ -64,16 +135,24 @@
     console.info("[login-cold] normalizados:", normalized.length, "de", list.length);
     if (!normalized.length) return 0;
 
+    freeLocalStorageQuota();
+
     try {
       window._ghApplyingUsers = true;
+      writeUsersArray(normalized);
       if (typeof saveUsers === "function") {
-        saveUsers(normalized);
+        try {
+          saveUsers(normalized);
+        } catch (eS) {
+          console.warn("[login-cold] saveUsers", eS);
+        }
       }
-      localStorage.setItem(LS_USERS, JSON.stringify(normalized));
     } catch (e) {
       console.warn("[login-cold] save", e);
     } finally {
-      try { window._ghApplyingUsers = false; } catch (e2) {}
+      try {
+        window._ghApplyingUsers = false;
+      } catch (e2) {}
     }
 
     try {
@@ -82,10 +161,22 @@
       }
     } catch (e) {
       console.warn("[login-cold] ghApplyPayload", e);
+      try {
+        writeUsersArray(normalized);
+      } catch (e3) {}
     }
 
+    writeUsersArray(normalized);
+
     var n = nUsers();
-    console.info("[login-cold] tras apply loadUsers:", n, "LS raw len:", (localStorage.getItem(LS_USERS) || "").length);
+    console.info(
+      "[login-cold] tras apply loadUsers:",
+      n,
+      "LS len:",
+      (localStorage.getItem(LS_USERS) || "").length,
+      "mem:",
+      window.__rutalogUsersMem ? window.__rutalogUsersMem.length : 0
+    );
     return n;
   }
 
@@ -153,7 +244,9 @@
           console.info("[RUTALOG] login-cold · usuarios locales:", nUsers());
           fn();
         } else {
-          setLoginMsg("Se descargó el catálogo pero no se pudieron guardar los usuarios. Revisa consola [login-cold].");
+          setLoginMsg(
+            "Se descargó el catálogo pero no se pudieron guardar los usuarios (¿almacenamiento lleno?). Revisa consola [login-cold]."
+          );
         }
       })
       .catch(function (e) {
@@ -168,14 +261,42 @@
     if (typeof window.intentarLogin !== "function" || window.intentarLogin._loginCold) return false;
     var orig = window.intentarLogin;
     window.intentarLogin = async function () {
-      if (nUsers() > 0) return orig.apply(this, arguments);
+      var self = this;
+      var args = arguments;
       return new Promise(function (resolve) {
         ensureUsersThen(function () {
-          Promise.resolve(orig.apply(window, arguments)).then(resolve, resolve);
+          Promise.resolve(orig.apply(self, args)).then(resolve).catch(function (e) {
+            console.warn("[login-cold] intentarLogin", e);
+            resolve(undefined);
+          });
         });
       });
     };
     window.intentarLogin._loginCold = true;
+    return true;
+  }
+
+  function patchLoadUsers() {
+    if (typeof window.loadUsers !== "function" || window.loadUsers._loginColdV4) return false;
+    var orig = window.loadUsers;
+    window.loadUsers = function () {
+      try {
+        var arr = orig.apply(this, arguments);
+        if (Array.isArray(arr) && arr.length) return arr;
+      } catch (e) {}
+      if (window.__rutalogUsersMem && window.__rutalogUsersMem.length) {
+        return window.__rutalogUsersMem.slice();
+      }
+      try {
+        var ss = sessionStorage.getItem(SS_USERS);
+        if (ss) {
+          var parsed = JSON.parse(ss);
+          if (Array.isArray(parsed) && parsed.length) return parsed;
+        }
+      } catch (e2) {}
+      return [];
+    };
+    window.loadUsers._loginColdV4 = true;
     return true;
   }
 
@@ -201,6 +322,7 @@
   }
 
   function install() {
+    patchLoadUsers();
     patchIntentarLogin();
   }
   install();
@@ -214,5 +336,5 @@
   setTimeout(coldBootPull, 1200);
   setTimeout(coldBootPull, 3500);
 
-  console.info("[RUTALOG] login-cold v3 · escritura directa usuarios");
+  console.info("[RUTALOG] login-cold v4 · usuarios con fallback mem/session + liberar cuota");
 })();
