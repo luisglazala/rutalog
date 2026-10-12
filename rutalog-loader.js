@@ -97,6 +97,7 @@
     "./mejoras-sync-dirty-push.js?v=1",
     "./mejoras-sync-core.js?v=5",
     "./mejoras-login-cold.js?v=4",
+    "./mejoras-usuarios-guard.js?v=1",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
     "./mejoras-centros.js?v=4",
