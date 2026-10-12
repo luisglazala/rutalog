@@ -1,4 +1,4 @@
-/* RUTALOG load extras v2 — manifiesto único, sin dobles + perf H5-H11 */
+/* RUTALOG load extras v2 */
 (function () {
   "use strict";
   if (window.RUTALOG && window.RUTALOG.load && window.RUTALOG.load.__v2) return;
@@ -96,8 +96,8 @@
     "./mejoras-sync-skip-unchanged.js?v=2",
     "./mejoras-sync-dirty-push.js?v=1",
     "./mejoras-sync-core.js?v=5",
-    "./mejoras-login-cold.js?v=4",
-    "./mejoras-usuarios-guard.js?v=1",
+    "./mejoras-login-cold.js?v=5",
+    "./mejoras-usuarios-guard.js?v=2",
     "./mejoras-v2.js?v=11",
     "./mejoras-citas-v15.js?v=17",
     "./mejoras-centros.js?v=4",

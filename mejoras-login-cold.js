@@ -1,7 +1,8 @@
-/* RUTALOG login-cold v4 — usuarios aunque localStorage esté al límite */
+/* RUTALOG login-cold v5 — usuarios aunque localStorage esté al límite */
 (function () {
   "use strict";
-  if (window.__rutalogLoginColdV4) return;
+  if (window.__rutalogLoginColdV5) return;
+  window.__rutalogLoginColdV5 = true;
   window.__rutalogLoginColdV4 = true;
   window.__rutalogLoginColdV3 = true;
   window.__rutalogLoginColdV2 = true;
@@ -70,7 +71,6 @@
       try {
         window.rutalogStorage.safeSetHeavy(LS_USERS, json);
         ok = true;
-        console.info("[login-cold] usuarios vía IndexedDB (safeSetHeavy)");
       } catch (e3) {}
     }
     return ok || (arr && arr.length > 0);
@@ -126,7 +126,6 @@
       console.warn("[login-cold] remoto sin array usuarios");
       return 0;
     }
-    console.info("[login-cold] raw keys[0]:", list[0] ? Object.keys(list[0]) : []);
     var normalized = [];
     for (var i = 0; i < list.length; i++) {
       var nu = normalizeUser(list[i]);
@@ -143,9 +142,7 @@
       if (typeof saveUsers === "function") {
         try {
           saveUsers(normalized);
-        } catch (eS) {
-          console.warn("[login-cold] saveUsers", eS);
-        }
+        } catch (eS) {}
       }
     } catch (e) {
       console.warn("[login-cold] save", e);
@@ -167,17 +164,7 @@
     }
 
     writeUsersArray(normalized);
-
-    var n = nUsers();
-    console.info(
-      "[login-cold] tras apply loadUsers:",
-      n,
-      "LS len:",
-      (localStorage.getItem(LS_USERS) || "").length,
-      "mem:",
-      window.__rutalogUsersMem ? window.__rutalogUsersMem.length : 0
-    );
-    return n;
+    return nUsers();
   }
 
   function pullAndApplyUsers() {
@@ -201,16 +188,9 @@
             "[RUTALOG] login-cold · remoto usuarios:",
             Array.isArray(rawU) ? rawU.length : 0,
             "maestro:",
-            Array.isArray(remote.data.maestroClientes) ? remote.data.maestroClientes.length : 0,
-            "bytes:",
-            remote.size || 0
+            Array.isArray(remote.data.maestroClientes) ? remote.data.maestroClientes.length : 0
           );
           return applyRemoteUsers(remote.data);
-        }
-        if (remote.unchanged && typeof window.ghActualizar === "function") {
-          return window.ghActualizar({ silent: true, force: true, manual: true }).then(function () {
-            return nUsers();
-          });
         }
         return 0;
       })
@@ -226,7 +206,7 @@
   }
 
   function ensureUsersThen(fn) {
-    if (nUsers() > 0) {
+    if (nUsers() > 0 || (window.__rutalogUsersMem && window.__rutalogUsersMem.length)) {
       fn();
       return;
     }
@@ -239,13 +219,12 @@
       .then(function () {
         pulling = false;
         if (btn) btn.disabled = false;
-        if (nUsers() > 0) {
+        if (nUsers() > 0 || (window.__rutalogUsersMem && window.__rutalogUsersMem.length)) {
           afterUsersOk();
-          console.info("[RUTALOG] login-cold · usuarios locales:", nUsers());
           fn();
         } else {
           setLoginMsg(
-            "Se descargó el catálogo pero no se pudieron guardar los usuarios (¿almacenamiento lleno?). Revisa consola [login-cold]."
+            'GitHub no tiene usuarios. En consola: await rutalogSeedAdmin("llazala","tu_clave") y luego Entrar.'
           );
         }
       })
@@ -310,9 +289,10 @@
         pulling = false;
         if (nUsers() > 0) {
           afterUsersOk();
-          console.info("[RUTALOG] login-cold boot · usuarios:", nUsers());
         } else {
-          setLoginMsg("Catálogo remoto OK pero usuarios no quedaron en este navegador. Pulsa Entrar para reintentar.");
+          setLoginMsg(
+            'GitHub sin usuarios. Consola: await rutalogSeedAdmin("llazala","tu_clave")'
+          );
         }
       })
       .catch(function (e) {
@@ -336,5 +316,5 @@
   setTimeout(coldBootPull, 1200);
   setTimeout(coldBootPull, 3500);
 
-  console.info("[RUTALOG] login-cold v4 · usuarios con fallback mem/session + liberar cuota");
+  console.info("[RUTALOG] login-cold v5 · seed si GitHub sin usuarios");
 })();
