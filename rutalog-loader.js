@@ -96,6 +96,7 @@
     "./mejoras-sync-skip-unchanged.js?v=2",
     "./mejoras-sync-dirty-push.js?v=1",
     "./mejoras-sync-core.js?v=5",
+    "./mejoras-dromos-sync.js?v=1",
     "./mejoras-login-cold.js?v=5",
     "./mejoras-usuarios-guard.js?v=2",
     "./mejoras-push-serial.js?v=1",
