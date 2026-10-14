@@ -1,14 +1,20 @@
-/* RUTALOG dromos-sync v2 — Fase 2b bridge (carga write) */
+/* RUTALOG dromos-sync v2 — Fase 2b bridge */
 (function () {
   "use strict";
   if (window.__rutalogDromosSyncV2) return;
   window.__rutalogDromosSyncV2 = true;
   window.__rutalogDromosSyncV1 = true;
   var LOG = "[RUTALOG] dromos-sync";
-  console.info(LOG, "v2 bridge · cargando write module");
-  var s = document.createElement("script");
-  s.src = "./mejoras-dromos-write.js?v=1";
-  s.async = true;
-  s.onerror = function () { console.warn(LOG, "no se pudo cargar dromos-write"); };
-  document.head.appendChild(s);
+  function load(src, next) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.async = false;
+    s.onload = function () { if (next) next(); };
+    s.onerror = function () { console.warn(LOG, "fail", src); };
+    document.head.appendChild(s);
+  }
+  console.info(LOG, "v2 bridge · write a+b");
+  load("./mejoras-dromos-write-a.js?v=1", function () {
+    load("./mejoras-dromos-write-b.js?v=1");
+  });
 })();
