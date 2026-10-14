@@ -1,11 +1,11 @@
 /**
- * RUTALOG — único worker / proxy GitHub (Fase 5)
+ * RUTALOG — proxy GitHub (Fase 2: rutalog-datos + Dromos)
  * wrangler.toml → main = worker.js
- * Solo repo luisglazala/rutalog-datos: contents/data.json + Git Data API.
- * Secret: GITHUB_SECRET_TOKEN (nunca en el cliente).
+ * Secret: GITHUB_SECRET_TOKEN (acceso a rutalog-datos Y Dromos).
  * Preview: escritura bloqueada salvo ALLOW_PREVIEW_WRITES=1.
  */
-const ALLOWED_REPO = "luisglazala/rutalog-datos";
+const REPO_DATOS = "luisglazala/rutalog-datos";
+const REPO_DROMOS = "luisglazala/Dromos";
 const ALLOWED_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "POST", "OPTIONS"]);
 const WRITE_METHODS = new Set(["PUT", "PATCH", "POST", "DELETE"]);
 const PROD_HOST = "rutalog.pages.dev";
@@ -26,7 +26,7 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    return new Response("RUTALOG Worker · /api → rutalog-datos", {
+    return new Response("RUTALOG Worker · /api → rutalog-datos + Dromos", {
       status: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
@@ -41,13 +41,15 @@ function corsHeaders(request) {
     else if (/^https:\/\/[a-z0-9-]+\.rutalog\.pages\.dev$/i.test(o)) origin = o;
     else if (!o) origin = "https://rutalog.pages.dev";
     else origin = "https://rutalog.pages.dev";
-  } catch (e) { origin = "https://rutalog.pages.dev"; }
+  } catch (e) {
+    origin = "https://rutalog.pages.dev";
+  }
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, HEAD, PUT, PATCH, POST, OPTIONS",
     "Access-Control-Allow-Headers":
       "Content-Type, Authorization, Accept, X-GitHub-Api-Version",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }
 
@@ -61,28 +63,46 @@ function json(body, status, cors) {
   });
 }
 
+function gitDataAllowed(rest, method) {
+  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest))
+    return true;
+  if (method === "POST" && rest === "/git/blobs") return true;
+  if (method === "POST" && rest === "/git/trees") return true;
+  if ((method === "GET" || method === "POST") && /^\/git\/commits(\/[0-9a-f]{40})?$/i.test(rest))
+    return true;
+  if ((method === "GET" || method === "PATCH") && /^\/git\/refs?\/heads\//i.test(rest))
+    return true;
+  return false;
+}
+
 function pathAllowed(githubPath, method) {
   if (githubPath === "/rate_limit") return false;
   const m = githubPath.match(/^\/repos\/([^/]+)\/([^/]+)(\/.*)?$/);
   if (!m) return false;
   const full = m[1] + "/" + m[2];
-  if (full !== ALLOWED_REPO) return false;
   const rest = m[3] || "";
-  if (rest === "" || rest === "/") return true;
-  if (/^\/contents\/data\.json$/i.test(rest) || /^\/contents\/data\.json\?/i.test(rest)) return true;
-  if ((method === "GET" || method === "HEAD") && /^\/git\/blobs\/[0-9a-f]{40}$/i.test(rest)) return true;
-  if (method === "POST" && rest === "/git/blobs") return true;
-  if (method === "POST" && rest === "/git/trees") return true;
-  if ((method === "GET" || method === "POST") && /^\/git\/commits(\/[0-9a-f]{40})?$/i.test(rest)) return true;
-  // GitHub API: /git/ref/heads/main (singular) y /git/refs/heads/main (plural)
-  if ((method === "GET" || method === "PATCH") && /^\/git\/refs?\/heads\//i.test(rest)) return true;
+
+  if (full === REPO_DATOS) {
+    if (rest === "" || rest === "/") return true;
+    if (/^\/contents\/data\.json$/i.test(rest) || /^\/contents\/data\.json\?/i.test(rest))
+      return true;
+    if (gitDataAllowed(rest, method)) return true;
+    return false;
+  }
+
+  if (full === REPO_DROMOS) {
+    if (rest === "" || rest === "/") return true;
+    if (/^\/contents\/data(\/|$)/i.test(rest)) return true;
+    if (gitDataAllowed(rest, method)) return true;
+    return false;
+  }
+
   return false;
 }
 
 function isProdHost(request) {
   const host = (request.headers.get("Host") || "").toLowerCase().split(":")[0];
-  if (host === PROD_HOST) return true;
-  return false;
+  return host === PROD_HOST;
 }
 
 function writesAllowed(request, env) {
@@ -108,9 +128,13 @@ async function handleGitHubProxy(request, env, url) {
         {
           ok: true,
           service: "RUTALOG GitHub proxy",
-          repo: ALLOWED_REPO,
-          scope: "contents/data.json + Git Data API",
+          repos: [REPO_DATOS, REPO_DROMOS],
+          scope: {
+            [REPO_DATOS]: "contents/data.json + Git Data API",
+            [REPO_DROMOS]: "contents/data/** + Git Data API",
+          },
           writes: writesAllowed(request, env) ? "allowed" : "blocked-preview",
+          fase: 2,
         },
         200,
         cors
@@ -121,7 +145,11 @@ async function handleGitHubProxy(request, env, url) {
       return json(
         {
           error: "Ruta o repositorio no permitido",
-          allowed: ALLOWED_REPO + "/contents/data.json y git data API",
+          allowed: [
+            REPO_DATOS + "/contents/data.json",
+            REPO_DROMOS + "/contents/data/**",
+            "git data API en ambos",
+          ],
         },
         403,
         cors
@@ -132,7 +160,10 @@ async function handleGitHubProxy(request, env, url) {
       return json(
         {
           error: "Escritura bloqueada en preview",
-          detail: "Solo lectura en hosts distintos de " + PROD_HOST + ". Define ALLOW_PREVIEW_WRITES=1 solo si es necesario.",
+          detail:
+            "Solo lectura en hosts distintos de " +
+            PROD_HOST +
+            ". Define ALLOW_PREVIEW_WRITES=1 solo si es necesario.",
           host: request.headers.get("Host") || "",
         },
         403,
